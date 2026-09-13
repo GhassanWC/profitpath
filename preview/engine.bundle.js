@@ -1381,8 +1381,9 @@ exports.CATEGORY_META = {
     reduce_cac: { label: 'Reduce acquisition cost', icon: '📣', blurb: 'Pay less to win each customer.' },
     increase_value: { label: 'Increase customer value', icon: '🔄', blurb: 'Earn more from the customers you already have.' },
 };
+/** Sentence case: nothing in the interface is set in capitals. */
 function priorityLabel(p) {
-    return p === 'high' ? 'HIGH' : p === 'medium' ? 'MEDIUM' : 'LOW';
+    return p === 'high' ? 'High' : p === 'medium' ? 'Medium' : 'Low';
 }
 
   };

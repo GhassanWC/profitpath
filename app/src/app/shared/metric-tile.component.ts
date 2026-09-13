@@ -12,6 +12,7 @@ import { Component, input } from '@angular/core';
       }
     </div>
   `,
+  styles: [':host { display: block; height: 100%; }'],
 })
 export class MetricTileComponent {
   label = input.required<string>();

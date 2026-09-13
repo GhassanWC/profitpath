@@ -1,160 +1,470 @@
-/* ProfitPath design system — layered on top of Bootstrap 5 */
+/* ============================================================================
+   ProfitPath design system
+   Visual language: the frosted-glass dashboard on a periwinkle wash.
+   Product structure: unchanged — this file only restyles the existing markup.
+
+   Two-layer surface model
+   -----------------------
+   Content never sits straight on the page wash. `.pp-card` IS the frosted glass
+   panel; the white card inside it is drawn by its `::before` at a 12px inset.
+   That keeps both layers in one element, so the Angular templates and the
+   dependency-free preview share the same markup.
+     .pp-card        glass panel + white card   (the default)
+     .pp-card-soft   glass panel + pale card
+     .pp-card-dark   glass panel + near-black card
+     .pp-card-bare   white card only — use inside an explicit .pp-panel
+     .pp-panel       glass panel only — for grouping several bare cards
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- tokens -- */
 :root {
-  --pp-ink: #0f172a;
-  --pp-ink-2: #334155;
-  --pp-muted: #64748b;
-  --pp-line: #e6eaf0;
-  --pp-bg: #f6f8fa;
+  /* Page — periwinkle → pale-blue wash */
+  --pp-bg-1: #9ba5d9;
+  --pp-bg-2: #c3cbe6;
+  --pp-bg-3: #dfe4ee;
+  --pp-page: linear-gradient(160deg, #9ba5d9 0%, #c3cbe6 46%, #dfe4ee 100%);
+  --pp-bg: var(--pp-bg-2);
+
+  /* Glass */
+  --pp-glass: rgba(255, 255, 255, 0.42);
+  --pp-glass-strong: rgba(255, 255, 255, 0.62);
+  --pp-glass-line: rgba(255, 255, 255, 0.55);
+  --pp-glass-blur: 24px;
+
+  /* Solid surfaces */
   --pp-card: #ffffff;
-  --pp-primary: #0f766e;
-  --pp-primary-2: #0d9488;
-  --pp-primary-soft: #e6f4f1;
-  --pp-accent: #f59e0b;
-  --pp-accent-soft: #fff4dc;
-  --pp-indigo: #4f46e5;
-  --pp-indigo-soft: #eceafe;
-  --pp-danger: #dc2626;
-  --pp-danger-soft: #fde8e8;
-  --pp-success: #16a34a;
-  --pp-radius: 16px;
-  --pp-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
-  --pp-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --pp-subtle: #eef1f8;
+  --pp-subtle-2: #f6f8fc;
+  --pp-line: #eceff5;
+
+  /* Ink */
+  --pp-ink: #1a1c22;
+  --pp-ink-2: #4b505c;
+  --pp-muted: #8b90a0;
+
+  /* Action — near-black pill buttons */
+  --pp-action: #111318;
+  --pp-action-hover: #26292f;
+
+  /* Blue accent */
+  --pp-accent: #2f6bf6;
+  --pp-accent-2: #5b8cff;
+  --pp-accent-soft: #dbe7ff;
+
+  /* Violet — reserved for the orb */
+  --pp-violet: #6c5ce7;
+  --pp-violet-2: #8f7ff5;
+  --pp-violet-soft: #e7e4fb;
+
+  /* Semantic */
+  --pp-pos: #1f9d64;
+  --pp-pos-soft: #dff3e8;
+  --pp-neg: #e2574c;
+  --pp-neg-soft: #fde8e6;
+  --pp-warn: #e8a33d;
+  --pp-warn-soft: #fdf0da;
+  --pp-neutral-soft: #eceff5;
+
+  /* Cost-composition series — blue→violet, with fees left neutral. The cost
+     breakdown component names these tokens rather than repeating the hexes. */
+  --pp-series-1: #2f6bf6; --pp-series-2: #5b8cff; --pp-series-3: #8fb0ff; --pp-series-4: #b9cdff;
+  --pp-series-5: #6c5ce7; --pp-series-6: #8f7ff5; --pp-series-7: #c4bdfa;
+  --pp-series-8: #aeb5c6; --pp-series-9: #ccd2de;
+  /* Aliases kept so template inline styles and the preview utilities resolve. */
+  --pp-primary: var(--pp-accent);
+  --pp-danger: var(--pp-neg);
+  --pp-success: var(--pp-pos);
+
+  /* Gradients — three places only, plus the landing headline */
+  --pp-gradient-orb: radial-gradient(circle at 35% 30%, #9d8cff 0%, #6c5ce7 55%, #5a49d6 100%);
+  --pp-gradient-trend: linear-gradient(135deg, #4a7bf7 0%, #7aa8ff 55%, #9dc0ff 100%);
+  --pp-gradient-bar: linear-gradient(180deg, #8fb0ff 0%, #2f6bf6 100%);
+  --pp-gradient-text: linear-gradient(90deg, #2f6bf6 0%, #6c5ce7 100%);
+
+  /* Type */
+  --pp-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Shape — everything round; no square corners, no rectangular buttons */
+  --pp-radius-panel: 28px;
+  --pp-radius: 20px;
+  --pp-radius-md: 16px;
+  --pp-radius-sm: 12px;
+  --pp-radius-pill: 999px;
+
+  --pp-shadow-panel: 0 24px 60px -28px rgba(44, 54, 96, 0.38);
+  --pp-shadow-card: 0 10px 30px -16px rgba(26, 28, 34, 0.2);
+  --pp-shadow-soft: 0 2px 8px -4px rgba(26, 28, 34, 0.12);
+  --pp-shadow-action: 0 8px 20px -10px rgba(17, 19, 24, 0.55);
+  --pp-ring-accent: 0 0 0 4px rgba(47, 107, 246, 0.16);
+  --pp-glow-orb: 0 0 60px 10px rgba(108, 92, 231, 0.35);
+  --pp-shadow: var(--pp-shadow-card);
+
+  /* Motion */
+  --pp-ease: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  --pp-ease-slow: 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* Layout */
+  --pp-container: 1120px;
+  --pp-gutter: 24px;
+  --pp-grid-gap: 12px;
+  --pp-panel-pad: 12px;
+  --pp-card-pad: 20px;
 }
 
-html, body { background: var(--pp-bg); color: var(--pp-ink); font-family: var(--pp-font); -webkit-font-smoothing: antialiased; }
-body { font-size: 15px; line-height: 1.55; margin: 0; }
-h1, h2, h3, h4, .display-pp { letter-spacing: -0.02em; font-weight: 700; color: var(--pp-ink); }
-a { color: var(--pp-primary); text-decoration: none; }
-a:hover { color: var(--pp-primary-2); }
+/* ------------------------------------------------------------------ base -- */
+html, body {
+  background: var(--pp-bg-2);
+  background-image: var(--pp-page);
+  background-attachment: fixed;
+  color: var(--pp-ink);
+  font-family: var(--pp-font);
+  -webkit-font-smoothing: antialiased;
+}
+body { font-size: 14px; line-height: 1.5; margin: 0; }
+/* Headings are 300–400 with tight tracking; these also override Bootstrap's scale. */
+h1, h2, h3, h4, h5, .display-pp { letter-spacing: -0.02em; font-weight: 400; color: var(--pp-ink); }
+h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; }
+h2 { font-size: 24px; }
+h3, h4 { font-size: 20px; }
+h5 { font-size: 15px; font-weight: 500; }
+a { color: var(--pp-accent); text-decoration: none; }
+a:hover { color: var(--pp-violet); }
 .text-muted, .pp-muted { color: var(--pp-muted) !important; }
-.pp-container { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+.pp-container { max-width: var(--pp-container); margin: 0 auto; padding-inline: var(--pp-gutter); }
 .pp-narrow { max-width: 720px; margin: 0 auto; }
-
-/* Buttons */
-.btn-pp { background: var(--pp-primary); color: #fff; border: 0; border-radius: 12px; padding: 0.8rem 1.4rem; font-weight: 600; transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 6px 18px -8px rgba(15, 118, 110, 0.6); }
-.btn-pp:hover, .btn-pp:focus { background: var(--pp-primary-2); color: #fff; transform: translateY(-1px); }
-.btn-pp:disabled { opacity: 0.5; transform: none; }
-.btn-pp-ghost { background: transparent; color: var(--pp-ink); border: 1px solid var(--pp-line); border-radius: 12px; padding: 0.8rem 1.4rem; font-weight: 600; }
-.btn-pp-ghost:hover { background: #fff; border-color: #cfd6df; color: var(--pp-ink); }
-.btn-pp-lg { padding: 1rem 1.8rem; font-size: 1.05rem; }
-
-/* Cards */
-.pp-card { background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-radius); box-shadow: var(--pp-shadow); padding: 1.5rem; }
-.pp-card-soft { background: var(--pp-primary-soft); border-color: transparent; box-shadow: none; }
-.pp-card-hero { background: linear-gradient(135deg, #0f766e 0%, #115e59 60%, #134e4a 100%); color: #fff; border: 0; }
-.pp-card-hero .pp-eyebrow, .pp-card-hero .pp-muted { color: rgba(255, 255, 255, 0.75) !important; }
-.pp-eyebrow { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--pp-muted); }
-.pp-kpi { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.pp-kpi-xl { font-size: clamp(2.6rem, 6vw, 4.2rem); }
-.pp-kpi-lg { font-size: clamp(2rem, 4vw, 3rem); }
-.pp-kpi-sm { font-size: 1.35rem; }
 .pp-num { font-variant-numeric: tabular-nums; }
 
-/* Shell */
-.pp-header { position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(180%) blur(12px); background: rgba(246, 248, 250, 0.82); border-bottom: 1px solid var(--pp-line); }
-.pp-header .pp-container { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-.pp-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; color: var(--pp-ink); font-size: 1.1rem; letter-spacing: -0.02em; }
-.pp-logo svg { width: 28px; height: 28px; }
-.pp-nav a { color: var(--pp-ink-2); font-weight: 500; margin-left: 1.2rem; }
-.pp-nav a.active { color: var(--pp-primary); }
-.pp-footer { border-top: 1px solid var(--pp-line); padding: 2.5rem 0 3rem; color: var(--pp-muted); font-size: 0.9rem; }
-.pp-notice { font-size: 0.82rem; color: var(--pp-muted); background: #fff; border: 1px dashed var(--pp-line); border-radius: 10px; padding: 0.6rem 0.9rem; }
+/* Panels tile 12px apart, as the source composition does. */
+.row.g-3, .row.g-4 { --bs-gutter-x: var(--pp-grid-gap); --bs-gutter-y: var(--pp-grid-gap); --g: var(--pp-grid-gap); }
 
-/* Landing */
-.pp-hero { padding: 5.5rem 0 3rem; text-align: center; }
-.pp-hero h1 { font-size: clamp(2.5rem, 6vw, 4.25rem); font-weight: 800; line-height: 1.05; }
-.pp-hero p.lead { font-size: 1.2rem; color: var(--pp-ink-2); max-width: 640px; margin: 1.25rem auto 2rem; }
-.pp-gradient-text { background: linear-gradient(90deg, var(--pp-primary) 0%, var(--pp-indigo) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.pp-section { padding: 4rem 0; }
-.pp-section h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); margin-bottom: 0.5rem; }
-.pp-chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--pp-line); border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.85rem; font-weight: 500; color: var(--pp-ink-2); }
-.pp-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-.pp-step-num { width: 34px; height: 34px; border-radius: 10px; display: inline-grid; place-items: center; background: var(--pp-primary-soft); color: var(--pp-primary); font-weight: 700; margin-bottom: 0.75rem; }
-.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 0.45rem; column-gap: 1rem; }
-.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 0.5rem; font-weight: 700; }
-.pp-plus { color: var(--pp-success); font-weight: 700; }
+/* --------------------------------------------------------------- buttons -- */
+/* Every button is a full pill. Hover lifts 1px; there is no press state. */
+.btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: var(--pp-radius-pill); font-family: inherit; font-weight: 500;
+  line-height: 1.2; padding: 11px 20px; font-size: 13px; white-space: nowrap; cursor: pointer;
+  transition: background var(--pp-ease), box-shadow var(--pp-ease), transform var(--pp-ease), border-color var(--pp-ease);
+}
+.btn-pp { background: var(--pp-action); color: #fff; box-shadow: var(--pp-shadow-action); }
+.btn-pp:hover, .btn-pp:focus { background: var(--pp-action-hover); color: #fff; transform: translateY(-1px); }
+.btn-pp:disabled { opacity: 0.45; transform: none; box-shadow: none; }
 
-/* Questionnaire */
-.pp-progress { height: 6px; background: #e9eef3; border-radius: 999px; overflow: hidden; }
-.pp-progress > div { height: 100%; background: linear-gradient(90deg, var(--pp-primary), var(--pp-primary-2)); transition: width 0.3s ease; }
-.pp-q-label { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.35rem; }
-.pp-q-help { font-size: 0.86rem; color: var(--pp-muted); margin-bottom: 0.6rem; }
-.pp-input-group { display: flex; align-items: stretch; border: 1.5px solid var(--pp-line); border-radius: 12px; background: #fff; overflow: hidden; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-.pp-input-group:focus-within { border-color: var(--pp-primary); box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12); }
-.pp-input-group input, .pp-input-group select { flex: 1; border: 0; outline: 0; padding: 0.8rem 0.9rem; font-size: 1.05rem; background: transparent; min-width: 0; font-variant-numeric: tabular-nums; }
-.pp-input-group .affix { display: flex; align-items: center; padding: 0 0.9rem; color: var(--pp-muted); font-size: 0.9rem; background: #f8fafc; border-left: 1px solid var(--pp-line); white-space: nowrap; }
-.pp-input-group .affix.pre { border-left: 0; border-right: 1px solid var(--pp-line); font-weight: 600; color: var(--pp-ink-2); }
-.pp-input-group.is-invalid { border-color: var(--pp-danger); }
-.pp-error { color: var(--pp-danger); font-size: 0.84rem; margin-top: 0.35rem; }
-.pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.7rem; }
-.pp-option { border: 1.5px solid var(--pp-line); background: #fff; border-radius: 14px; padding: 0.9rem 1rem; text-align: left; cursor: pointer; transition: all 0.15s ease; font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: flex-start; }
-.pp-option:hover { border-color: #bfc8d4; }
-.pp-option.selected { border-color: var(--pp-primary); background: var(--pp-primary-soft); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12); }
-.pp-option .icon { font-size: 1.35rem; line-height: 1; }
-.pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 0.82rem; margin-top: 2px; }
-.pp-type-card { border: 1.5px solid var(--pp-line); background: #fff; border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.15s ease; }
-.pp-type-card:hover { border-color: #bfc8d4; transform: translateY(-1px); }
-.pp-type-card.selected { border-color: var(--pp-primary); background: var(--pp-primary-soft); }
-.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-primary-soft); border-radius: 14px; padding: 1rem 1.1rem; }
-.pp-detect .icon { font-size: 1.8rem; }
+.btn-pp-ghost { background: transparent; color: var(--pp-ink-2); border: 1px solid var(--pp-line); }
+.btn-pp-ghost:hover, .btn-pp-ghost:focus { border-color: var(--pp-muted); color: var(--pp-ink-2); transform: translateY(-1px); }
 
-/* Results */
-.pp-metric { background: #fff; border: 1px solid var(--pp-line); border-radius: 14px; padding: 1rem 1.15rem; height: 100%; }
-.pp-metric .pp-eyebrow { margin-bottom: 0.3rem; }
-.pp-metric .sub { font-size: 0.84rem; color: var(--pp-muted); margin-top: 0.2rem; }
-.pp-scenario { position: relative; border: 1.5px solid var(--pp-line); border-radius: 16px; padding: 1.4rem; background: #fff; height: 100%; }
-.pp-scenario.recommended { border-color: var(--pp-primary); box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1), var(--pp-shadow); }
-.pp-scenario .price { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; }
-.pp-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; padding: 0.25rem 0.65rem; letter-spacing: 0.02em; }
-.pp-badge.low { background: var(--pp-accent-soft); color: #b45309; }
-.pp-badge.recommended { background: var(--pp-primary-soft); color: var(--pp-primary); }
-.pp-badge.premium { background: var(--pp-indigo-soft); color: var(--pp-indigo); }
-.pp-badge.loss { background: var(--pp-danger-soft); color: var(--pp-danger); }
-.pp-badge.high { background: var(--pp-danger-soft); color: var(--pp-danger); }
-.pp-badge.medium { background: var(--pp-accent-soft); color: #b45309; }
-.pp-badge.neutral { background: #eef2f6; color: var(--pp-ink-2); }
-.pp-badge.easy { background: #e7f7ec; color: var(--pp-success); }
-.pp-badge.hard { background: var(--pp-indigo-soft); color: var(--pp-indigo); }
-.pp-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: #eef2f6; }
-.pp-bar span { display: block; height: 100%; }
-.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.4rem 1.2rem; font-size: 0.88rem; }
-.pp-legend .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 8px; }
-.pp-tabs { display: inline-flex; background: #eef2f6; border-radius: 12px; padding: 4px; gap: 4px; }
-.pp-tabs button { border: 0; background: transparent; padding: 0.5rem 1rem; border-radius: 9px; font-weight: 600; color: var(--pp-ink-2); }
-.pp-tabs button.active { background: #fff; color: var(--pp-ink); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); }
-.pp-slider label { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.92rem; margin-bottom: 0.2rem; }
-.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-primary); }
-.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-primary); }
-.pp-slider small { color: var(--pp-muted); }
-.pp-delta { font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.pp-delta.up { color: var(--pp-success); }
-.pp-delta.down { color: var(--pp-danger); }
-.pp-warn { background: var(--pp-accent-soft); border: 1px solid #fde4b3; color: #7c4a03; border-radius: 12px; padding: 0.8rem 1rem; font-size: 0.92rem; }
-.pp-ok { background: #e7f7ec; border: 1px solid #c8eed3; color: #14532d; border-radius: 12px; padding: 0.8rem 1rem; font-size: 0.92rem; }
+.btn-pp-white { background: #fff; color: var(--pp-ink); box-shadow: var(--pp-shadow-soft); }
+.btn-pp-white:hover, .btn-pp-white:focus { color: var(--pp-ink); box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
 
-/* Roadmap */
-.pp-rec { border: 1px solid var(--pp-line); border-radius: 16px; background: #fff; padding: 1.25rem 1.4rem; transition: box-shadow 0.15s ease; }
-.pp-rec:hover { box-shadow: var(--pp-shadow); }
-.pp-rec.done { opacity: 0.6; }
-.pp-rec .impact { font-size: 1.5rem; font-weight: 800; color: var(--pp-success); letter-spacing: -0.02em; white-space: nowrap; }
-.pp-rec h4 { font-size: 1.08rem; margin: 0.3rem 0 0.4rem; }
-.pp-rec .label { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--pp-muted); font-weight: 700; margin-bottom: 0.15rem; }
-.pp-rec p { margin-bottom: 0.6rem; font-size: 0.94rem; }
-.pp-rec ul { font-size: 0.86rem; color: var(--pp-muted); padding-left: 1.1rem; margin: 0; }
-.pp-check { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #cbd5e1; display: inline-grid; place-items: center; cursor: pointer; background: #fff; }
-.pp-check.on { background: var(--pp-success); border-color: var(--pp-success); color: #fff; }
-.pp-cat-head { display: flex; align-items: center; gap: 10px; margin: 2rem 0 0.9rem; }
-.pp-cat-head .icon { font-size: 1.4rem; }
-.pp-waterfall { display: grid; gap: 0.55rem; }
-.pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; font-size: 0.93rem; }
-.pp-waterfall .track { height: 8px; border-radius: 999px; background: #eef2f6; overflow: hidden; grid-column: 1 / -1; }
-.pp-waterfall .track span { display: block; height: 100%; background: var(--pp-success); }
+/* Glass button — the secondary hero action, sitting straight on the wash. */
+.btn-pp-glass {
+  background: var(--pp-glass); color: var(--pp-ink); border: 1px solid var(--pp-glass-line);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.btn-pp-glass:hover, .btn-pp-glass:focus { background: var(--pp-glass-strong); color: var(--pp-ink); transform: translateY(-1px); }
 
-.pp-fade { animation: ppfade 0.35s ease both; }
-@keyframes ppfade { from { transform: translateY(6px); } to { transform: none; } }
+.btn-pp-lg { padding: 15px 28px; font-size: 15px; }
+.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm { padding: 7px 14px; font-size: 12px; }
+
+/* --------------------------------------------------- surfaces: the model -- */
+.pp-panel {
+  background: var(--pp-glass);
+  backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
+  border: 1px solid var(--pp-glass-line);
+  border-radius: var(--pp-radius-panel);
+  box-shadow: var(--pp-shadow-panel);
+  padding: var(--pp-panel-pad);
+}
+
+.pp-card, .pp-scenario, .pp-rec {
+  position: relative;
+  isolation: isolate;
+  background: var(--pp-glass);
+  backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
+  border: 1px solid var(--pp-glass-line);
+  border-radius: var(--pp-radius-panel);
+  box-shadow: var(--pp-shadow-panel);
+  /* glass gutter + white-card interior */
+  padding: calc(var(--pp-panel-pad) + var(--pp-card-pad));
+}
+.pp-card::before, .pp-scenario::before, .pp-rec::before {
+  content: '';
+  position: absolute;
+  inset: var(--pp-panel-pad);
+  z-index: -1;
+  border-radius: var(--pp-radius);
+  background: var(--pp-card);
+  box-shadow: var(--pp-shadow-card);
+}
+.pp-card-soft::before { background: var(--pp-subtle); box-shadow: none; }
+.pp-card-dark { color: #fff; }
+.pp-card-dark::before { background: var(--pp-action); box-shadow: var(--pp-shadow-action); }
+.pp-card-dark h1, .pp-card-dark h2, .pp-card-dark h3, .pp-card-dark h4,
+.pp-card-dark .pp-eyebrow, .pp-card-dark .pp-kpi { color: #fff; }
+.pp-card-dark .pp-muted, .pp-card-dark ul { color: rgba(255, 255, 255, 0.72) !important; }
+
+/* A plain white card, for use inside an explicit .pp-panel. */
+.pp-card-bare {
+  background: var(--pp-card);
+  border-radius: var(--pp-radius);
+  box-shadow: var(--pp-shadow-card);
+  padding: var(--pp-card-pad);
+  border: 0;
+}
+
+/* Card eyebrow — 12px sentence case. Nothing in this system is uppercase. */
+.pp-eyebrow { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--pp-ink); }
+.pp-subhead { font-size: 12px; color: var(--pp-muted); }
+
+/* --------------------------------------------------------------- figures -- */
+/* Figures are always weight 300 and tabular. Nothing here bolds a number. */
+.pp-kpi {
+  font-size: 22px; font-weight: 300; letter-spacing: -0.03em; line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: var(--pp-ink);
+}
+.pp-kpi-xl { font-size: clamp(34px, 5vw, 44px); line-height: 1.1; }
+.pp-kpi-lg { font-size: clamp(28px, 4vw, 34px); line-height: 1.1; }
+.pp-kpi-sm { font-size: 16px; }
+/* The currency mark rides high and quiet beside the figure, never level with it. */
+.pp-kpi-xl { display: flex; align-items: flex-start; }
+.pp-kpi .cur { font-size: 0.45em; color: var(--pp-muted); margin: 0.45em 2px 0 0; }
+
+/* ----------------------------------------------------------------- shell -- */
+/* The header is the only sticky element, and it floats as a pill. */
+.pp-header { position: sticky; top: 0; z-index: 50; }
+.pp-header .pp-container { padding-block: 14px; }
+.pp-header-pill {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: var(--pp-glass);
+  backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
+  border: 1px solid var(--pp-glass-line);
+  border-radius: var(--pp-radius-pill);
+  padding: 10px 12px 10px 20px;
+  box-shadow: var(--pp-shadow-panel);
+}
+.pp-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--pp-ink); font-size: 15px; letter-spacing: -0.02em; }
+.pp-logo svg { width: 24px; height: 24px; }
+.pp-nav a { color: var(--pp-ink-2); font-weight: 400; font-size: 13px; margin-left: 22px; }
+.pp-nav a.active { color: var(--pp-ink); font-weight: 500; }
+.pp-footer { padding: 32px 0 48px; color: var(--pp-ink-2); font-size: 12px; }
+
+/* Notices are quiet pills; the frosted one is the only translucent inline UI. */
+.pp-notice {
+  display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px;
+  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line); color: var(--pp-ink-2);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.pp-warn { display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px; background: var(--pp-warn-soft); color: #8a5d13; }
+.pp-ok { display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px; background: var(--pp-pos-soft); color: #16603f; }
+/* Notices that wrap relax from a pill to a rounded block. */
+.pp-notice-block, .pp-warn-block, .pp-ok-block { display: block; border-radius: var(--pp-radius-md); padding: 12px 16px; line-height: 1.55; }
+
+/* --------------------------------------------------------------- landing -- */
+.pp-hero { padding: 64px 0 40px; text-align: center; }
+.pp-hero h1 { font-size: clamp(34px, 5vw, 52px); font-weight: 300; line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
+.pp-hero p.lead { font-size: 15px; color: var(--pp-ink-2); max-width: 560px; margin: 18px auto 26px; }
+.pp-gradient-text { background: var(--pp-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pp-section { padding: 48px 0 0; }
+.pp-section h2 { font-size: 28px; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
+.pp-section .text-center p { font-size: 13px; }
+.pp-chip {
+  display: inline-flex; align-items: center; gap: 6px; border-radius: var(--pp-radius-pill);
+  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line);
+  padding: 6px 12px; font-size: 12px; font-weight: 400; color: var(--pp-ink-2);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.pp-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--pp-grid-gap); }
+.pp-flow h5 { font-size: 15px; font-weight: 500; margin: 12px 0 6px; }
+.pp-flow p { font-size: 13px; color: var(--pp-ink-2); }
+.pp-step-num {
+  width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center;
+  background: var(--pp-accent-soft); color: var(--pp-accent); font-weight: 500; font-size: 13px;
+}
+
+.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 8px; column-gap: 16px; font-size: 13px; }
+.pp-ledger > :nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 10px; font-weight: 500; color: inherit; }
+.pp-plus { color: var(--pp-pos); font-weight: 500; }
+
+/* --------------------------------------------------------- questionnaire -- */
+.pp-progress { height: 6px; background: var(--pp-subtle); border-radius: var(--pp-radius-pill); overflow: hidden; }
+.pp-progress > div { height: 100%; background: var(--pp-gradient-text); border-radius: var(--pp-radius-pill); transition: width var(--pp-ease-slow); }
+.pp-q-label { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: var(--pp-ink); }
+.pp-q-help { font-size: 12px; color: var(--pp-muted); margin-bottom: 8px; }
+
+/* Fields show no border until focus, which draws a hairline plus a 4px ring. */
+.pp-input-group {
+  display: flex; align-items: stretch; background: var(--pp-subtle);
+  border: 1px solid transparent; border-radius: var(--pp-radius-pill); overflow: hidden;
+  transition: border-color var(--pp-ease), box-shadow var(--pp-ease);
+}
+.pp-input-group:focus-within { border-color: var(--pp-accent); box-shadow: var(--pp-ring-accent); }
+.pp-input-group input, .pp-input-group select {
+  flex: 1; border: 0; outline: 0; padding: 12px 16px; font-size: 14px; background: transparent;
+  min-width: 0; font-family: inherit; color: var(--pp-ink); font-variant-numeric: tabular-nums;
+}
+.pp-input-group .affix { display: flex; align-items: center; padding: 0 14px; color: var(--pp-muted); font-size: 13px; white-space: nowrap; }
+.pp-input-group .affix.pre { padding-right: 0; font-weight: 500; color: var(--pp-ink-2); }
+.pp-input-group .affix:not(.pre) { padding-left: 0; }
+.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; }
+.pp-error { color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
+
+.pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.pp-option {
+  background: var(--pp-subtle); border: 1px solid transparent; border-radius: var(--pp-radius-md);
+  padding: 14px 16px; text-align: left; cursor: pointer; font-family: inherit; font-size: 13px;
+  font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: flex-start;
+  transition: background var(--pp-ease), border-color var(--pp-ease);
+}
+.pp-option:hover { background: var(--pp-subtle-2); }
+.pp-option.selected { background: var(--pp-accent-soft); border-color: var(--pp-accent); }
+.pp-option .icon { font-size: 18px; line-height: 1; }
+.pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
+
+.pp-type-card {
+  background: #fff; border: 1px solid transparent; border-radius: var(--pp-radius-md); padding: 16px;
+  cursor: pointer; text-align: left; font-family: inherit; box-shadow: var(--pp-shadow-soft);
+  transition: box-shadow var(--pp-ease), transform var(--pp-ease), background var(--pp-ease), border-color var(--pp-ease);
+}
+.pp-type-card:hover { box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
+.pp-type-card.selected { background: var(--pp-accent-soft); border-color: var(--pp-accent); box-shadow: none; transform: none; }
+.pp-type-card .icon { font-size: 20px; line-height: 1; }
+.pp-type-card .name { font-weight: 500; margin-top: 6px; font-size: 13px; color: var(--pp-ink); }
+.pp-type-card small { color: var(--pp-muted); display: block; font-size: 12px; margin-top: 2px; }
+
+.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-accent-soft); border-radius: var(--pp-radius-md); padding: 14px 16px; }
+.pp-detect .icon { font-size: 22px; }
+.pp-detect .title { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
+
+/* --------------------------------------------------------------- results -- */
+/* Metric tiles are pale blocks inside a card, never cards in their own right. */
+.pp-metric { background: var(--pp-subtle); border: 0; border-radius: var(--pp-radius-md); padding: 16px; height: 100%; }
+.pp-metric .pp-eyebrow { font-weight: 400; color: var(--pp-muted); margin-bottom: 6px; }
+.pp-metric .sub { font-size: 12px; color: var(--pp-muted); margin-top: 4px; }
+
+/* The violet orb — one per screen, on the single most important figure. */
+.pp-split { display: flex; align-items: center; }
+.pp-split .side {
+  flex: 1; min-width: 0; background: var(--pp-subtle); border-radius: var(--pp-radius-pill);
+  padding: 18px 22px; text-align: center;
+}
+.pp-split .side.left { padding-right: 46px; margin-right: -34px; }
+.pp-split .side.right { padding-left: 46px; margin-left: -34px; }
+.pp-split .fig { font-size: 22px; font-weight: 300; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.pp-split .cap { font-size: 11px; color: var(--pp-muted); margin-top: 2px; }
+.pp-orb {
+  width: 118px; height: 118px; border-radius: 50%; background: var(--pp-gradient-orb);
+  box-shadow: var(--pp-glow-orb); display: grid; place-items: center; color: #fff;
+  position: relative; z-index: 2; flex: 0 0 auto; text-align: center;
+}
+.pp-orb .fig { color: #fff; }
+.pp-orb .cap { color: rgba(255, 255, 255, 0.8); }
+
+/* The recommended scenario is the near-black card. */
+.pp-scenario { height: 100%; }
+.pp-scenario::before { box-shadow: var(--pp-shadow-soft); }
+.pp-scenario.recommended { color: #fff; }
+.pp-scenario.recommended::before { background: var(--pp-action); box-shadow: var(--pp-shadow-action); }
+.pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-eyebrow { color: rgba(255, 255, 255, 0.72) !important; }
+.pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.2); }
+.pp-scenario .price { font-size: 34px; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+/* Badges are soft pills — quiet, and never colour alone. */
+.pp-badge {
+  display: inline-flex; align-items: center; gap: 5px; border-radius: var(--pp-radius-pill);
+  font-size: 11px; font-weight: 500; padding: 4px 10px; letter-spacing: 0.01em;
+  background: var(--pp-neutral-soft); color: var(--pp-ink-2);
+}
+.pp-badge.low { background: var(--pp-warn-soft); color: #8a5d13; }
+.pp-badge.recommended { background: var(--pp-accent-soft); color: var(--pp-accent); }
+.pp-badge.premium { background: var(--pp-violet-soft); color: var(--pp-violet); }
+.pp-badge.loss { background: var(--pp-neg-soft); color: var(--pp-neg); }
+.pp-badge.high { background: var(--pp-accent-soft); color: var(--pp-accent); }
+.pp-badge.medium { background: var(--pp-warn-soft); color: #8a5d13; }
+.pp-badge.neutral { background: var(--pp-neutral-soft); color: var(--pp-ink-2); }
+.pp-badge.easy { background: var(--pp-pos-soft); color: var(--pp-pos); }
+.pp-badge.hard { background: var(--pp-violet-soft); color: var(--pp-violet); }
+
+/* Cost bar — individually pill-rounded segments separated by 3px gaps. */
+.pp-bar { display: flex; gap: 3px; height: 10px; background: transparent; }
+.pp-bar span { display: block; height: 100%; border-radius: var(--pp-radius-pill); }
+.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; font-size: 12px; }
+.pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+/* Tabs sit on a frosted bed; the active tab is a near-black pill. */
+.pp-tabs {
+  display: inline-flex; gap: 4px; background: var(--pp-glass-strong);
+  border: 1px solid var(--pp-glass-line); border-radius: var(--pp-radius-pill); padding: 4px;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.pp-tabs button {
+  border: 0; background: transparent; padding: 8px 18px; border-radius: var(--pp-radius-pill);
+  font-weight: 500; font-size: 13px; color: var(--pp-ink-2); cursor: pointer;
+  transition: background var(--pp-ease), color var(--pp-ease);
+}
+.pp-tabs button.active { background: var(--pp-action); color: #fff; }
+
+.pp-slider label { display: flex; justify-content: space-between; font-weight: 500; font-size: 13px; margin-bottom: 4px; }
+.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-accent); font-weight: 400; }
+.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-accent); }
+.pp-slider small { color: var(--pp-muted); font-size: 12px; }
+.pp-delta { font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.pp-delta.up { color: var(--pp-pos); }
+.pp-delta.down { color: var(--pp-neg); }
+
+/* --------------------------------------------------------------- roadmap -- */
+/* The blue gradient trend card — one per screen. */
+.pp-trend { background: var(--pp-gradient-trend); border-radius: var(--pp-radius); padding: var(--pp-card-pad); color: #fff; }
+.pp-trend .pp-eyebrow, .pp-trend .pp-muted { color: rgba(255, 255, 255, 0.82) !important; }
+.pp-trend .pp-kpi { color: #fff; }
+.pp-trend strong { font-weight: 500; color: #fff; }
+
+.pp-rec { transition: opacity var(--pp-ease); }
+.pp-rec::before { box-shadow: var(--pp-shadow-soft); transition: box-shadow var(--pp-ease); }
+.pp-rec:hover::before { box-shadow: var(--pp-shadow-card); }
+.pp-rec.done { opacity: 0.55; }
+.pp-rec .impact { font-size: 22px; font-weight: 300; color: var(--pp-pos); letter-spacing: -0.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pp-rec h4 { font-size: 15px; font-weight: 500; letter-spacing: -0.02em; margin: 8px 0 0; }
+.pp-rec .label { font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--pp-muted); font-weight: 400; margin-bottom: 2px; }
+.pp-rec p { margin-bottom: 10px; font-size: 13px; color: var(--pp-ink-2); }
+.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-left: 16px; margin: 8px 0 0; }
+.pp-rec summary { color: var(--pp-muted); font-size: 12px; cursor: pointer; }
+
+/* Round, and near-black when checked — a completed item is never green. */
+.pp-check {
+  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--pp-line);
+  display: inline-grid; place-items: center; cursor: pointer; background: #fff; color: #fff;
+  font-family: inherit; font-size: 12px; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
+}
+.pp-check.on { background: var(--pp-action); border-color: var(--pp-action); color: #fff; }
+
+.pp-cat-head { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; }
+.pp-cat-head .icon { font-size: 18px; }
+.pp-cat-head h3 { font-size: 20px; font-weight: 400; letter-spacing: -0.02em; margin: 0; }
+
+/* Ranked 6px pill tracks. */
+.pp-waterfall { display: grid; gap: 10px; }
+.pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; font-size: 12px; }
+.pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; }
+.pp-waterfall .track { height: 6px; border-radius: var(--pp-radius-pill); background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
+.pp-waterfall .track span { display: block; height: 100%; background: var(--pp-gradient-bar); border-radius: var(--pp-radius-pill); }
+/* On the trend card the tracks invert to white on translucent white. */
+.pp-trend .pp-waterfall .track { background: rgba(255, 255, 255, 0.22); }
+.pp-trend .pp-waterfall .track span { background: #fff; }
+
+/* ------------------------------------------------------------- animation -- */
+/* Route entry is one keyframe. No bounces, no springs, no scroll reveals. */
+.pp-fade { animation: ppfade var(--pp-ease-slow) both; }
+@keyframes ppfade { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 
 @media (max-width: 576px) {
-  .pp-hero { padding: 3.5rem 0 2rem; }
-  .pp-kpi { font-size: 1.6rem; }
-  .pp-scenario .price { font-size: 1.8rem; }
+  .pp-hero { padding: 40px 0 24px; }
+  .pp-kpi { font-size: 20px; }
+  .pp-scenario .price { font-size: 28px; }
+  .pp-split { flex-direction: column; gap: 10px; }
+  .pp-split .side, .pp-split .side.left, .pp-split .side.right { width: 100%; margin: 0; padding: 14px 18px; }
+  .pp-card, .pp-scenario, .pp-rec { padding: calc(var(--pp-panel-pad) + 14px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-fade, .pp-progress > div, .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass { animation: none; transition: none; }
 }

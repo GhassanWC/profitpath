@@ -2,11 +2,12 @@ import { Component, computed, input } from '@angular/core';
 import { CostLine } from '../core/engine';
 import { MoneyPipe, PctPipe } from './pipes';
 
+/** The blue→violet cost-composition series, named from the tokens in styles.css. */
 const COLORS: Record<CostLine['group'], string[]> = {
-  direct: ['#0f766e', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1', '#0d9488'],
-  variable: ['#f59e0b', '#fbbf24'],
-  overhead: ['#6366f1'],
-  fees: ['#94a3b8', '#b6c2d1', '#cbd5e1', '#dde4ec'],
+  direct: ['var(--pp-series-1)', 'var(--pp-series-2)', 'var(--pp-series-3)', 'var(--pp-series-4)'],
+  variable: ['var(--pp-series-5)', 'var(--pp-series-6)'],
+  overhead: ['var(--pp-series-7)'],
+  fees: ['var(--pp-series-8)', 'var(--pp-series-9)'],
 };
 
 @Component({

@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { CostModel, applyWhatIf, computePricing, evaluatePrice, unitEconomics } from '../../core/engine';
+import { CostModel, applyWhatIf, computePricing, evaluatePrice, formatMoney, unitEconomics } from '../../core/engine';
 import { TemplateExplanationProvider } from '../../core/ai/explanation-provider';
 import { AnalysisStore } from '../../core/state/analysis.store';
 import { CostBreakdownComponent } from '../../shared/cost-breakdown.component';
@@ -20,32 +20,58 @@ type Tab = 'overview' | 'whatif' | 'target';
         <!-- Hero -->
         <div class="row g-4 align-items-stretch">
           <div class="col-lg-5">
-            <div class="pp-card pp-card-hero h-100 d-flex flex-column justify-content-between">
+            <div class="pp-card h-100 d-flex flex-column justify-content-between">
               <div>
-                <div class="pp-eyebrow">Your recommended price · {{ store.offering() }}</div>
-                <div class="pp-kpi pp-kpi-xl my-2">{{ p.recommended.price | money: p.currency : 0 }}</div>
-                <div class="pp-muted">per {{ p.unitLabel }} · {{ p.marginBand.mid | pct: 0 }} target margin</div>
+                <div class="pp-eyebrow mb-3">Your recommended price · {{ store.offering() }}</div>
+                <div class="pp-kpi pp-kpi-xl">
+                  <span class="cur">{{ currencyMark(p.recommended.price, p.currency) }}</span>{{ figure(p.recommended.price, p.currency) }}
+                </div>
+                <div class="pp-subhead mt-1">per {{ p.unitLabel }} · {{ p.marginBand.mid | pct: 0 }} target margin</div>
+
+                <!-- The violet orb sits on the single most important figure. -->
+                <div class="pp-split mt-4">
+                  <div class="side left">
+                    <div class="fig">{{ p.trueCostPerUnit | money: p.currency : 0 }}</div>
+                    <div class="cap">True cost</div>
+                  </div>
+                  <div class="pp-orb">
+                    <div>
+                      <div class="fig">{{ p.recommended.profitPerUnit | money: p.currency : 0 }}</div>
+                      <div class="cap">Profit / {{ p.unitLabel }}</div>
+                    </div>
+                  </div>
+                  <div class="side right">
+                    <div class="fig">{{ p.recommended.marginPct | pct }}</div>
+                    <div class="cap">Margin</div>
+                  </div>
+                </div>
               </div>
               <div class="mt-4 d-flex flex-wrap gap-2">
-                <a routerLink="/roadmap" class="btn btn-pp-ghost" style="background: #fff; color: var(--pp-primary); border-color: #fff">See my Profit Roadmap →</a>
-                <a routerLink="/analyze" class="btn btn-pp-ghost text-white" style="border-color: rgba(255,255,255,0.4)">Edit answers</a>
+                <a routerLink="/roadmap" class="btn btn-pp">See my Profit Roadmap →</a>
+                <a routerLink="/analyze" class="btn btn-pp-white">Edit answers</a>
               </div>
             </div>
           </div>
           <div class="col-lg-7">
-            <div class="row g-3 h-100">
-              <div class="col-6 col-md-4"><pp-metric-tile label="True cost" [value]="p.trueCostPerUnit | money: p.currency" [sub]="'per ' + p.unitLabel + ' incl. overhead & fees'" /></div>
-              <div class="col-6 col-md-4"><pp-metric-tile label="Profit per {{ p.unitLabel }}" [value]="p.recommended.profitPerUnit | money: p.currency" color="var(--pp-primary)" /></div>
-              <div class="col-6 col-md-4"><pp-metric-tile label="Profit margin" [value]="p.recommended.marginPct | pct" /></div>
-              <div class="col-6 col-md-4"><pp-metric-tile label="Expected monthly sales" [value]="p.expectedUnits + ''" [sub]="p.unitLabel + 's per month'" /></div>
-              <div class="col-6 col-md-4"><pp-metric-tile label="Est. monthly revenue" [value]="p.recommended.monthlyRevenue | money: p.currency : 0" /></div>
-              <div class="col-6 col-md-4"><pp-metric-tile label="Est. monthly profit" [value]="p.recommended.monthlyProfit | money: p.currency : 0" color="var(--pp-primary)" /></div>
+            <div class="pp-card h-100">
+              <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div class="pp-eyebrow">Monthly outlook</div>
+                <span class="pp-notice">Estimates · not a guarantee</span>
+              </div>
+              <div class="row g-3">
+                <div class="col-6 col-md-4"><pp-metric-tile label="True cost" [value]="p.trueCostPerUnit | money: p.currency" [sub]="'per ' + p.unitLabel + ' incl. overhead & fees'" /></div>
+                <div class="col-6 col-md-4"><pp-metric-tile label="Profit per {{ p.unitLabel }}" [value]="p.recommended.profitPerUnit | money: p.currency" /></div>
+                <div class="col-6 col-md-4"><pp-metric-tile label="Profit margin" [value]="p.recommended.marginPct | pct" /></div>
+                <div class="col-6 col-md-4"><pp-metric-tile label="Expected monthly sales" [value]="p.expectedUnits + ''" [sub]="p.unitLabel + 's per month'" /></div>
+                <div class="col-6 col-md-4"><pp-metric-tile label="Est. monthly revenue" [value]="p.recommended.monthlyRevenue | money: p.currency : 0" /></div>
+                <div class="col-6 col-md-4"><pp-metric-tile label="Est. monthly profit" [value]="p.recommended.monthlyProfit | money: p.currency : 0" color="var(--pp-pos)" /></div>
+              </div>
             </div>
           </div>
         </div>
 
         @for (w of p.warnings; track $index) {
-          <div class="pp-warn mt-3">⚠️ {{ w }}</div>
+          <div class="mt-3"><span class="pp-warn">{{ w }}</span></div>
         }
 
         <!-- Tabs -->
@@ -57,6 +83,7 @@ type Tab = 'overview' | 'whatif' | 'target';
           </div>
           <span class="pp-notice">Estimates from your inputs · not a guarantee</span>
         </div>
+
 
         @switch (tab()) {
           @case ('overview') {
@@ -72,8 +99,8 @@ type Tab = 'overview' | 'whatif' | 'target';
                 <div class="col-lg-7">
                   <div class="pp-card h-100">
                     <h4 class="mb-1">Why {{ p.recommended.price | money: p.currency : 0 }}?</h4>
-                    <p class="pp-muted">{{ explanation() }}</p>
-                    <div class="pp-eyebrow mt-4 mb-2">Where each {{ p.currency }} of cost goes</div>
+                    <div class="pp-subhead">Where each {{ p.currency }} of cost goes</div>
+                    <p style="color: var(--pp-ink-2); font-size: 13px; margin: 12px 0 20px">{{ explanation() }}</p>
                     <pp-cost-breakdown [lines]="p.costBreakdown" [currency]="p.currency" />
                   </div>
                 </div>
@@ -81,19 +108,19 @@ type Tab = 'overview' | 'whatif' | 'target';
                   <div class="pp-card h-100">
                     <h4 class="mb-3">Break-even</h4>
                     <div class="pp-ledger">
-                      <span class="pp-muted">Break-even price</span><span class="pp-num fw-semibold">{{ p.breakEvenPrice | money: p.currency }}</span>
-                      <span class="pp-muted" style="font-size: 0.85rem; grid-column: 1 / -1">The lowest price that covers every cost — including your share of fixed costs — if you sell {{ p.expectedUnits }} {{ p.unitLabel }}s a month.</span>
-                      <span class="pp-muted mt-2">Variable break-even</span><span class="pp-num fw-semibold mt-2">{{ p.variableBreakEvenPrice | money: p.currency }}</span>
-                      <span class="pp-muted" style="font-size: 0.85rem; grid-column: 1 / -1">Below this you lose money on every single sale, regardless of volume.</span>
-                      <span class="pp-muted mt-2">Monthly fixed costs</span><span class="pp-num fw-semibold mt-2">{{ p.fixedMonthly | money: p.currency : 0 }}</span>
-                      <span class="pp-muted">Break-even sales at {{ p.recommended.price | money: p.currency : 0 }}</span>
-                      <span class="pp-num fw-semibold">{{ p.recommended.breakEvenUnits ?? '—' }} {{ p.unitLabel }}s / month</span>
+                      <span class="pp-muted">Break-even price</span><span class="pp-num">{{ p.breakEvenPrice | money: p.currency }}</span>
+                      <span class="pp-muted">Variable break-even</span><span class="pp-num">{{ p.variableBreakEvenPrice | money: p.currency }}</span>
+                      <span class="pp-muted">Monthly fixed costs</span><span class="pp-num">{{ p.fixedMonthly | money: p.currency : 0 }}</span>
+                      <span class="total">Break-even sales at {{ p.recommended.price | money: p.currency : 0 }}</span>
+                      <span class="total pp-num">{{ p.recommended.breakEvenUnits ?? '—' }} {{ p.unitLabel }}s / month</span>
                     </div>
-                    <div class="pp-ok mt-3" style="font-size: 0.88rem">
-                      @if (p.recommended.breakEvenUnits !== null) {
-                        Sell {{ p.recommended.breakEvenUnits }} of your expected {{ p.expectedUnits }} {{ p.unitLabel }}s and the rest is profit.
-                      }
-                    </div>
+                    <p class="pp-muted" style="font-size: 12px; margin-top: 14px">
+                      The break-even price is the lowest price that covers every cost — including your share of fixed costs — at {{ p.expectedUnits }} {{ p.unitLabel }}s a month.
+                      Below the variable break-even you lose money on every single sale, regardless of volume.
+                    </p>
+                    @if (p.recommended.breakEvenUnits !== null) {
+                      <div class="pp-ok">Sell {{ p.recommended.breakEvenUnits }} of your expected {{ p.expectedUnits }} {{ p.unitLabel }}s and the rest is profit.</div>
+                    }
                   </div>
                 </div>
               </div>
@@ -119,8 +146,9 @@ type Tab = 'overview' | 'whatif' | 'target';
               </div>
               <div class="col-lg-7">
                 @if (whatIf(); as w) {
+                  <div class="pp-card">
                   <div class="row g-3">
-                    <div class="col-6 col-md-4"><pp-metric-tile label="Monthly profit" [value]="w.scenario.monthlyProfit | money: p.currency : 0" [sub]="delta(w.scenario.monthlyProfit, p.recommended.monthlyProfit)" color="var(--pp-primary)" /></div>
+                    <div class="col-6 col-md-4"><pp-metric-tile label="Monthly profit" [value]="w.scenario.monthlyProfit | money: p.currency : 0" [sub]="delta(w.scenario.monthlyProfit, p.recommended.monthlyProfit)" [color]="w.scenario.monthlyProfit >= p.recommended.monthlyProfit ? 'var(--pp-pos)' : 'var(--pp-neg)'" /></div>
                     <div class="col-6 col-md-4"><pp-metric-tile label="Monthly revenue" [value]="w.scenario.monthlyRevenue | money: p.currency : 0" [sub]="delta(w.scenario.monthlyRevenue, p.recommended.monthlyRevenue)" /></div>
                     <div class="col-6 col-md-4"><pp-metric-tile label="Profit / {{ p.unitLabel }}" [value]="w.scenario.profitPerUnit | money: p.currency" [sub]="delta(w.scenario.profitPerUnit, p.recommended.profitPerUnit)" /></div>
                     <div class="col-6 col-md-4"><pp-metric-tile label="Margin" [value]="w.scenario.marginPct | pct" [sub]="deltaPts(w.scenario.marginPct, p.recommended.marginPct)" /></div>
@@ -128,9 +156,10 @@ type Tab = 'overview' | 'whatif' | 'target';
                     <div class="col-6 col-md-4"><pp-metric-tile label="Break-even units" [value]="(w.scenario.breakEvenUnits ?? '—') + ''" [sub]="'was ' + (p.recommended.breakEvenUnits ?? '—')" /></div>
                     <div class="col-12"><pp-metric-tile label="Units needed for your target" [value]="(w.pricing.target.requiredUnitsAtRecommended ?? '—') + ' ' + p.unitLabel + 's'" [sub]="'to reach ' + (p.target.targetMonthlyProfit | money: p.currency : 0) + ' at ' + (wi()['price'] | money: p.currency : 0) + ' — was ' + (p.target.requiredUnitsAtRecommended ?? '—')" [small]="true" /></div>
                   </div>
-                  <div class="pp-card mt-3" [class.pp-card-soft]="w.scenario.monthlyProfit >= p.recommended.monthlyProfit">
-                    <strong>{{ w.scenario.monthlyProfit >= p.recommended.monthlyProfit ? 'This scenario looks stronger.' : 'This scenario looks weaker.' }}</strong>
-                    <span class="pp-muted"> Compared with your recommended setup, estimated monthly profit changes by <span class="pp-delta" [class.up]="w.scenario.monthlyProfit >= p.recommended.monthlyProfit" [class.down]="w.scenario.monthlyProfit < p.recommended.monthlyProfit">{{ (w.scenario.monthlyProfit - p.recommended.monthlyProfit) | signed: p.currency }}</span>. Volume assumptions are yours; we don't predict demand.</span>
+                  <div class="mt-3" style="font-size: 13px; color: var(--pp-ink-2)">
+                    <strong style="font-weight: 500; color: var(--pp-ink)">{{ w.scenario.monthlyProfit >= p.recommended.monthlyProfit ? 'This scenario looks stronger.' : 'This scenario looks weaker.' }}</strong>
+                    Compared with your recommended setup, estimated monthly profit changes by <span class="pp-delta" [class.up]="w.scenario.monthlyProfit >= p.recommended.monthlyProfit" [class.down]="w.scenario.monthlyProfit < p.recommended.monthlyProfit">{{ (w.scenario.monthlyProfit - p.recommended.monthlyProfit) | signed: p.currency }}</span>. Volume assumptions are yours; we don't predict demand.
+                  </div>
                   </div>
                 }
               </div>
@@ -142,7 +171,7 @@ type Tab = 'overview' | 'whatif' | 'target';
               <div class="col-lg-5">
                 <div class="pp-card">
                   <h4 class="mb-1">How much do you want to make per month?</h4>
-                  <p class="pp-muted">Change the target and volume to see what they demand from your price.</p>
+                  <p style="color: var(--pp-ink-2); font-size: 13px; margin: 6px 0 18px">Change the target and volume to see what they demand from your price.</p>
                   <label class="pp-q-label" for="tgt">Target monthly profit</label>
                   <div class="pp-input-group mb-3">
                     <span class="affix pre">{{ p.currency }}</span>
@@ -156,20 +185,22 @@ type Tab = 'overview' | 'whatif' | 'target';
               </div>
               <div class="col-lg-7">
                 @if (targetPricing(); as tp) {
+                  <div class="pp-card">
                   <div class="row g-3">
                     <div class="col-6 col-md-4"><pp-metric-tile label="Required profit / {{ p.unitLabel }}" [value]="tp.target.requiredProfitPerUnit | money: p.currency" /></div>
-                    <div class="col-6 col-md-4"><pp-metric-tile label="Required price" [value]="tp.target.requiredPrice | money: p.currency" color="var(--pp-primary)" [sub]="'at ' + targetUnits() + ' ' + p.unitLabel + 's'" /></div>
+                    <div class="col-6 col-md-4"><pp-metric-tile label="Required price" [value]="tp.target.requiredPrice | money: p.currency" color="var(--pp-accent)" [sub]="'at ' + targetUnits() + ' ' + p.unitLabel + 's'" /></div>
                     <div class="col-6 col-md-4"><pp-metric-tile label="Required margin" [value]="tp.target.requiredMarginPct | pct" /></div>
                     <div class="col-6 col-md-4"><pp-metric-tile label="True cost at that volume" [value]="tp.baseCostPerUnit | money: p.currency" [sub]="'excl. % fees'" /></div>
-                    <div class="col-6 col-md-8"><pp-metric-tile label="Or keep {{ p.recommended.price | money: p.currency : 0 }} and sell" [value]="(tp.target.requiredUnitsAtRecommended ?? '—') + ' ' + p.unitLabel + 's / month'" /></div>
+                    <div class="col-6 col-md-8"><pp-metric-tile label="Or keep {{ p.recommended.price | money: p.currency : 0 }} and sell" [value]="(tp.target.requiredUnitsAtRecommended ?? '—') + ' ' + p.unitLabel + 's / month'" [small]="true" /></div>
                   </div>
-                  <div class="mt-3" [class]="tp.target.requiredMarginPct > p.marginBand.high ? 'pp-warn' : 'pp-ok'">
+                  <div class="mt-3" [class]="tp.target.requiredMarginPct > p.marginBand.high ? 'pp-warn pp-warn-block' : 'pp-ok pp-ok-block'">
                     At {{ tp.target.requiredPrice | money: p.currency : 0 }}, your estimated margin would be {{ tp.target.requiredMarginPct | pct }}.
                     @if (tp.target.requiredMarginPct > p.marginBand.high) {
                       That is above the typical {{ p.marginBand.low | pct: 0 }}–{{ p.marginBand.high | pct: 0 }} range for this kind of business — the roadmap focuses on reaching the target by lowering costs and raising volume instead.
                     } @else {
                       That sits within the typical {{ p.marginBand.low | pct: 0 }}–{{ p.marginBand.high | pct: 0 }} range for this kind of business.
                     }
+                  </div>
                   </div>
                 }
               </div>
@@ -284,6 +315,25 @@ export class ResultsComponent {
     }
     const good = lowerIsBetter ? d < 0 : d > 0;
     return `${d > 0 ? '+' : '−'}${s} ${good ? '▲' : '▼'}`;
+  }
+
+  /**
+   * The hero figure sets its currency mark at 0.45em and muted, so the two
+   * halves are rendered separately. Splitting the formatted string keeps the
+   * locale's own symbol (and degrades to no mark for suffix-style currencies).
+   */
+  private splitMoney(value: number, currency: string): [string, string] {
+    const s = formatMoney(value, currency, { decimals: 0 });
+    const m = /^([^\d-]*)(.*)$/.exec(s);
+    return m ? [m[1].trim(), m[2]] : ['', s];
+  }
+
+  currencyMark(value: number, currency: string): string {
+    return this.splitMoney(value, currency)[0];
+  }
+
+  figure(value: number, currency: string): string {
+    return this.splitMoney(value, currency)[1];
   }
 
   deltaPts(now: number, was: number): string {

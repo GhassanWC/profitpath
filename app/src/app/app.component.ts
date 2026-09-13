@@ -9,18 +9,20 @@ import { AnalysisStore } from './core/state/analysis.store';
   template: `
     <header class="pp-header">
       <div class="pp-container">
-        <a routerLink="/" class="pp-logo">
-          <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0f766e"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#a7f3d0"/></svg>
-          ProfitPath
-        </a>
-        <nav class="pp-nav d-none d-sm-block">
-          <a routerLink="/analyze" routerLinkActive="active">Calculator</a>
-          @if (store.pricing()) {
-            <a routerLink="/results" routerLinkActive="active">Results</a>
-            <a routerLink="/roadmap" routerLinkActive="active">Roadmap</a>
-          }
-        </nav>
-        <a routerLink="/analyze" class="btn btn-pp btn-sm">Calculate my price</a>
+        <div class="pp-header-pill">
+          <a routerLink="/" class="pp-logo">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0f766e"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#a7f3d0"/></svg>
+            ProfitPath
+          </a>
+          <nav class="pp-nav d-none d-sm-block">
+            <a routerLink="/analyze" routerLinkActive="active">Calculator</a>
+            @if (store.pricing()) {
+              <a routerLink="/results" routerLinkActive="active">Results</a>
+              <a routerLink="/roadmap" routerLinkActive="active">Roadmap</a>
+            }
+          </nav>
+          <a routerLink="/analyze" class="btn btn-pp btn-sm">Calculate my price</a>
+        </div>
       </div>
     </header>
 

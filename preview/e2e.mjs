@@ -81,7 +81,7 @@ await page.screenshot({ path: 'shots/08-roadmap.png', fullPage: true, animations
 
 // Example path + mobile
 await page.goto(url + '#/');
-await page.click('[data-action="example"]');
+await page.locator('[data-action="example"]').first().click();
 await page.waitForSelector('.pp-kpi-xl');
 console.log('example price:', await page.locator('.pp-kpi-xl').first().innerText());
 await page.setViewportSize({ width: 390, height: 800 });

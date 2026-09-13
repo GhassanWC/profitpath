@@ -5,6 +5,11 @@
   const money = (v, cur, d) => (v === null || v === undefined ? '—' : E.formatMoney(v, cur, { decimals: d }));
   const pct = (f, d = 1) => E.formatPct(f, d);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  /* The hero figure sets its currency mark at 0.45em and muted, so the two
+     halves are rendered separately (no mark for suffix-style currencies). */
+  const splitMoney = (v, cur) => { const s = money(v, cur, 0); const m = /^([^\d-]*)(.*)$/.exec(s); return m ? [m[1].trim(), m[2]] : ['', s]; };
+  const currencyMark = (v, cur) => esc(splitMoney(v, cur)[0]);
+  const figure = (v, cur) => esc(splitMoney(v, cur)[1]);
 
   // ---------- state ----------
   const S = { offering: '', type: null, answers: {}, completedIds: [], complete: false, step: 0, selectedType: null, detection: null, errors: {}, formValues: {}, tab: 'overview', wi: {}, target: { profit: 0, units: 1 } };
@@ -56,10 +61,10 @@
     const has = !!pricing();
     const r = route();
     const nav = (p, l) => `<a href="#/${p}" class="${r === p ? 'active' : ''}">${l}</a>`;
-    return `<header class="pp-header"><div class="pp-container">
+    return `<header class="pp-header"><div class="pp-container"><div class="pp-header-pill">
       <a href="#/" class="pp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0f766e"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#a7f3d0"/></svg>ProfitPath</a>
       <nav class="pp-nav d-none d-sm-block">${nav('analyze', 'Calculator')}${has ? nav('results', 'Results') + nav('roadmap', 'Roadmap') : ''}</nav>
-      <a href="#/analyze" class="btn btn-pp btn-sm">Calculate my price</a></div></header>
+      <a href="#/analyze" class="btn btn-pp btn-sm">Calculate my price</a></div></div></header>
       <main>${inner}</main>
       <footer class="pp-footer"><div class="pp-container d-flex flex-wrap justify-content-between gap-3"><div>© ${new Date().getFullYear()} ProfitPath · Estimates based on your inputs, not financial advice or a guarantee of results.</div><div>Live preview of the Angular MVP · all calculations deterministic</div></div></footer>`;
   }
@@ -68,24 +73,24 @@
   function renderLanding() {
     const s = E.SAMPLES[0]; const m = E.normalizeAnswers(s.type, s.answers, s.offering); const p = E.computePricing(m); const r = E.buildRoadmap(m, p);
     const chips = E.BUSINESS_TYPE_LIST.map((t) => `<span class="pp-chip">${t.icon} ${t.shortLabel}</span>`).join('');
-    const recs = r.recommendations.slice(0, 3).map((x) => `<div class="d-flex justify-content-between gap-3 py-1"><span>${esc(x.title)}</span><span class="pp-num fw-bold" style="color:#a7f3d0;white-space:nowrap">+${money(x.estimatedMonthlyImpact, 'USD', 0)}/mo</span></div>`).join('');
+    const recMax = Math.max(1, ...r.recommendations.slice(0, 3).map((x) => x.estimatedMonthlyImpact));
+    const recs = r.recommendations.slice(0, 3).map((x) => `<div class="item"><span>${esc(x.title)}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, 'USD', 0)}/mo</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / recMax) * 100}%"></span></div></div>`).join('');
     return `
     <section class="pp-hero pp-container pp-fade">
-      <span class="pp-chip mb-4">✨ Pricing intelligence + profit roadmap</span>
+      <span class="pp-chip mb-4">Pricing intelligence + profit roadmap</span>
       <h1>How much should <span class="pp-gradient-text">you charge?</span></h1>
       <p class="lead">Tell us what you're selling, what it costs you, and what you want to earn. We'll calculate your ideal price and show you how to improve your profit.</p>
-      <div class="d-flex flex-wrap justify-content-center gap-2"><a href="#/analyze" class="btn btn-pp btn-pp-lg">Calculate My Price</a><button type="button" class="btn btn-pp-ghost btn-pp-lg" data-action="example">See an Example</button></div>
+      <div class="d-flex flex-wrap justify-content-center gap-2"><a href="#/analyze" class="btn btn-pp btn-pp-lg">Calculate My Price</a><button type="button" class="btn btn-pp-glass btn-pp-lg" data-action="example">See an Example</button></div>
       <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">${chips}</div>
     </section>
-    <section class="pp-section pp-container"><div class="row g-4 align-items-stretch">
-      <div class="col-lg-5"><div class="pp-card h-100"><div class="pp-eyebrow mb-2">Example</div><h3 class="mb-3">"I'm selling iPhones."</h3>
-        <div class="pp-ledger"><span class="pp-muted">Purchase</span><span class="pp-num">${money(850, 'USD', 0)}</span><span class="pp-muted">Shipping</span><span class="pp-num">${money(45, 'USD', 0)}</span><span class="pp-muted">Marketing per unit</span><span class="pp-num">${money(35, 'USD', 0)}</span><span class="pp-muted">Overhead per unit</span><span class="pp-num">${money(p.allocatedOverhead, 'USD', 0)}</span><span class="total">True cost</span><span class="total pp-num">${money(p.trueCostPerUnit, 'USD', 0)}</span></div>
-        <p class="pp-muted mt-3 mb-0" style="font-size:.86rem">30 units a month · target profit $5,000</p></div></div>
-      <div class="col-lg-7"><div class="pp-card pp-card-hero h-100"><div class="pp-eyebrow mb-2">ProfitPath calculates</div>
-        <div class="row g-3"><div class="col-6 col-md-4"><div class="pp-eyebrow">Recommended price</div><div class="pp-kpi">${money(p.recommended.price, 'USD', 0)}</div></div><div class="col-6 col-md-4"><div class="pp-eyebrow">Profit / unit</div><div class="pp-kpi">${money(p.recommended.profitPerUnit, 'USD', 0)}</div></div><div class="col-6 col-md-4"><div class="pp-eyebrow">Margin</div><div class="pp-kpi">${pct(p.recommended.marginPct)}</div></div></div>
-        <hr style="border-color:rgba(255,255,255,.25)"><div class="pp-eyebrow mb-2">Here's how you could make even more</div>${recs}
-        <div class="d-flex justify-content-between gap-3 pt-2 mt-2" style="border-top:1px solid rgba(255,255,255,.25)"><span class="fw-semibold">Estimated monthly profit → optimised</span><span class="pp-num fw-bold">${money(p.recommended.monthlyProfit, 'USD', 0)} → ${money(r.optimisedMonthlyProfit, 'USD', 0)}</span></div>
-        <p class="pp-muted mt-3 mb-0" style="font-size:.8rem">Estimates, not guarantees. Every number above is computed from the inputs on the left.</p></div></div>
+    <section class="pp-section pp-container"><div class="row g-4 align-items-start">
+      <div class="col-lg-5"><div class="pp-card h-100"><div class="pp-eyebrow">Example</div><div class="pp-subhead mb-3">30 units a month · target profit $5,000</div><h3 class="mb-3" style="font-size:20px">"I'm selling iPhones."</h3>
+        <div class="pp-ledger"><span class="pp-muted">Purchase</span><span class="pp-num">${money(850, 'USD', 0)}</span><span class="pp-muted">Shipping</span><span class="pp-num">${money(45, 'USD', 0)}</span><span class="pp-muted">Marketing per unit</span><span class="pp-num">${money(35, 'USD', 0)}</span><span class="pp-muted">Overhead per unit</span><span class="pp-num">${money(p.allocatedOverhead, 'USD', 0)}</span><span class="total">True cost</span><span class="total pp-num">${money(p.trueCostPerUnit, 'USD', 0)}</span></div></div></div>
+      <div class="col-lg-7"><div class="pp-card h-100"><div class="d-flex justify-content-between align-items-start gap-3 mb-3"><div class="pp-eyebrow">ProfitPath calculates</div><button type="button" class="btn btn-pp btn-sm" data-action="example">Open this example</button></div>
+        <div class="row g-3"><div class="col-6 col-md-4"><div class="pp-metric"><div class="pp-eyebrow">Recommended price</div><div class="pp-kpi">${money(p.recommended.price, 'USD', 0)}</div></div></div><div class="col-6 col-md-4"><div class="pp-metric"><div class="pp-eyebrow">Profit / unit</div><div class="pp-kpi">${money(p.recommended.profitPerUnit, 'USD', 0)}</div></div></div><div class="col-6 col-md-4"><div class="pp-metric"><div class="pp-eyebrow">Margin</div><div class="pp-kpi">${pct(p.recommended.marginPct)}</div></div></div></div>
+        <div class="pp-subhead" style="margin:20px 0 12px">Here's how you could make even more</div><div class="pp-waterfall">${recs}</div>
+        <div class="d-flex justify-content-between align-items-center gap-3 pt-3 mt-3" style="border-top:1px solid var(--pp-line);font-size:13px"><span>Estimated monthly profit → optimised</span><span class="pp-kpi pp-kpi-sm">${money(p.recommended.monthlyProfit, 'USD', 0)} → ${money(r.optimisedMonthlyProfit, 'USD', 0)}</span></div>
+        <p class="pp-muted mt-3 mb-0" style="font-size:11px">Estimates, not guarantees. Every number above is computed from the inputs on the left.</p></div></div>
     </div></section>
     <section class="pp-section pp-container"><div class="text-center mb-4"><h2>How it works</h2><p class="pp-muted">A conversation, not a spreadsheet. Five minutes from idea to price.</p></div>
       <div class="pp-flow">
@@ -96,11 +101,11 @@
       </div></section>
     <section class="pp-section pp-container"><div class="text-center mb-4"><h2>Simple pricing</h2><p class="pp-muted">Start free. Upgrade when the roadmap pays for itself.</p></div>
       <div class="row g-3 justify-content-center">
-        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-eyebrow">Free</div><div class="pp-kpi my-2">$0</div><ul class="pp-muted ps-3 mb-0"><li>Pricing calculator</li><li>Recommended price &amp; three scenarios</li><li>Break-even analysis</li><li>One saved business</li></ul></div></div>
-        <div class="col-md-4"><div class="pp-card h-100" style="border-color:var(--pp-primary)"><div class="pp-eyebrow" style="color:var(--pp-primary)">Pro</div><div class="pp-kpi my-2">$9<span class="pp-muted" style="font-size:1rem;font-weight:500">/month</span></div><ul class="pp-muted ps-3 mb-0"><li>Everything in Free</li><li>Full Profit Roadmap</li><li>What-if simulator</li><li>Unlimited saved businesses</li><li>PDF reports</li></ul></div></div>
-        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-eyebrow">Business</div><div class="pp-kpi my-2">$19<span class="pp-muted" style="font-size:1rem;font-weight:500">/month</span></div><ul class="pp-muted ps-3 mb-0"><li>Everything in Pro</li><li>Team members</li><li>Scenario comparison</li><li>Market research (coming)</li></ul></div></div>
+        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-subhead">Free</div><div class="pp-kpi pp-kpi-lg my-2">$0</div><ul class="pp-muted ps-3 mb-0" style="font-size:13px;line-height:1.9"><li>Pricing calculator</li><li>Recommended price &amp; three scenarios</li><li>Break-even analysis</li><li>One saved business</li></ul></div></div>
+        <div class="col-md-4"><div class="pp-card pp-card-dark h-100"><div class="pp-subhead">Pro</div><div class="pp-kpi pp-kpi-lg my-2">$9<span class="pp-muted" style="font-size:13px">/month</span></div><ul class="ps-3 mb-0" style="font-size:13px;line-height:1.9"><li>Everything in Free</li><li>Full Profit Roadmap</li><li>What-if simulator</li><li>Unlimited saved businesses</li><li>PDF reports</li></ul></div></div>
+        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-subhead">Business</div><div class="pp-kpi pp-kpi-lg my-2">$19<span class="pp-muted" style="font-size:13px">/month</span></div><ul class="pp-muted ps-3 mb-0" style="font-size:13px;line-height:1.9"><li>Everything in Pro</li><li>Team members</li><li>Scenario comparison</li><li>Market research (coming)</li></ul></div></div>
       </div></section>
-    <section class="pp-section pp-container text-center"><div class="pp-card pp-card-hero py-5"><h2 class="text-white">Ready to find out what to charge?</h2><p class="pp-muted mb-4">No sign-up needed for your first analysis.</p><a href="#/analyze" class="btn btn-pp-ghost btn-pp-lg" style="background:#fff;color:var(--pp-primary);border-color:#fff">Calculate My Price</a></div></section>`;
+    <section class="pp-section pp-container text-center"><div class="pp-card" style="padding-block:60px"><h2>Ready to find out what to charge?</h2><p class="pp-muted mb-4" style="font-size:13px">No sign-up needed for your first analysis.</p><a href="#/analyze" class="btn btn-pp btn-pp-lg">Calculate My Price</a></div></section>`;
   }
 
   // ---------- analyze ----------
@@ -114,11 +119,11 @@
     let body;
     if (S.step === 0) {
       const d = S.detection;
-      const detect = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="fw-semibold">Looks like: ${E.businessTypeDef(d.type).label}</div><div class="pp-muted" style="font-size:.85rem">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
-      const cards = E.BUSINESS_TYPE_LIST.map((t) => `<button type="button" class="pp-type-card ${S.selectedType === t.type ? 'selected' : ''}" data-type="${t.type}"><div style="font-size:1.4rem">${t.icon}</div><div class="fw-semibold mt-1">${t.label}</div><small class="pp-muted">${t.description}</small></button>`).join('');
+      const detect = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="title">Looks like: ${E.businessTypeDef(d.type).label}</div><div style="font-size:12px;color:var(--pp-ink-2)">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
+      const cards = E.BUSINESS_TYPE_LIST.map((t) => `<button type="button" class="pp-type-card ${S.selectedType === t.type ? 'selected' : ''}" data-type="${t.type}"><div class="icon">${t.icon}</div><div class="name">${t.label}</div><small>${t.description}</small></button>`).join('');
       body = `<div class="pp-card pp-fade"><h2 class="mb-1">What are you planning to sell?</h2><p class="pp-muted mb-4">Describe it in your own words. We'll tailor the next questions to your kind of business.</p>
         <div class="pp-input-group mb-3"><input id="offering" type="text" value="${esc(S.offering)}" placeholder="e.g. iPhone 17 Pro, wedding photography, soy candles, online course…" autofocus></div>
-        <div id="detect">${detect}</div><div class="pp-eyebrow mb-2">Business type</div><div class="pp-option-grid mb-4" id="typegrid">${cards}</div>
+        <div id="detect">${detect}</div><div class="pp-subhead mb-2">Business type</div><div class="pp-option-grid mb-4" id="typegrid">${cards}</div>
         <div class="d-flex justify-content-end"><button class="btn btn-pp" id="start" ${!S.selectedType || !S.offering.trim() ? 'disabled' : ''}>Continue →</button></div></div>`;
     } else {
       const g = currentGroup();
@@ -126,11 +131,11 @@
       const qs = E.visibleQuestions(g, merged()).map((q) => renderQuestion(q, cur)).join('');
       const last = S.step === groups().length;
       body = `<form class="pp-card pp-fade" id="qform"><h2 class="mb-1">${g.title}</h2><p class="pp-muted mb-4">${g.intro}</p>${qs}
-        <div class="d-flex justify-content-between align-items-center mt-2"><button type="button" class="btn btn-pp-ghost" id="back">← Back</button><button type="submit" class="btn btn-pp">${last ? 'Calculate my price ✨' : 'Continue →'}</button></div></form>
+        <div class="d-flex justify-content-between align-items-center mt-2"><button type="button" class="btn btn-pp-ghost" id="back">← Back</button><button type="submit" class="btn btn-pp">${last ? 'Calculate my price' : 'Continue →'}</button></div></form>
         <p class="pp-notice mt-3 text-center">Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</p>`;
     }
     return `<div class="pp-container py-5"><div class="pp-narrow">
-      <div class="d-flex justify-content-between align-items-center mb-2"><span class="pp-eyebrow">Step ${S.step + 1} of ${total}</span>${S.step > 0 ? `<span class="pp-muted" style="font-size:.85rem">${def.icon} ${def.label} · ${esc(S.offering)}</span>` : ''}</div>
+      <div class="d-flex justify-content-between align-items-center mb-2" style="font-size:12px;color:var(--pp-ink-2)"><span>Step ${S.step + 1} of ${total}</span>${S.step > 0 ? `<span>${def.icon} ${def.label} · ${esc(S.offering)}</span>` : ''}</div>
       <div class="pp-progress mb-4"><div style="width:${((S.step + 1) / total) * 100}%"></div></div>${body}</div></div>`;
   }
 
@@ -173,11 +178,17 @@
   function tile(label, value, sub, color, small) { return `<div class="pp-metric"><div class="pp-eyebrow">${label}</div><div class="pp-kpi ${small ? 'pp-kpi-sm' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`; }
   function scenarioCard(sc, cur, unit) {
     const st = sc.status === 'low' ? '⚠️ Thin margin' : sc.status === 'recommended' ? '🟢 Recommended' : sc.status === 'premium' ? '🔵 Higher margin' : '🔴 Loss';
-    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center mb-2"><span class="pp-eyebrow">${sc.label}</span><span class="pp-badge ${sc.status}">${st}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
-      <div class="pp-ledger mt-3"><span class="pp-muted">Profit / ${unit}</span><span class="pp-num fw-semibold ${sc.profitPerUnit < 0 ? 'text-danger' : ''}">${money(sc.profitPerUnit, cur)}</span><span class="pp-muted">Margin</span><span class="pp-num fw-semibold">${pct(sc.marginPct)}</span><span class="pp-muted">Monthly profit</span><span class="pp-num fw-semibold">${money(sc.monthlyProfit, cur, 0)}</span>${sc.breakEvenUnits !== null ? `<span class="pp-muted">Break-even</span><span class="pp-num fw-semibold">${sc.breakEvenUnits} ${unit}s</span>` : ''}</div>
-      <p class="pp-muted mt-3 mb-0" style="font-size:.86rem">${sc.note}</p></div>`;
+    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="pp-muted" style="font-size:12px">${sc.label}</span><span class="pp-badge ${sc.status}">${st}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
+      <div class="pp-ledger mt-3"><span class="pp-muted">Profit / ${unit}</span><span class="pp-num" style="${sc.profitPerUnit < 0 ? 'color:var(--pp-neg)' : ''}">${money(sc.profitPerUnit, cur)}</span><span class="pp-muted">Margin</span><span class="pp-num">${pct(sc.marginPct)}</span><span class="pp-muted">Monthly profit</span><span class="pp-num">${money(sc.monthlyProfit, cur, 0)}</span>${sc.breakEvenUnits !== null ? `<span class="pp-muted">Break-even</span><span class="pp-num">${sc.breakEvenUnits} ${unit}s</span>` : ''}</div>
+      <p class="pp-muted mt-3 mb-0" style="font-size:12px">${sc.note}</p></div>`;
   }
-  const PALETTE = { direct: ['#0f766e', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1', '#0d9488'], variable: ['#f59e0b', '#fbbf24'], overhead: ['#6366f1'], fees: ['#94a3b8', '#b6c2d1', '#cbd5e1', '#dde4ec'] };
+  /** The blue→violet cost-composition series, named from the tokens in styles.css. */
+  const PALETTE = {
+    direct: ['var(--pp-series-1)', 'var(--pp-series-2)', 'var(--pp-series-3)', 'var(--pp-series-4)'],
+    variable: ['var(--pp-series-5)', 'var(--pp-series-6)'],
+    overhead: ['var(--pp-series-7)'],
+    fees: ['var(--pp-series-8)', 'var(--pp-series-9)'],
+  };
   function breakdown(lines, cur) {
     const c = {}; const colored = lines.map((l) => { const i = c[l.group] || 0; c[l.group] = i + 1; return { l, color: PALETTE[l.group][i % PALETTE[l.group].length] }; });
     return `<div class="pp-bar" role="img" aria-label="Cost breakdown">${colored.map((x) => `<span style="width:${x.l.share * 100}%;background:${x.color}" title="${x.l.label}"></span>`).join('')}</div>
@@ -207,26 +218,26 @@
     const contrib = price * (1 - e.f) - e.D - e.V; const req = contrib > 0 ? Math.ceil((model.goals.targetMonthlyProfit + e.F) / contrib) : null;
     const sc = E.evaluatePrice(model, price, 'custom', 'What if');
     const better = sc.monthlyProfit >= p.recommended.monthlyProfit;
-    return `<div class="row g-3">
-      <div class="col-6 col-md-4">${tile('Monthly profit', money(sc.monthlyProfit, cur, 0), delta(sc.monthlyProfit, p.recommended.monthlyProfit, cur), 'var(--pp-primary)')}</div>
+    return `<div class="pp-card"><div class="row g-3">
+      <div class="col-6 col-md-4">${tile('Monthly profit', money(sc.monthlyProfit, cur, 0), delta(sc.monthlyProfit, p.recommended.monthlyProfit, cur), better ? 'var(--pp-pos)' : 'var(--pp-neg)')}</div>
       <div class="col-6 col-md-4">${tile('Monthly revenue', money(sc.monthlyRevenue, cur, 0), delta(sc.monthlyRevenue, p.recommended.monthlyRevenue, cur))}</div>
       <div class="col-6 col-md-4">${tile('Profit / ' + p.unitLabel, money(sc.profitPerUnit, cur), delta(sc.profitPerUnit, p.recommended.profitPerUnit, cur))}</div>
       <div class="col-6 col-md-4">${tile('Margin', pct(sc.marginPct), deltaPts(sc.marginPct, p.recommended.marginPct))}</div>
       <div class="col-6 col-md-4">${tile('Break-even price', money(pr.breakEvenPrice, cur), delta(pr.breakEvenPrice, p.breakEvenPrice, cur, true))}</div>
       <div class="col-6 col-md-4">${tile('Break-even units', sc.breakEvenUnits ?? '—', 'was ' + (p.recommended.breakEvenUnits ?? '—'))}</div>
       <div class="col-12">${tile('Units needed for your target', `${req ?? '—'} ${p.unitLabel}s`, `to reach ${money(p.target.targetMonthlyProfit, cur, 0)} at ${money(price, cur, 0)} — was ${p.target.requiredUnitsAtRecommended ?? '—'}`, '', true)}</div></div>
-      <div class="pp-card mt-3 ${better ? 'pp-card-soft' : ''}"><strong>${better ? 'This scenario looks stronger.' : 'This scenario looks weaker.'}</strong><span class="pp-muted"> Compared with your recommended setup, estimated monthly profit changes by <span class="pp-delta ${better ? 'up' : 'down'}">${E.signed(sc.monthlyProfit - p.recommended.monthlyProfit, cur)}</span>. Volume assumptions are yours; we don't predict demand.</span></div>`;
+      <div class="mt-3" style="font-size:13px;color:var(--pp-ink-2)"><strong style="font-weight:500;color:var(--pp-ink)">${better ? 'This scenario looks stronger.' : 'This scenario looks weaker.'}</strong> Compared with your recommended setup, estimated monthly profit changes by <span class="pp-delta ${better ? 'up' : 'down'}">${E.signed(sc.monthlyProfit - p.recommended.monthlyProfit, cur)}</span>. Volume assumptions are yours; we don't predict demand.</div></div>`;
   }
   function targetMetrics(m, p) {
     const cur = p.currency; const model = E.applyWhatIf(m, { units: S.target.units }); model.goals.targetMonthlyProfit = S.target.profit; const tp = E.computePricing(model);
     const high = tp.target.requiredMarginPct > p.marginBand.high;
-    return `<div class="row g-3">
+    return `<div class="pp-card"><div class="row g-3">
       <div class="col-6 col-md-4">${tile('Required profit / ' + p.unitLabel, money(tp.target.requiredProfitPerUnit, cur))}</div>
-      <div class="col-6 col-md-4">${tile('Required price', money(tp.target.requiredPrice, cur), `at ${S.target.units} ${p.unitLabel}s`, 'var(--pp-primary)')}</div>
+      <div class="col-6 col-md-4">${tile('Required price', money(tp.target.requiredPrice, cur), `at ${S.target.units} ${p.unitLabel}s`, 'var(--pp-accent)')}</div>
       <div class="col-6 col-md-4">${tile('Required margin', pct(tp.target.requiredMarginPct))}</div>
       <div class="col-6 col-md-4">${tile('True cost at that volume', money(tp.baseCostPerUnit, cur), 'excl. % fees')}</div>
-      <div class="col-6 col-md-8">${tile(`Or keep ${money(p.recommended.price, cur, 0)} and sell`, `${tp.target.requiredUnitsAtRecommended ?? '—'} ${p.unitLabel}s / month`)}</div></div>
-      <div class="mt-3 ${high ? 'pp-warn' : 'pp-ok'}">At ${money(tp.target.requiredPrice, cur, 0)}, your estimated margin would be ${pct(tp.target.requiredMarginPct)}. ${high ? `That is above the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business — the roadmap focuses on reaching the target by lowering costs and raising volume instead.` : `That sits within the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business.`}</div>`;
+      <div class="col-6 col-md-8">${tile(`Or keep ${money(p.recommended.price, cur, 0)} and sell`, `${tp.target.requiredUnitsAtRecommended ?? '—'} ${p.unitLabel}s / month`, '', '', true)}</div></div>
+      <div class="mt-3 ${high ? 'pp-warn pp-warn-block' : 'pp-ok pp-ok-block'}">At ${money(tp.target.requiredPrice, cur, 0)}, your estimated margin would be ${pct(tp.target.requiredMarginPct)}. ${high ? `That is above the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business — the roadmap focuses on reaching the target by lowering costs and raising volume instead.` : `That sits within the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business.`}</div></div>`;
   }
 
   function renderResults() {
@@ -237,12 +248,14 @@
     let panel;
     if (S.tab === 'overview') {
       panel = `<h3 class="mb-3">Three ways to price it</h3><div class="row g-3"><div class="col-md-4">${scenarioCard(p.scenarios.minimum, cur, u)}</div><div class="col-md-4">${scenarioCard(p.scenarios.recommended, cur, u)}</div><div class="col-md-4">${scenarioCard(p.scenarios.premium, cur, u)}</div></div>
-        <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card h-100"><h4 class="mb-1">Why ${money(p.recommended.price, cur, 0)}?</h4><p class="pp-muted">${explainPrice(m, p)}</p><div class="pp-eyebrow mt-4 mb-2">Where each ${cur} of cost goes</div>${breakdown(p.costBreakdown, cur)}</div></div>
+        <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card h-100"><h4 class="mb-1">Why ${money(p.recommended.price, cur, 0)}?</h4><div class="pp-subhead">Where each ${cur} of cost goes</div><p style="color:var(--pp-ink-2);font-size:13px;margin:12px 0 20px">${explainPrice(m, p)}</p>${breakdown(p.costBreakdown, cur)}</div></div>
         <div class="col-lg-5"><div class="pp-card h-100"><h4 class="mb-3">Break-even</h4><div class="pp-ledger">
-          <span class="pp-muted">Break-even price</span><span class="pp-num fw-semibold">${money(p.breakEvenPrice, cur)}</span><span class="pp-muted" style="font-size:.85rem;grid-column:1/-1">The lowest price that covers every cost — including your share of fixed costs — if you sell ${p.expectedUnits} ${u}s a month.</span>
-          <span class="pp-muted mt-2">Variable break-even</span><span class="pp-num fw-semibold mt-2">${money(p.variableBreakEvenPrice, cur)}</span><span class="pp-muted" style="font-size:.85rem;grid-column:1/-1">Below this you lose money on every single sale, regardless of volume.</span>
-          <span class="pp-muted mt-2">Monthly fixed costs</span><span class="pp-num fw-semibold mt-2">${money(p.fixedMonthly, cur, 0)}</span><span class="pp-muted">Break-even sales at ${money(p.recommended.price, cur, 0)}</span><span class="pp-num fw-semibold">${p.recommended.breakEvenUnits ?? '—'} ${u}s / month</span></div>
-          ${p.recommended.breakEvenUnits !== null ? `<div class="pp-ok mt-3" style="font-size:.88rem">Sell ${p.recommended.breakEvenUnits} of your expected ${p.expectedUnits} ${u}s and the rest is profit.</div>` : ''}</div></div></div>`;
+          <span class="pp-muted">Break-even price</span><span class="pp-num">${money(p.breakEvenPrice, cur)}</span>
+          <span class="pp-muted">Variable break-even</span><span class="pp-num">${money(p.variableBreakEvenPrice, cur)}</span>
+          <span class="pp-muted">Monthly fixed costs</span><span class="pp-num">${money(p.fixedMonthly, cur, 0)}</span>
+          <span class="total">Break-even sales at ${money(p.recommended.price, cur, 0)}</span><span class="total pp-num">${p.recommended.breakEvenUnits ?? '—'} ${u}s / month</span></div>
+          <p class="pp-muted" style="font-size:12px;margin-top:14px">The break-even price is the lowest price that covers every cost — including your share of fixed costs — at ${p.expectedUnits} ${u}s a month. Below the variable break-even you lose money on every single sale, regardless of volume.</p>
+          ${p.recommended.breakEvenUnits !== null ? `<div class="pp-ok">Sell ${p.recommended.breakEvenUnits} of your expected ${p.expectedUnits} ${u}s and the rest is profit.</div>` : ''}</div></div></div>`;
     } else if (S.tab === 'whatif') {
       const fmtv = (s, v) => (s.money ? money(v, cur, s.step < 1 ? 2 : 0) : v + (s.unit ? ' ' + s.unit : ''));
       panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">Experiment</h4><button class="btn btn-pp-ghost btn-sm" id="wi-reset">Reset</button></div>
@@ -255,16 +268,20 @@
         <div class="col-lg-7" id="tgt-metrics">${targetMetrics(m, p)}</div></div>`;
     }
     return `<div class="pp-container py-5 pp-fade">
-      <div class="row g-4 align-items-stretch"><div class="col-lg-5"><div class="pp-card pp-card-hero h-100 d-flex flex-column justify-content-between"><div><div class="pp-eyebrow">Your recommended price · ${esc(S.offering)}</div><div class="pp-kpi pp-kpi-xl my-2">${money(p.recommended.price, cur, 0)}</div><div class="pp-muted">per ${u} · ${pct(p.marginBand.mid, 0)} target margin</div></div>
-        <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp-ghost" style="background:#fff;color:var(--pp-primary);border-color:#fff">See my Profit Roadmap →</a><a href="#/analyze" class="btn btn-pp-ghost text-white" style="border-color:rgba(255,255,255,.4)" id="edit-answers">Edit answers</a></div></div></div>
-        <div class="col-lg-7"><div class="row g-3 h-100">
+      <div class="row g-4 align-items-stretch"><div class="col-lg-5"><div class="pp-card h-100 d-flex flex-column justify-content-between"><div><div class="pp-eyebrow mb-3">Your recommended price · ${esc(S.offering)}</div>
+        <div class="pp-kpi pp-kpi-xl"><span class="cur">${currencyMark(p.recommended.price, cur)}</span>${figure(p.recommended.price, cur)}</div><div class="pp-subhead mt-1">per ${u} · ${pct(p.marginBand.mid, 0)} target margin</div>
+        <div class="pp-split mt-4"><div class="side left"><div class="fig">${money(p.trueCostPerUnit, cur, 0)}</div><div class="cap">True cost</div></div>
+          <div class="pp-orb"><div><div class="fig">${money(p.recommended.profitPerUnit, cur, 0)}</div><div class="cap">Profit / ${u}</div></div></div>
+          <div class="side right"><div class="fig">${pct(p.recommended.marginPct)}</div><div class="cap">Margin</div></div></div></div>
+        <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp">See my Profit Roadmap →</a><a href="#/analyze" class="btn btn-pp-white" id="edit-answers">Edit answers</a></div></div></div>
+        <div class="col-lg-7"><div class="pp-card h-100"><div class="d-flex justify-content-between align-items-start gap-3 mb-3"><div class="pp-eyebrow">Monthly outlook</div><span class="pp-notice">Estimates · not a guarantee</span></div><div class="row g-3">
           <div class="col-6 col-md-4">${tile('True cost', money(p.trueCostPerUnit, cur), `per ${u} incl. overhead &amp; fees`)}</div>
-          <div class="col-6 col-md-4">${tile('Profit per ' + u, money(p.recommended.profitPerUnit, cur), '', 'var(--pp-primary)')}</div>
+          <div class="col-6 col-md-4">${tile('Profit per ' + u, money(p.recommended.profitPerUnit, cur))}</div>
           <div class="col-6 col-md-4">${tile('Profit margin', pct(p.recommended.marginPct))}</div>
           <div class="col-6 col-md-4">${tile('Expected monthly sales', p.expectedUnits, u + 's per month')}</div>
           <div class="col-6 col-md-4">${tile('Est. monthly revenue', money(p.recommended.monthlyRevenue, cur, 0))}</div>
-          <div class="col-6 col-md-4">${tile('Est. monthly profit', money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-primary)')}</div></div></div></div>
-      ${p.warnings.map((w) => `<div class="pp-warn mt-3">⚠️ ${w}</div>`).join('')}
+          <div class="col-6 col-md-4">${tile('Est. monthly profit', money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-pos)')}</div></div></div></div></div>
+      ${p.warnings.map((w) => `<div class="mt-3"><span class="pp-warn">${w}</span></div>`).join('')}
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-5 mb-3"><div class="pp-tabs">${tabs}</div><span class="pp-notice">Estimates from your inputs · not a guarantee</span></div>
       <div class="pp-fade">${panel}</div></div>`;
   }
@@ -276,31 +293,48 @@
     const done = r.recommendations.filter((x) => x.done).length;
     const order = ['reduce_costs', 'reduce_cac', 'increase_revenue', 'increase_value'];
     const cats = order.map((k) => ({ k, meta: E.CATEGORY_META[k], items: r.recommendations.filter((x) => x.category === k) })).filter((c) => c.items.length);
-    const card = (rec) => `<article class="pp-rec ${rec.done ? 'done' : ''}"><div class="d-flex gap-3 align-items-start"><button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${rec.done ? 'Mark as not done' : 'Mark as done'}">${rec.done ? '✓' : ''}</button><div class="flex-grow-1">
-      <div class="d-flex flex-wrap gap-2 align-items-center"><span class="pp-badge ${rec.priority}">${E.priorityLabel(rec.priority)} PRIORITY</span><span class="pp-badge ${rec.difficulty}">${rec.difficulty}</span></div>
-      <div class="d-flex justify-content-between gap-3 align-items-start"><h4>${esc(rec.title)}</h4><div class="text-end"><div class="impact">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-muted" style="font-size:.74rem">est. per month</div></div></div>
-      <div class="label">Why</div><p>${esc(rec.why)}</p><div class="label">Suggested action</div><p>${esc(rec.action)}</p>
-      <details><summary class="pp-muted" style="font-size:.85rem;cursor:pointer">Assumptions behind this estimate</summary><ul class="mt-2">${rec.assumptions.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details></div></div></article>`;
+    const card = (rec) => `<article class="pp-rec ${rec.done ? 'done' : ''}"><div class="d-flex align-items-start" style="gap:14px"><button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${rec.done ? 'Mark as not done' : 'Mark as done'}">${rec.done ? '✓' : ''}</button><div class="flex-grow-1" style="min-width:0">
+      <div class="d-flex flex-wrap gap-2 align-items-center"><span class="pp-badge ${rec.priority}">${E.priorityLabel(rec.priority)} priority</span><span class="pp-badge ${rec.difficulty}">${rec.difficulty}</span></div>
+      <div class="d-flex justify-content-between align-items-start" style="gap:16px"><h4>${esc(rec.title)}</h4><div class="text-end"><div class="impact">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-muted" style="font-size:11px">est. per month</div></div></div>
+      <div style="margin-top:12px"><div class="label">Why</div><p>${esc(rec.why)}</p><div class="label">Suggested action</div><p>${esc(rec.action)}</p></div>
+      ${rec.assumptions.length ? `<details><summary>Assumptions behind this estimate</summary><ul>${rec.assumptions.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details>` : ''}</div></div></article>`;
     return `<div class="pp-container py-5 pp-fade">
-      <div class="pp-narrow text-center mb-4"><span class="pp-chip mb-3">🗺️ Profit Roadmap · ${esc(S.offering)}</span><h1>How to make more profit at ${money(r.current.price, cur, 0)}</h1><p class="pp-muted" style="font-size:1.05rem">There are more ways to grow profit than raising your price. These are the levers that matter most for your numbers, ranked by estimated impact and effort.</p></div>
-      <div class="row g-4 align-items-stretch"><div class="col-lg-4"><div class="pp-card h-100"><div class="pp-eyebrow mb-2">Current situation</div><div class="pp-ledger">
-        <span class="pp-muted">Selling price</span><span class="pp-num fw-semibold">${money(r.current.price, cur, 0)}</span><span class="pp-muted">True cost</span><span class="pp-num fw-semibold">${money(r.current.trueCostPerUnit, cur)}</span><span class="pp-muted">Profit / ${u}</span><span class="pp-num fw-semibold">${money(r.current.profitPerUnit, cur)}</span><span class="pp-muted">${u}s / month</span><span class="pp-num fw-semibold">${r.current.units}</span><span class="pp-muted">Margin</span><span class="pp-num fw-semibold">${pct(r.current.marginPct)}</span><span class="total">Monthly profit</span><span class="total pp-num">${money(r.current.monthlyProfit, cur, 0)}</span></div></div></div>
-        <div class="col-lg-8"><div class="pp-card pp-card-hero h-100"><div class="row g-3 align-items-center"><div class="col-md-5"><div class="pp-eyebrow">Optimised estimated monthly profit</div><div class="pp-kpi pp-kpi-lg my-1">${money(r.optimisedMonthlyProfit, cur, 0)}</div><div class="pp-muted">from ${money(r.current.monthlyProfit, cur, 0)} today · <strong class="text-white">+${money(r.optimisedMonthlyProfit - r.current.monthlyProfit, cur, 0)}</strong></div>${p.target.targetMonthlyProfit > 0 ? `<div class="mt-2" style="font-size:.9rem">${r.targetReached ? '✅ Reaches' : '⚠️ Still short of'} your ${money(p.target.targetMonthlyProfit, cur, 0)} target</div>` : ''}</div>
-          <div class="col-md-7"><div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span style="font-size:.86rem">${esc(x.title)}</span><span class="pp-num fw-semibold" style="font-size:.86rem">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%;background:#a7f3d0"></span></div></div>`).join('')}</div><div class="pp-muted mt-2" style="font-size:.78rem">Sum of items ${money(r.sumOfImpacts, cur, 0)}, reduced by ${pct(r.interactionDiscountPct, 0)} because improvements overlap.</div></div></div></div></div></div>
-      <div class="pp-card pp-card-soft mt-4"><div class="d-flex justify-content-between flex-wrap gap-2 align-items-center"><div><strong>Roadmap progress:</strong> ${done}/${r.recommendations.length} completed</div><div class="pp-progress" style="width:min(320px,100%)"><div style="width:${(done / r.recommendations.length) * 100}%"></div></div></div><p class="mb-0 mt-2 pp-muted" style="font-size:.92rem">${explainRoadmap(m, r)}</p></div>
-      ${cats.map((c) => `<div class="pp-cat-head"><span class="icon">${c.meta.icon}</span><div><h3 class="mb-0">${c.meta.label}</h3><div class="pp-muted" style="font-size:.88rem">${c.meta.blurb}</div></div></div><div class="d-grid gap-3">${c.items.map(card).join('')}</div>`).join('')}
-      <div class="pp-notice mt-5">${r.disclaimer}</div>
-      <div class="d-flex flex-wrap gap-2 mt-4"><a href="#/results" class="btn btn-pp-ghost">← Back to pricing</a><a href="#/analyze" class="btn btn-pp-ghost" id="new-analysis">Analyse another business</a></div></div>`;
+      <div class="pp-narrow text-center mb-4"><span class="pp-chip mb-3">🗺️ Profit Roadmap · ${esc(S.offering)}</span><h1>How to make more profit at ${money(r.current.price, cur, 0)}</h1><p class="pp-muted" style="font-size:14px;margin:10px 0 0">There are more ways to grow profit than raising your price. These are the levers that matter most for your numbers, ranked by estimated impact and effort.</p></div>
+      <div class="row g-4 align-items-start"><div class="col-lg-4"><div class="pp-card h-100"><div class="pp-eyebrow mb-3">Current situation</div><div class="pp-ledger">
+        <span class="pp-muted">Selling price</span><span class="pp-num">${money(r.current.price, cur, 0)}</span><span class="pp-muted">True cost</span><span class="pp-num">${money(r.current.trueCostPerUnit, cur)}</span><span class="pp-muted">Profit / ${u}</span><span class="pp-num">${money(r.current.profitPerUnit, cur)}</span><span class="pp-muted">${u}s / month</span><span class="pp-num">${r.current.units}</span><span class="pp-muted">Margin</span><span class="pp-num">${pct(r.current.marginPct)}</span><span class="total">Monthly profit</span><span class="total pp-num">${money(r.current.monthlyProfit, cur, 0)}</span></div></div></div>
+        <div class="col-lg-8"><div class="pp-panel h-100"><div class="row g-3 align-items-stretch"><div class="col-md-5"><div class="pp-trend h-100"><div class="pp-eyebrow">Optimised estimated monthly profit</div><div class="pp-kpi pp-kpi-lg mt-2">${money(r.optimisedMonthlyProfit, cur, 0)}</div><div class="pp-muted" style="font-size:11px">from ${money(r.current.monthlyProfit, cur, 0)} today · <strong>+${money(r.optimisedMonthlyProfit - r.current.monthlyProfit, cur, 0)}</strong></div>
+          <div style="position:relative;margin-top:14px;height:64px"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible" role="img" aria-label="Cumulative profit as each roadmap item lands"><path d="${trendPath(r)}" fill="none" stroke="#fff" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="position:absolute;left:0;bottom:-4px;font-size:10px;color:rgba(255,255,255,.8)">today</span><span style="position:absolute;right:0;top:-6px;font-size:10px;color:rgba(255,255,255,.8)">optimised</span></div></div></div>
+          <div class="col-md-7"><div class="pp-card-bare h-100"><div class="pp-eyebrow mb-3">Where the lift comes from</div><div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span>${esc(x.title)}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}</div><div class="pp-muted mt-3" style="font-size:11px">Sum of items ${money(r.sumOfImpacts, cur, 0)}, reduced by ${pct(r.interactionDiscountPct, 0)} because improvements overlap.${p.target.targetMonthlyProfit > 0 ? ` ${r.targetReached ? 'Reaches' : 'Still short of'} your ${money(p.target.targetMonthlyProfit, cur, 0)} target.` : ''}</div></div></div></div></div></div></div>
+      <div class="pp-card mt-3"><div class="d-flex justify-content-between flex-wrap gap-2 align-items-center"><div style="font-size:13px"><strong style="font-weight:500">Roadmap progress:</strong> ${done}/${r.recommendations.length} completed</div><div class="pp-progress" style="width:min(320px,100%)"><div style="width:${(done / r.recommendations.length) * 100}%"></div></div></div><p class="mb-0 mt-2" style="font-size:13px;color:var(--pp-ink-2)">${explainRoadmap(m, r)}</p></div>
+      ${cats.map((c) => `<div class="pp-cat-head"><span class="icon">${c.meta.icon}</span><div><h3 class="mb-0">${c.meta.label}</h3><div class="pp-muted" style="font-size:12px">${c.meta.blurb}</div></div></div><div class="d-grid" style="gap:var(--pp-grid-gap)">${c.items.map(card).join('')}</div>`).join('')}
+      <div class="pp-notice pp-notice-block mt-5">${r.disclaimer}</div>
+      <div class="d-flex flex-wrap gap-2 mt-4"><a href="#/results" class="btn btn-pp-white">← Back to pricing</a><a href="#/analyze" class="btn btn-pp-ghost" id="new-analysis">Analyse another business</a></div></div>`;
+  }
+
+  /* The trend line is cumulative, not decorative: profit today, then each
+     recommendation's share of the (discounted) lift in rank order, so the last
+     point is exactly the optimised figure shown above it. */
+  function trendPath(r) {
+    const lift = r.optimisedMonthlyProfit - r.current.monthlyProfit;
+    const sum = r.sumOfImpacts || 1;
+    let cumulative = 0;
+    const points = [r.current.monthlyProfit].concat(r.recommendations.map((rec) => {
+      cumulative += rec.estimatedMonthlyImpact;
+      return r.current.monthlyProfit + (cumulative / sum) * lift;
+    }));
+    if (points.length < 2) return '';
+    const hi = Math.max(...points); const lo = Math.min(...points);
+    return points.map((v, i) => `${i ? 'L' : 'M'}${((i / (points.length - 1)) * 100).toFixed(2)} ${(100 - ((v - lo) / (hi - lo || 1)) * 100).toFixed(2)}`).join(' ');
   }
 
   // ---------- events ----------
   function bind() {
-    root.querySelector('[data-action="example"]')?.addEventListener('click', () => { const s = E.SAMPLES[0]; Object.assign(S, { offering: s.offering, type: s.type, selectedType: s.type, answers: { ...s.answers }, completedIds: [], complete: true, step: 0, wi: {}, target: null, tab: 'overview' }); go('results'); });
+    root.querySelectorAll('[data-action="example"]').forEach((el) => el.addEventListener('click', () => { const s = E.SAMPLES[0]; Object.assign(S, { offering: s.offering, type: s.type, selectedType: s.type, answers: { ...s.answers }, completedIds: [], complete: true, step: 0, wi: {}, target: null, tab: 'overview' }); go('results'); }));
     const off = root.querySelector('#offering');
     if (off) off.addEventListener('input', (ev) => {
       S.offering = ev.target.value; const d = S.offering.trim().length >= 3 ? E.detectBusinessType(S.offering) : null; S.detection = d;
       if (d && d.confidence > 0) S.selectedType = d.type;
-      const det = root.querySelector('#detect'); det.innerHTML = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="fw-semibold">Looks like: ${E.businessTypeDef(d.type).label}</div><div class="pp-muted" style="font-size:.85rem">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
+      const det = root.querySelector('#detect'); det.innerHTML = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="title">Looks like: ${E.businessTypeDef(d.type).label}</div><div style="font-size:12px;color:var(--pp-ink-2)">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
       root.querySelectorAll('[data-type]').forEach((b) => b.classList.toggle('selected', b.dataset.type === S.selectedType));
       root.querySelector('#start').disabled = !S.selectedType || !S.offering.trim();
     });

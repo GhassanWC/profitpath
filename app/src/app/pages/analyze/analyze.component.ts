@@ -24,10 +24,10 @@ import { AnalysisStore } from '../../core/state/analysis.store';
     <div class="pp-container py-5">
       <div class="pp-narrow">
         <!-- Progress -->
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="pp-eyebrow">Step {{ stepIndex() + 1 }} of {{ totalSteps() }}</span>
+        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 12px; color: var(--pp-ink-2)">
+          <span>Step {{ stepIndex() + 1 }} of {{ totalSteps() }}</span>
           @if (stepIndex() > 0) {
-            <span class="pp-muted" style="font-size: 0.85rem">{{ typeDef()?.icon }} {{ typeDef()?.label }} · {{ store.offering() }}</span>
+            <span>{{ typeDef()?.icon }} {{ typeDef()?.label }} · {{ store.offering() }}</span>
           }
         </div>
         <div class="pp-progress mb-4"><div [style.width.%]="((stepIndex() + 1) / totalSteps()) * 100"></div></div>
@@ -46,20 +46,20 @@ import { AnalysisStore } from '../../core/state/analysis.store';
                 <div class="pp-detect mb-4 pp-fade">
                   <span class="icon">{{ businessTypeDef(d.type).icon }}</span>
                   <div>
-                    <div class="fw-semibold">Looks like: {{ businessTypeDef(d.type).label }}</div>
-                    <div class="pp-muted" style="font-size: 0.85rem">{{ confidenceText(d) }} · Not right? Pick a type below.</div>
+                    <div class="title">Looks like: {{ businessTypeDef(d.type).label }}</div>
+                    <div style="font-size: 12px; color: var(--pp-ink-2)">{{ confidenceText(d) }} · Not right? Pick a type below.</div>
                   </div>
                 </div>
               }
             }
 
-            <div class="pp-eyebrow mb-2">Business type</div>
+            <div class="pp-subhead mb-2">Business type</div>
             <div class="pp-option-grid mb-4">
               @for (t of types; track t.type) {
                 <button type="button" class="pp-type-card" [class.selected]="selectedType() === t.type" (click)="selectedType.set(t.type)">
-                  <div style="font-size: 1.4rem">{{ t.icon }}</div>
-                  <div class="fw-semibold mt-1">{{ t.label }}</div>
-                  <small class="pp-muted">{{ t.description }}</small>
+                  <div class="icon">{{ t.icon }}</div>
+                  <div class="name">{{ t.label }}</div>
+                  <small>{{ t.description }}</small>
                 </button>
               }
             </div>
@@ -133,7 +133,7 @@ import { AnalysisStore } from '../../core/state/analysis.store';
 
             <div class="d-flex justify-content-between align-items-center mt-2">
               <button type="button" class="btn btn-pp-ghost" (click)="back()">← Back</button>
-              <button type="submit" class="btn btn-pp">{{ isLast() ? 'Calculate my price ✨' : 'Continue →' }}</button>
+              <button type="submit" class="btn btn-pp">{{ isLast() ? 'Calculate my price' : 'Continue →' }}</button>
             </div>
           </form>
           <p class="pp-notice mt-3 text-center">Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</p>

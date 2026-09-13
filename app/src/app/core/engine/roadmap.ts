@@ -343,6 +343,7 @@ export const CATEGORY_META: Record<RecCategory, { label: string; icon: string; b
   increase_value: { label: 'Increase customer value', icon: '🔄', blurb: 'Earn more from the customers you already have.' },
 };
 
+/** Sentence case: nothing in the interface is set in capitals. */
 export function priorityLabel(p: Priority): string {
-  return p === 'high' ? 'HIGH' : p === 'medium' ? 'MEDIUM' : 'LOW';
+  return p === 'high' ? 'High' : p === 'medium' ? 'Medium' : 'Low';
 }

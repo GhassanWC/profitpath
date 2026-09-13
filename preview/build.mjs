@@ -4,10 +4,9 @@ const engine = readFileSync('engine.bundle.js','utf8');
 const app = readFileSync('app.js','utf8');
 const head = `<title>ProfitPath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>${css}
-body { color-scheme: light; background: var(--pp-bg); }
-@media (prefers-reduced-motion: reduce) { .pp-fade, .btn-pp, .pp-progress > div { animation: none; transition: none; } }
+body { color-scheme: light; }
 </style>`;
 const body = `<div id="app"></div>
 <script>${engine}</script>

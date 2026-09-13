@@ -16,6 +16,21 @@ app/                               Angular 18 application (standalone components
 preview/                           Dependency-free live preview built from the same compiled engine
 ```
 
+## Design system
+
+The interface follows the ProfitPath design system: a frosted-glass dashboard on a
+periwinkle→pale-blue wash, light-weight tabular figures, pill controls and near-black
+primary buttons. Every token and class lives in `app/src/styles.css`, which the preview
+compiles in verbatim, so the two surfaces cannot drift.
+
+The key structural rule is the **two-layer surface model**: content never sits straight on
+the page wash. `.pp-card` *is* the frosted panel, and the white card inside it is drawn by
+the element's own `::before` at a 12px inset — so a card stays one element in the markup.
+Use `.pp-panel` + `.pp-card-bare` where one panel has to group several cards.
+
+Typeface is **Plus Jakarta Sans** (Google Fonts, 300–700), loaded in `app/src/index.html`
+and `preview/build.mjs`.
+
 ## Run the Angular app
 
 ```bash
