@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist-engine",
+    "rootDir": "src/app/core/engine",
+    "types": [],
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src/app/core/engine/**/*.ts"]
+}
