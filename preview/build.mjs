@@ -1,7 +1,16 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-const css = readFileSync('utilities.css','utf8') + '\n' + readFileSync('../app/src/styles.css','utf8');
-const engine = readFileSync('engine.bundle.js','utf8');
-const app = readFileSync('app.js','utf8');
+
+const css = readFileSync('utilities.css', 'utf8') + '\n' + readFileSync('../app/src/styles.css', 'utf8');
+const engine = readFileSync('engine.bundle.js', 'utf8');
+const app = readFileSync('app.js', 'utf8');
+
+/**
+ * The icon set is shared with the Angular app rather than duplicated. That file
+ * is deliberately plain data — no type annotations, no imports — so stripping
+ * the `export ` keyword is all it takes to reuse it here.
+ */
+const icons = readFileSync('../app/src/app/shared/icons.ts', 'utf8').replace(/^export /gm, '');
+
 const head = `<title>ProfitPath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -9,8 +18,10 @@ const head = `<title>ProfitPath</title>
 body { color-scheme: light; }
 </style>`;
 const body = `<div id="app"></div>
+<script>${icons}</script>
 <script>${engine}</script>
 <script>${app}</script>`;
+
 mkdirSync('dist', { recursive: true });
 writeFileSync('dist/profitpath-artifact.html', head + '\n' + body);
 writeFileSync('dist/profitpath-preview.html', `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${head}</head><body>${body}</body></html>`);

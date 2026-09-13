@@ -18,18 +18,56 @@ preview/                           Dependency-free live preview built from the s
 
 ## Design system
 
-The interface follows the ProfitPath design system: a frosted-glass dashboard on a
-periwinkle→pale-blue wash, light-weight tabular figures, pill controls and near-black
-primary buttons. Every token and class lives in `app/src/styles.css`, which the preview
+Soft glass on a periwinkle wash, one brand gradient, and figures that are scannable before
+they are read. Every token and class lives in `app/src/styles.css`, which the preview
 compiles in verbatim, so the two surfaces cannot drift.
 
-The key structural rule is the **two-layer surface model**: content never sits straight on
-the page wash. `.pp-card` *is* the frosted panel, and the white card inside it is drawn by
-the element's own `::before` at a 12px inset — so a card stays one element in the markup.
-Use `.pp-panel` + `.pp-card-bare` where one panel has to group several cards.
+**Two-layer surface model.** Content never sits straight on the page wash. `.pp-card` *is*
+the glass panel, and the card inside it is drawn by the element's own `::before` at a 12px
+inset — so a card stays one element in the markup.
+
+**Card hierarchy — four treatments and one inverted. Do not add a fifth.**
+
+| Class | Use |
+| --- | --- |
+| `.pp-card` | secondary: the default content card |
+| `.pp-card--primary` | the decision on the page — deeper, roomier, brand edge. One per screen |
+| `.pp-card--insight` | explanation and reasoning: faint brand wash |
+| `.pp-card--data` | dense figures: pale interior |
+| `.pp-card--dark` | inverted, at most one per screen |
+| `.pp-card-bare` | a plain block nested inside one of the above |
+
+**Brand.** The mark, the primary button, the active nav item and the accents are all the
+same blue→violet identity (`--pp-brand`, `--pp-brand-gradient`). Near-black is ink and the
+inverted card only. Brand *text* uses `--pp-brand-ink`, which is darkened to clear AA.
+
+**Contrast.** Every ink token clears WCAG AA (4.5:1) on white, on `--pp-subtle` and on
+`--pp-subtle-2`. `node preview/contrast.mjs` audits the shipped stylesheet and fails if a
+pair drops below that — run it after touching a colour.
+
+**Icons.** Lucide, inlined in `app/src/app/shared/icons.ts` rather than loaded from a CDN,
+so both surfaces share one registry and neither needs a network round-trip. Angular renders
+them through `<pp-icon name="…">`; `preview/build.mjs` strips the `export` keyword and
+reuses the same file. Add one by copying the inner markup of `lucide-static/icons/<name>.svg`.
+No emoji anywhere in the interface.
 
 Typeface is **Plus Jakarta Sans** (Google Fonts, 300–700), loaded in `app/src/index.html`
 and `preview/build.mjs`.
+
+## Verify the UI against the engine
+
+Nothing in the interface may hardcode a financial figure. `preview/verify.mjs` computes the
+sample analysis in Node straight from the compiled engine and asserts that every price,
+cost, margin and recommendation impact the page shows is that engine's own output — plus
+that icons render, that no emoji survive, and that nothing overflows at 390px.
+
+```bash
+cd app && npx tsc -p tsconfig.engine.json && npx ng build
+cd ../preview && node build.mjs
+node verify.mjs                                   # the dependency-free preview
+node verify.mjs http://localhost:4173             # a served Angular build too
+node contrast.mjs                                 # colour audit
+```
 
 ## Run the Angular app
 

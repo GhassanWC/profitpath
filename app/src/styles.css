@@ -1,103 +1,110 @@
 /* ============================================================================
    ProfitPath design system
-   Visual language: the frosted-glass dashboard on a periwinkle wash.
-   Product structure: unchanged — this file only restyles the existing markup.
+   A quiet, premium surface for a profit strategist: soft glass on a periwinkle
+   wash, one brand gradient, and figures that are scannable before they are read.
 
    Two-layer surface model
    -----------------------
-   Content never sits straight on the page wash. `.pp-card` IS the frosted glass
-   panel; the white card inside it is drawn by its `::before` at a 12px inset.
-   That keeps both layers in one element, so the Angular templates and the
-   dependency-free preview share the same markup.
-     .pp-card        glass panel + white card   (the default)
-     .pp-card-soft   glass panel + pale card
-     .pp-card-dark   glass panel + near-black card
-     .pp-card-bare   white card only — use inside an explicit .pp-panel
-     .pp-panel       glass panel only — for grouping several bare cards
+   Content never sits straight on the page wash. `.pp-card` IS the glass panel;
+   the card inside it is drawn by its `::before` at a 12px inset. That keeps both
+   layers in one element, so the Angular templates and the dependency-free
+   preview share the same markup.
+
+   Card hierarchy — four treatments, and one inverted. Do not invent a fifth.
+     .pp-card                 secondary — the default content card
+     .pp-card--primary        the decision on the page: deeper, roomier, brand edge
+     .pp-card--insight        explanation and reasoning: faint brand wash
+     .pp-card--data           dense figures: pale interior
+     .pp-card--dark           inverted, at most one per screen
+     .pp-card-bare            a plain block nested inside one of the above
    ========================================================================== */
 
 /* ---------------------------------------------------------------- tokens -- */
 :root {
   /* Page — periwinkle → pale-blue wash */
-  --pp-bg-1: #9ba5d9;
   --pp-bg-2: #c3cbe6;
-  --pp-bg-3: #dfe4ee;
   --pp-page: linear-gradient(160deg, #9ba5d9 0%, #c3cbe6 46%, #dfe4ee 100%);
-  --pp-bg: var(--pp-bg-2);
 
-  /* Glass */
-  --pp-glass: rgba(255, 255, 255, 0.42);
-  --pp-glass-strong: rgba(255, 255, 255, 0.62);
-  --pp-glass-line: rgba(255, 255, 255, 0.55);
-  --pp-glass-blur: 24px;
+  /* Glass — restrained: more solid, less blur than a typical glass UI, so text
+     on it stays crisp and the effect reads as material rather than as an effect. */
+  --pp-glass: rgba(255, 255, 255, 0.55);
+  --pp-glass-strong: rgba(255, 255, 255, 0.72);
+  --pp-glass-line: rgba(255, 255, 255, 0.6);
+  --pp-glass-blur: 14px;
 
   /* Solid surfaces */
   --pp-card: #ffffff;
   --pp-subtle: #eef1f8;
   --pp-subtle-2: #f6f8fc;
-  --pp-line: #eceff5;
+  --pp-line: #e6eaf2;
 
-  /* Ink */
-  --pp-ink: #1a1c22;
-  --pp-ink-2: #4b505c;
-  --pp-muted: #8b90a0;
+  /* Ink — every value below is >= 4.5:1 on white, on --pp-subtle and on
+     --pp-subtle-2, so secondary text never reads as disabled. */
+  --pp-ink: #1a1c22;        /* 17.0:1 */
+  --pp-ink-2: #4b505c;      /*  8.1:1 */
+  --pp-muted: #656b7b;      /*  5.3:1 white · 4.7:1 on tiles */
 
-  /* Action — near-black pill buttons */
-  --pp-action: #111318;
-  --pp-action-hover: #26292f;
+  /* Brand — one identity across the mark, the primary action, active state and
+     accents. The gradient is the brand; the solid blue is its working colour. */
+  --pp-brand: #2f6bf6;
+  --pp-brand-hover: #255fe8;
+  --pp-brand-ink: #1f57e0;    /* brand as TEXT: 6.0:1 white, 4.8:1 on brand-soft */
+  --pp-brand-2: #6c5ce7;
+  --pp-brand-2-ink: #5b4bd6;
+  --pp-brand-soft: #dbe7ff;
+  --pp-brand-2-soft: #e7e4fb;
+  --pp-brand-wash: #f4f7ff;   /* insight-card interior */
+  --pp-brand-gradient: linear-gradient(135deg, #2f6bf6 0%, #6c5ce7 100%);
 
-  /* Blue accent */
-  --pp-accent: #2f6bf6;
-  --pp-accent-2: #5b8cff;
-  --pp-accent-soft: #dbe7ff;
+  /* Ink-dark surface — the single inverted card, and nothing else. */
+  --pp-dark: #111318;
+  --pp-dark-hover: #26292f;
+  --pp-on-dark: #ffffff;
+  --pp-on-dark-muted: rgba(255, 255, 255, 0.78);
 
-  /* Violet — reserved for the orb */
-  --pp-violet: #6c5ce7;
-  --pp-violet-2: #8f7ff5;
-  --pp-violet-soft: #e7e4fb;
-
-  /* Semantic */
-  --pp-pos: #1f9d64;
+  /* Semantic — the base is for TEXT, the -ink variant for text on its own soft pill. */
+  --pp-pos: #12784a;        /* 5.5:1 white · 4.9:1 on tiles */
   --pp-pos-soft: #dff3e8;
-  --pp-neg: #e2574c;
+  --pp-pos-ink: #0e6b41;    /* on --pp-pos-soft: 5.7:1 */
+  --pp-neg: #c93a30;        /* 5.1:1 */
   --pp-neg-soft: #fde8e6;
-  --pp-warn: #e8a33d;
+  --pp-neg-ink: #b02f26;
   --pp-warn-soft: #fdf0da;
+  --pp-warn-ink: #7a5210;
   --pp-neutral-soft: #eceff5;
 
-  /* Cost-composition series — blue→violet, with fees left neutral. The cost
-     breakdown component names these tokens rather than repeating the hexes. */
-  --pp-series-1: #2f6bf6; --pp-series-2: #5b8cff; --pp-series-3: #8fb0ff; --pp-series-4: #b9cdff;
-  --pp-series-5: #6c5ce7; --pp-series-6: #8f7ff5; --pp-series-7: #c4bdfa;
-  --pp-series-8: #aeb5c6; --pp-series-9: #ccd2de;
-  /* Aliases kept so template inline styles and the preview utilities resolve. */
-  --pp-primary: var(--pp-accent);
+  /* The preview's utility sheet resolves .text-danger through this alias. */
   --pp-danger: var(--pp-neg);
-  --pp-success: var(--pp-pos);
 
-  /* Gradients — three places only, plus the landing headline */
-  --pp-gradient-orb: radial-gradient(circle at 35% 30%, #9d8cff 0%, #6c5ce7 55%, #5a49d6 100%);
-  --pp-gradient-trend: linear-gradient(135deg, #4a7bf7 0%, #7aa8ff 55%, #9dc0ff 100%);
-  --pp-gradient-bar: linear-gradient(180deg, #8fb0ff 0%, #2f6bf6 100%);
+  /* Gradients — the brand mark, the comparison lift, the trend card, the bars,
+     the landing headline. Never behind body text, never on a page background. */
+  --pp-gradient-bar: linear-gradient(90deg, #2f6bf6 0%, #6c5ce7 100%);
   --pp-gradient-text: linear-gradient(90deg, #2f6bf6 0%, #6c5ce7 100%);
 
   /* Type */
   --pp-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  /* Shape — everything round; no square corners, no rectangular buttons */
-  --pp-radius-panel: 28px;
-  --pp-radius: 20px;
-  --pp-radius-md: 16px;
-  --pp-radius-sm: 12px;
+  /* Figure scale — the hierarchy that makes results scannable. */
+  --pp-fig-hero: clamp(46px, 7vw, 68px);
+  --pp-fig-xl: clamp(28px, 3.4vw, 36px);
+  --pp-fig-lg: 26px;
+  --pp-fig-md: 20px;
+  --pp-fig-sm: 15px;
+
+  /* Shape */
+  --pp-radius-panel: 26px;
+  --pp-radius: 18px;
+  --pp-radius-md: 14px;
+  --pp-radius-sm: 10px;
   --pp-radius-pill: 999px;
 
-  --pp-shadow-panel: 0 24px 60px -28px rgba(44, 54, 96, 0.38);
-  --pp-shadow-card: 0 10px 30px -16px rgba(26, 28, 34, 0.2);
-  --pp-shadow-soft: 0 2px 8px -4px rgba(26, 28, 34, 0.12);
-  --pp-shadow-action: 0 8px 20px -10px rgba(17, 19, 24, 0.55);
-  --pp-ring-accent: 0 0 0 4px rgba(47, 107, 246, 0.16);
-  --pp-glow-orb: 0 0 60px 10px rgba(108, 92, 231, 0.35);
-  --pp-shadow: var(--pp-shadow-card);
+  --pp-shadow-panel: 0 18px 44px -26px rgba(38, 48, 88, 0.32);
+  --pp-shadow-panel-lg: 0 28px 64px -30px rgba(38, 48, 88, 0.42);
+  --pp-shadow-card: 0 8px 24px -14px rgba(26, 28, 34, 0.18);
+  --pp-shadow-soft: 0 2px 8px -4px rgba(26, 28, 34, 0.1);
+  --pp-shadow-brand: 0 10px 24px -12px rgba(47, 107, 246, 0.5);
+  --pp-shadow-dark: 0 10px 24px -12px rgba(17, 19, 24, 0.45);
+  --pp-ring-brand: 0 0 0 4px rgba(47, 107, 246, 0.16);
 
   /* Motion */
   --pp-ease: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -109,6 +116,13 @@
   --pp-grid-gap: 12px;
   --pp-panel-pad: 12px;
   --pp-card-pad: 20px;
+  --pp-card-pad-lg: 28px;
+
+  /* Cost-composition series — blue→violet, fees left neutral. The cost
+     breakdown component names these tokens rather than repeating the hexes. */
+  --pp-series-1: #2f6bf6; --pp-series-2: #5b8cff; --pp-series-3: #8fb0ff; --pp-series-4: #b9cdff;
+  --pp-series-5: #6c5ce7; --pp-series-6: #8f7ff5; --pp-series-7: #c4bdfa;
+  --pp-series-8: #9aa1b3; --pp-series-9: #c3c9d6;
 }
 
 /* ------------------------------------------------------------------ base -- */
@@ -121,60 +135,89 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 body { font-size: 14px; line-height: 1.5; margin: 0; }
-/* Headings are 300–400 with tight tracking; these also override Bootstrap's scale. */
-h1, h2, h3, h4, h5, .display-pp { letter-spacing: -0.02em; font-weight: 400; color: var(--pp-ink); }
-h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; }
-h2 { font-size: 24px; }
-h3, h4 { font-size: 20px; }
-h5 { font-size: 15px; font-weight: 500; }
-a { color: var(--pp-accent); text-decoration: none; }
-a:hover { color: var(--pp-violet); }
+
+/* Headings are 300–500 with tight tracking; these also override Bootstrap. */
+h1, h2, h3, h4, h5, .display-pp { letter-spacing: -0.02em; font-weight: 500; color: var(--pp-ink); }
+h1 { font-size: clamp(30px, 4vw, 42px); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; }
+h2 { font-size: 24px; font-weight: 400; }
+h3 { font-size: 19px; }
+h4 { font-size: 17px; }
+h5 { font-size: 15px; }
+a { color: var(--pp-brand-ink); text-decoration: none; }
+a:hover { color: var(--pp-brand-2-ink); }
 .text-muted, .pp-muted { color: var(--pp-muted) !important; }
 .pp-container { max-width: var(--pp-container); margin: 0 auto; padding-inline: var(--pp-gutter); }
 .pp-narrow { max-width: 720px; margin: 0 auto; }
 .pp-num { font-variant-numeric: tabular-nums; }
 
+/* Icons: `pp-icon` is the Angular host, `.pp-i` the preview's bare <svg>. */
+pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.pp-i { vertical-align: -0.15em; }
+
 /* Panels tile 12px apart, as the source composition does. */
 .row.g-3, .row.g-4 { --bs-gutter-x: var(--pp-grid-gap); --bs-gutter-y: var(--pp-grid-gap); --g: var(--pp-grid-gap); }
 
+/* ----------------------------------------------------------- type ladder -- */
+/* Labels above figures. Sentence case — nothing here is set in capitals. */
+.pp-eyebrow { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--pp-ink); }
+.pp-subhead { font-size: 12px; color: var(--pp-muted); }
+.pp-label { font-size: 11px; color: var(--pp-muted); font-weight: 400; }
+.pp-body { font-size: 13px; color: var(--pp-ink-2); }
+
+/* Figures are always weight 300 and tabular. Nothing here bolds a number. */
+.pp-kpi {
+  font-size: var(--pp-fig-md); font-weight: 300; letter-spacing: -0.03em; line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: var(--pp-ink);
+}
+.pp-kpi--hero { font-size: var(--pp-fig-hero); line-height: 1; letter-spacing: -0.04em; }
+.pp-kpi--xl { font-size: var(--pp-fig-xl); line-height: 1.05; }
+.pp-kpi--lg { font-size: var(--pp-fig-lg); line-height: 1.1; }
+.pp-kpi--sm { font-size: var(--pp-fig-sm); }
+.pp-kpi--pos { color: var(--pp-pos); }
+/* The currency mark rides high and quiet beside the figure, never level with it.
+   Inline-block rather than a flex item, so the mark and the digits stay one run
+   of text: `$1,149` copies, reads aloud and asserts as a single string. */
+.pp-kpi .cur {
+  display: inline-block; vertical-align: top;
+  font-size: 0.42em; color: var(--pp-muted); letter-spacing: 0;
+  margin: 0.3em 0.1em 0 0;
+}
+
 /* --------------------------------------------------------------- buttons -- */
 /* Every button is a full pill. Hover lifts 1px; there is no press state. */
-.btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+.btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   border: 0; border-radius: var(--pp-radius-pill); font-family: inherit; font-weight: 500;
   line-height: 1.2; padding: 11px 20px; font-size: 13px; white-space: nowrap; cursor: pointer;
-  transition: background var(--pp-ease), box-shadow var(--pp-ease), transform var(--pp-ease), border-color var(--pp-ease);
+  transition: background var(--pp-ease), box-shadow var(--pp-ease), transform var(--pp-ease), border-color var(--pp-ease), color var(--pp-ease);
 }
-.btn-pp { background: var(--pp-action); color: #fff; box-shadow: var(--pp-shadow-action); }
-.btn-pp:hover, .btn-pp:focus { background: var(--pp-action-hover); color: #fff; transform: translateY(-1px); }
+/* Primary action — brand, so the CTA, the mark and the active state agree. */
+.btn-pp { background: var(--pp-brand); color: #fff; box-shadow: var(--pp-shadow-brand); }
+.btn-pp:hover, .btn-pp:focus { background: var(--pp-brand-hover); color: #fff; transform: translateY(-1px); }
 .btn-pp:disabled { opacity: 0.45; transform: none; box-shadow: none; }
+/* The single most important CTA on a screen may carry the full gradient. */
+.btn-pp-hero { background: var(--pp-brand-gradient); }
+.btn-pp-hero:hover, .btn-pp-hero:focus { background: var(--pp-brand-gradient); filter: brightness(1.06); }
 
 .btn-pp-ghost { background: transparent; color: var(--pp-ink-2); border: 1px solid var(--pp-line); }
-.btn-pp-ghost:hover, .btn-pp-ghost:focus { border-color: var(--pp-muted); color: var(--pp-ink-2); transform: translateY(-1px); }
+.btn-pp-ghost:hover, .btn-pp-ghost:focus { border-color: var(--pp-muted); color: var(--pp-ink); transform: translateY(-1px); }
 
 .btn-pp-white { background: #fff; color: var(--pp-ink); box-shadow: var(--pp-shadow-soft); }
 .btn-pp-white:hover, .btn-pp-white:focus { color: var(--pp-ink); box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
 
-/* Glass button — the secondary hero action, sitting straight on the wash. */
+.btn-pp-dark { background: var(--pp-dark); color: #fff; box-shadow: var(--pp-shadow-dark); }
+.btn-pp-dark:hover, .btn-pp-dark:focus { background: var(--pp-dark-hover); color: #fff; transform: translateY(-1px); }
+
 .btn-pp-glass {
   background: var(--pp-glass); color: var(--pp-ink); border: 1px solid var(--pp-glass-line);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .btn-pp-glass:hover, .btn-pp-glass:focus { background: var(--pp-glass-strong); color: var(--pp-ink); transform: translateY(-1px); }
 
-.btn-pp-lg { padding: 15px 28px; font-size: 15px; }
-.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm { padding: 7px 14px; font-size: 12px; }
+.btn-pp-lg { padding: 14px 26px; font-size: 15px; gap: 9px; }
+.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm, .btn-pp-dark.btn-sm { padding: 7px 14px; font-size: 12px; gap: 6px; }
 
 /* --------------------------------------------------- surfaces: the model -- */
-.pp-panel {
-  background: var(--pp-glass);
-  backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
-  border: 1px solid var(--pp-glass-line);
-  border-radius: var(--pp-radius-panel);
-  box-shadow: var(--pp-shadow-panel);
-  padding: var(--pp-panel-pad);
-}
-
 .pp-card, .pp-scenario, .pp-rec {
   position: relative;
   isolation: isolate;
@@ -183,7 +226,6 @@ a:hover { color: var(--pp-violet); }
   border: 1px solid var(--pp-glass-line);
   border-radius: var(--pp-radius-panel);
   box-shadow: var(--pp-shadow-panel);
-  /* glass gutter + white-card interior */
   padding: calc(var(--pp-panel-pad) + var(--pp-card-pad));
 }
 .pp-card::before, .pp-scenario::before, .pp-rec::before {
@@ -195,38 +237,43 @@ a:hover { color: var(--pp-violet); }
   background: var(--pp-card);
   box-shadow: var(--pp-shadow-card);
 }
-.pp-card-soft::before { background: var(--pp-subtle); box-shadow: none; }
-.pp-card-dark { color: #fff; }
-.pp-card-dark::before { background: var(--pp-action); box-shadow: var(--pp-shadow-action); }
-.pp-card-dark h1, .pp-card-dark h2, .pp-card-dark h3, .pp-card-dark h4,
-.pp-card-dark .pp-eyebrow, .pp-card-dark .pp-kpi { color: #fff; }
-.pp-card-dark .pp-muted, .pp-card-dark ul { color: rgba(255, 255, 255, 0.72) !important; }
 
-/* A plain white card, for use inside an explicit .pp-panel. */
+/* --- tier 1: primary. One per screen: the decision being presented. -------- */
+.pp-card--primary {
+  padding: calc(var(--pp-panel-pad) + var(--pp-card-pad-lg));
+  box-shadow: var(--pp-shadow-panel-lg);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+.pp-card--primary::before { box-shadow: 0 14px 40px -20px rgba(38, 48, 88, 0.4); }
+/* A brand hairline along the top edge of the white card, nothing louder. */
+.pp-card--primary::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  left: calc(var(--pp-panel-pad) + 26px); right: calc(var(--pp-panel-pad) + 26px);
+  top: var(--pp-panel-pad); height: 3px; border-radius: var(--pp-radius-pill);
+  background: var(--pp-brand-gradient);
+}
+
+/* --- tier 2: secondary is the bare `.pp-card` above. ---------------------- */
+
+/* --- tier 3: insight. Reasoning, explanation, assumptions. ---------------- */
+.pp-card--insight::before { background: var(--pp-brand-wash); }
+
+/* --- tier 4: data. Dense figures; the interior recedes so numbers lead. --- */
+.pp-card--data::before { background: var(--pp-subtle-2); }
+
+/* --- inverted. At most one per screen. ----------------------------------- */
+.pp-card--dark { color: var(--pp-on-dark); }
+.pp-card--dark::before { background: var(--pp-dark); box-shadow: var(--pp-shadow-dark); }
+.pp-card--dark h1, .pp-card--dark h2, .pp-card--dark h3, .pp-card--dark h4,
+.pp-card--dark .pp-eyebrow, .pp-card--dark .pp-kpi { color: var(--pp-on-dark); }
+.pp-card--dark .pp-muted, .pp-card--dark .pp-subhead, .pp-card--dark ul { color: var(--pp-on-dark-muted) !important; }
+
+/* A plain block nested inside a card — never floated on the page wash. */
 .pp-card-bare {
-  background: var(--pp-card);
-  border-radius: var(--pp-radius);
-  box-shadow: var(--pp-shadow-card);
-  padding: var(--pp-card-pad);
-  border: 0;
+  background: var(--pp-card); border-radius: var(--pp-radius);
+  box-shadow: var(--pp-shadow-card); padding: var(--pp-card-pad); border: 0;
 }
-
-/* Card eyebrow — 12px sentence case. Nothing in this system is uppercase. */
-.pp-eyebrow { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--pp-ink); }
-.pp-subhead { font-size: 12px; color: var(--pp-muted); }
-
-/* --------------------------------------------------------------- figures -- */
-/* Figures are always weight 300 and tabular. Nothing here bolds a number. */
-.pp-kpi {
-  font-size: 22px; font-weight: 300; letter-spacing: -0.03em; line-height: 1.15;
-  font-variant-numeric: tabular-nums; color: var(--pp-ink);
-}
-.pp-kpi-xl { font-size: clamp(34px, 5vw, 44px); line-height: 1.1; }
-.pp-kpi-lg { font-size: clamp(28px, 4vw, 34px); line-height: 1.1; }
-.pp-kpi-sm { font-size: 16px; }
-/* The currency mark rides high and quiet beside the figure, never level with it. */
-.pp-kpi-xl { display: flex; align-items: flex-start; }
-.pp-kpi .cur { font-size: 0.45em; color: var(--pp-muted); margin: 0.45em 2px 0 0; }
+.pp-card-bare--data { background: var(--pp-subtle-2); box-shadow: none; }
 
 /* ----------------------------------------------------------------- shell -- */
 /* The header is the only sticky element, and it floats as a pill. */
@@ -238,233 +285,299 @@ a:hover { color: var(--pp-violet); }
   backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
   border: 1px solid var(--pp-glass-line);
   border-radius: var(--pp-radius-pill);
-  padding: 10px 12px 10px 20px;
+  padding: 9px 10px 9px 18px;
   box-shadow: var(--pp-shadow-panel);
 }
-.pp-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--pp-ink); font-size: 15px; letter-spacing: -0.02em; }
-.pp-logo svg { width: 24px; height: 24px; }
-.pp-nav a { color: var(--pp-ink-2); font-weight: 400; font-size: 13px; margin-left: 22px; }
-.pp-nav a.active { color: var(--pp-ink); font-weight: 500; }
+.pp-logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; color: var(--pp-ink); font-size: 15px; letter-spacing: -0.02em; }
+.pp-logo svg { width: 26px; height: 26px; }
+/* No `display` here: the markup's `d-none d-sm-flex` owns that, and setting it
+   in this file would win on order and leave the nav visible on phones. */
+.pp-nav { align-items: center; gap: 4px; }
+.pp-nav a {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--pp-ink-2);
+  font-weight: 400; font-size: 13px; padding: 6px 12px; border-radius: var(--pp-radius-pill);
+  transition: background var(--pp-ease), color var(--pp-ease);
+}
+.pp-nav a:hover { color: var(--pp-ink); background: rgba(255, 255, 255, 0.55); }
+/* Active state is brand, like the mark and the primary action. */
+.pp-nav a.active { color: var(--pp-brand-ink); background: var(--pp-brand-soft); font-weight: 500; }
 .pp-footer { padding: 32px 0 48px; color: var(--pp-ink-2); font-size: 12px; }
 
 /* Notices are quiet pills; the frosted one is the only translucent inline UI. */
-.pp-notice {
-  display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px;
-  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line); color: var(--pp-ink-2);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+.pp-notice, .pp-warn, .pp-ok {
+  display: inline-flex; align-items: center; gap: 7px; border-radius: var(--pp-radius-pill);
+  padding: 9px 16px; font-size: 12px; line-height: 1.45;
 }
-.pp-warn { display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px; background: var(--pp-warn-soft); color: #8a5d13; }
-.pp-ok { display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px; background: var(--pp-pos-soft); color: #16603f; }
+.pp-notice {
+  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line); color: var(--pp-ink-2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.pp-warn { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
+.pp-ok { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
 /* Notices that wrap relax from a pill to a rounded block. */
-.pp-notice-block, .pp-warn-block, .pp-ok-block { display: block; border-radius: var(--pp-radius-md); padding: 12px 16px; line-height: 1.55; }
+.pp-notice-block, .pp-warn-block, .pp-ok-block {
+  display: flex; align-items: flex-start; border-radius: var(--pp-radius-md); padding: 12px 16px; line-height: 1.55;
+}
+.pp-notice-block pp-icon, .pp-warn-block pp-icon, .pp-ok-block pp-icon,
+.pp-notice-block .pp-i, .pp-warn-block .pp-i, .pp-ok-block .pp-i { margin-top: 1px; }
+
+/* An icon in a soft round chip — used for category heads and step markers. */
+.pp-icon-badge {
+  width: 34px; height: 34px; border-radius: var(--pp-radius-md); display: inline-grid; place-items: center;
+  background: var(--pp-brand-soft); color: var(--pp-brand-ink); flex: 0 0 auto;
+}
+.pp-icon-badge--plain { background: var(--pp-subtle); color: var(--pp-ink-2); }
+.pp-icon-badge--sm { width: 26px; height: 26px; border-radius: var(--pp-radius-sm); }
 
 /* --------------------------------------------------------------- landing -- */
-.pp-hero { padding: 64px 0 40px; text-align: center; }
-.pp-hero h1 { font-size: clamp(34px, 5vw, 52px); font-weight: 300; line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
+.pp-hero { padding: 60px 0 40px; text-align: center; }
+.pp-hero h1 { font-size: clamp(34px, 5vw, 54px); font-weight: 300; line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
 .pp-hero p.lead { font-size: 15px; color: var(--pp-ink-2); max-width: 560px; margin: 18px auto 26px; }
 .pp-gradient-text { background: var(--pp-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .pp-section { padding: 48px 0 0; }
-.pp-section h2 { font-size: 28px; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
+.pp-section h2 { font-size: clamp(24px, 3vw, 30px); font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
 .pp-section .text-center p { font-size: 13px; }
 .pp-chip {
   display: inline-flex; align-items: center; gap: 6px; border-radius: var(--pp-radius-pill);
   background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line);
   padding: 6px 12px; font-size: 12px; font-weight: 400; color: var(--pp-ink-2);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
+.pp-chip pp-icon { color: var(--pp-brand-ink); }
 .pp-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--pp-grid-gap); }
 .pp-flow h5 { font-size: 15px; font-weight: 500; margin: 12px 0 6px; }
 .pp-flow p { font-size: 13px; color: var(--pp-ink-2); }
 .pp-step-num {
-  width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center;
-  background: var(--pp-accent-soft); color: var(--pp-accent); font-weight: 500; font-size: 13px;
+  width: 32px; height: 32px; border-radius: var(--pp-radius-md); display: inline-grid; place-items: center;
+  background: var(--pp-brand-soft); color: var(--pp-brand-ink); font-weight: 600; font-size: 13px;
 }
 
-.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 8px; column-gap: 16px; font-size: 13px; }
+.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 9px; column-gap: 16px; font-size: 13px; }
 .pp-ledger > :nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
-.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 10px; font-weight: 500; color: inherit; }
-.pp-plus { color: var(--pp-pos); font-weight: 500; }
+.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 11px; font-weight: 500; color: inherit; }
 
 /* --------------------------------------------------------- questionnaire -- */
+/* A consultation, not a form: segments show how far the conversation has run. */
+.pp-steps { display: flex; gap: 5px; }
+.pp-steps .seg {
+  flex: 1; height: 5px; border-radius: var(--pp-radius-pill); background: rgba(255, 255, 255, 0.55);
+  transition: background var(--pp-ease-slow);
+}
+.pp-steps .seg.done { background: var(--pp-brand-2); }
+.pp-steps .seg.current { background: var(--pp-brand); }
+.pp-steps-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: var(--pp-ink-2); margin-bottom: 8px; }
+.pp-steps-meta .now { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--pp-ink); }
+
+/* Progress (roadmap completion) */
 .pp-progress { height: 6px; background: var(--pp-subtle); border-radius: var(--pp-radius-pill); overflow: hidden; }
-.pp-progress > div { height: 100%; background: var(--pp-gradient-text); border-radius: var(--pp-radius-pill); transition: width var(--pp-ease-slow); }
-.pp-q-label { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: var(--pp-ink); }
-.pp-q-help { font-size: 12px; color: var(--pp-muted); margin-bottom: 8px; }
+.pp-progress > div { height: 100%; background: var(--pp-gradient-bar); border-radius: var(--pp-radius-pill); transition: width var(--pp-ease-slow); }
+
+.pp-q { padding: 16px 0; border-top: 1px solid var(--pp-line); }
+.pp-q:first-of-type { border-top: 0; padding-top: 4px; }
+.pp-q-label { font-size: 15px; font-weight: 500; margin-bottom: 4px; color: var(--pp-ink); }
+.pp-q-help { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--pp-muted); margin-bottom: 10px; }
+.pp-q-help pp-icon { margin-top: 1px; color: var(--pp-brand-ink); }
 
 /* Fields show no border until focus, which draws a hairline plus a 4px ring. */
 .pp-input-group {
   display: flex; align-items: stretch; background: var(--pp-subtle);
   border: 1px solid transparent; border-radius: var(--pp-radius-pill); overflow: hidden;
-  transition: border-color var(--pp-ease), box-shadow var(--pp-ease);
+  transition: border-color var(--pp-ease), box-shadow var(--pp-ease), background var(--pp-ease);
 }
-.pp-input-group:focus-within { border-color: var(--pp-accent); box-shadow: var(--pp-ring-accent); }
+.pp-input-group:hover { background: #e8ecf6; }
+.pp-input-group:focus-within { background: #fff; border-color: var(--pp-brand); box-shadow: var(--pp-ring-brand); }
 .pp-input-group input, .pp-input-group select {
-  flex: 1; border: 0; outline: 0; padding: 12px 16px; font-size: 14px; background: transparent;
+  flex: 1; border: 0; outline: 0; padding: 12px 16px; font-size: 15px; background: transparent;
   min-width: 0; font-family: inherit; color: var(--pp-ink); font-variant-numeric: tabular-nums;
 }
 .pp-input-group .affix { display: flex; align-items: center; padding: 0 14px; color: var(--pp-muted); font-size: 13px; white-space: nowrap; }
 .pp-input-group .affix.pre { padding-right: 0; font-weight: 500; color: var(--pp-ink-2); }
 .pp-input-group .affix:not(.pre) { padding-left: 0; }
-.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; }
-.pp-error { color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
+.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; background: #fff; }
+.pp-error { display: flex; align-items: center; gap: 6px; color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
 
 .pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .pp-option {
   background: var(--pp-subtle); border: 1px solid transparent; border-radius: var(--pp-radius-md);
-  padding: 14px 16px; text-align: left; cursor: pointer; font-family: inherit; font-size: 13px;
-  font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: flex-start;
+  padding: 13px 15px; text-align: left; cursor: pointer; font-family: inherit; font-size: 13px;
+  font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: center;
   transition: background var(--pp-ease), border-color var(--pp-ease);
 }
-.pp-option:hover { background: var(--pp-subtle-2); }
-.pp-option.selected { background: var(--pp-accent-soft); border-color: var(--pp-accent); }
-.pp-option .icon { font-size: 18px; line-height: 1; }
+.pp-option:hover { background: #e8ecf6; }
+.pp-option.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); }
+.pp-option .tick { margin-left: auto; color: var(--pp-brand-ink); display: none; }
+.pp-option.selected .tick { display: inline-flex; }
 .pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
 
 .pp-type-card {
-  background: #fff; border: 1px solid transparent; border-radius: var(--pp-radius-md); padding: 16px;
+  background: #fff; border: 1px solid transparent; border-radius: var(--pp-radius-md); padding: 14px;
   cursor: pointer; text-align: left; font-family: inherit; box-shadow: var(--pp-shadow-soft);
+  display: flex; gap: 11px; align-items: flex-start;
   transition: box-shadow var(--pp-ease), transform var(--pp-ease), background var(--pp-ease), border-color var(--pp-ease);
 }
 .pp-type-card:hover { box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
-.pp-type-card.selected { background: var(--pp-accent-soft); border-color: var(--pp-accent); box-shadow: none; transform: none; }
-.pp-type-card .icon { font-size: 20px; line-height: 1; }
-.pp-type-card .name { font-weight: 500; margin-top: 6px; font-size: 13px; color: var(--pp-ink); }
+.pp-type-card.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); box-shadow: none; transform: none; }
+.pp-type-card.selected .pp-icon-badge { background: #fff; }
+.pp-type-card .name { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
 .pp-type-card small { color: var(--pp-muted); display: block; font-size: 12px; margin-top: 2px; }
 
-.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-accent-soft); border-radius: var(--pp-radius-md); padding: 14px 16px; }
-.pp-detect .icon { font-size: 22px; }
+.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-brand-soft); border-radius: var(--pp-radius-md); padding: 13px 15px; }
 .pp-detect .title { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
+.pp-detect .sub { font-size: 12px; color: var(--pp-brand-ink); }
 
 /* --------------------------------------------------------------- results -- */
-/* Metric tiles are pale blocks inside a card, never cards in their own right. */
-.pp-metric { background: var(--pp-subtle); border: 0; border-radius: var(--pp-radius-md); padding: 16px; height: 100%; }
-.pp-metric .pp-eyebrow { font-weight: 400; color: var(--pp-muted); margin-bottom: 6px; }
-.pp-metric .sub { font-size: 12px; color: var(--pp-muted); margin-top: 4px; }
-
-/* The violet orb — one per screen, on the single most important figure. */
-.pp-split { display: flex; align-items: center; }
-.pp-split .side {
-  flex: 1; min-width: 0; background: var(--pp-subtle); border-radius: var(--pp-radius-pill);
-  padding: 18px 22px; text-align: center;
+/* The unit-economics strip under the recommended price: three supporting
+   figures, each clearly subordinate to the price above them. */
+.pp-stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.pp-stat {
+  background: var(--pp-subtle); border-radius: var(--pp-radius-md); padding: 14px 16px; min-width: 0;
 }
-.pp-split .side.left { padding-right: 46px; margin-right: -34px; }
-.pp-split .side.right { padding-left: 46px; margin-left: -34px; }
-.pp-split .fig { font-size: 22px; font-weight: 300; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.pp-split .cap { font-size: 11px; color: var(--pp-muted); margin-top: 2px; }
-.pp-orb {
-  width: 118px; height: 118px; border-radius: 50%; background: var(--pp-gradient-orb);
-  box-shadow: var(--pp-glow-orb); display: grid; place-items: center; color: #fff;
-  position: relative; z-index: 2; flex: 0 0 auto; text-align: center;
-}
-.pp-orb .fig { color: #fff; }
-.pp-orb .cap { color: rgba(255, 255, 255, 0.8); }
+.pp-stat .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
+.pp-stat .v { font-size: var(--pp-fig-lg); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pp-stat--accent { background: var(--pp-brand-soft); }
+.pp-stat--accent .k { color: var(--pp-brand-ink); }
 
-/* The recommended scenario is the near-black card. */
+/* Metric tiles — pale blocks inside a card, never cards in their own right. */
+.pp-metric { background: var(--pp-subtle); border: 0; border-radius: var(--pp-radius-md); padding: 14px 16px; height: 100%; }
+.pp-card--data .pp-metric { background: #fff; box-shadow: var(--pp-shadow-soft); }
+.pp-metric .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
+.pp-metric .sub { font-size: 11px; color: var(--pp-muted); margin-top: 4px; }
+
+/* Current vs optimised — the single clearest statement of what the roadmap is
+   worth. Figures come from the engine; the bar is their real proportion. */
+.pp-compare { display: grid; gap: 14px; }
+.pp-compare__row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px 28px; }
+.pp-compare__side { min-width: 0; }
+.pp-compare__side .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 4px; }
+.pp-compare__arrow { display: flex; align-items: center; color: var(--pp-muted); padding-bottom: 8px; }
+.pp-compare__lift {
+  display: inline-flex; align-items: center; gap: 7px; align-self: center;
+  background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: var(--pp-radius-pill);
+  padding: 8px 15px; font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 500;
+}
+.pp-compare__bar { display: flex; height: 12px; border-radius: var(--pp-radius-pill); overflow: hidden; background: var(--pp-subtle); }
+.pp-compare__bar .now { background: var(--pp-brand); }
+.pp-compare__bar .lift { background: var(--pp-gradient-bar); opacity: 0.45; }
+.pp-compare__key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11px; color: var(--pp-muted); }
+.pp-compare__key i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+
+/* Scenario cards stay a tier below the recommended price. */
 .pp-scenario { height: 100%; }
 .pp-scenario::before { box-shadow: var(--pp-shadow-soft); }
-.pp-scenario.recommended { color: #fff; }
-.pp-scenario.recommended::before { background: var(--pp-action); box-shadow: var(--pp-shadow-action); }
-.pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-eyebrow { color: rgba(255, 255, 255, 0.72) !important; }
-.pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.2); }
-.pp-scenario .price { font-size: 34px; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pp-scenario.recommended { color: var(--pp-on-dark); }
+.pp-scenario.recommended::before { background: var(--pp-dark); box-shadow: var(--pp-shadow-dark); }
+.pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-subhead { color: var(--pp-on-dark-muted) !important; }
+.pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.22); }
+.pp-scenario .price { font-size: var(--pp-fig-xl); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 
-/* Badges are soft pills — quiet, and never colour alone. */
+/* Badges are soft pills — the text carries the meaning, never colour alone. */
 .pp-badge {
   display: inline-flex; align-items: center; gap: 5px; border-radius: var(--pp-radius-pill);
   font-size: 11px; font-weight: 500; padding: 4px 10px; letter-spacing: 0.01em;
   background: var(--pp-neutral-soft); color: var(--pp-ink-2);
 }
-.pp-badge.low { background: var(--pp-warn-soft); color: #8a5d13; }
-.pp-badge.recommended { background: var(--pp-accent-soft); color: var(--pp-accent); }
-.pp-badge.premium { background: var(--pp-violet-soft); color: var(--pp-violet); }
-.pp-badge.loss { background: var(--pp-neg-soft); color: var(--pp-neg); }
-.pp-badge.high { background: var(--pp-accent-soft); color: var(--pp-accent); }
-.pp-badge.medium { background: var(--pp-warn-soft); color: #8a5d13; }
+.pp-badge.low, .pp-badge.medium { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
+.pp-badge.recommended, .pp-badge.high { background: var(--pp-brand-soft); color: var(--pp-brand-ink); }
+.pp-badge.premium, .pp-badge.hard { background: var(--pp-brand-2-soft); color: var(--pp-brand-2-ink); }
+.pp-badge.loss { background: var(--pp-neg-soft); color: var(--pp-neg-ink); }
 .pp-badge.neutral { background: var(--pp-neutral-soft); color: var(--pp-ink-2); }
-.pp-badge.easy { background: var(--pp-pos-soft); color: var(--pp-pos); }
-.pp-badge.hard { background: var(--pp-violet-soft); color: var(--pp-violet); }
+.pp-badge.easy { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
+/* On the inverted card, badges invert too. */
+.pp-scenario.recommended .pp-badge { background: rgba(255, 255, 255, 0.16); color: #fff; }
 
 /* Cost bar — individually pill-rounded segments separated by 3px gaps. */
 .pp-bar { display: flex; gap: 3px; height: 10px; background: transparent; }
 .pp-bar span { display: block; height: 100%; border-radius: var(--pp-radius-pill); }
-.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; font-size: 12px; }
+.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 7px 16px; font-size: 12px; }
 .pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
 
-/* Tabs sit on a frosted bed; the active tab is a near-black pill. */
+/* Tabs sit on a frosted bed; the active tab is the brand. */
 .pp-tabs {
   display: inline-flex; gap: 4px; background: var(--pp-glass-strong);
   border: 1px solid var(--pp-glass-line); border-radius: var(--pp-radius-pill); padding: 4px;
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .pp-tabs button {
-  border: 0; background: transparent; padding: 8px 18px; border-radius: var(--pp-radius-pill);
-  font-weight: 500; font-size: 13px; color: var(--pp-ink-2); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; background: transparent; padding: 8px 16px; border-radius: var(--pp-radius-pill);
+  font-family: inherit; font-weight: 500; font-size: 13px; color: var(--pp-ink-2); cursor: pointer;
   transition: background var(--pp-ease), color var(--pp-ease);
 }
-.pp-tabs button.active { background: var(--pp-action); color: #fff; }
+.pp-tabs button:hover { color: var(--pp-ink); }
+.pp-tabs button.active { background: var(--pp-brand); color: #fff; }
 
-.pp-slider label { display: flex; justify-content: space-between; font-weight: 500; font-size: 13px; margin-bottom: 4px; }
-.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-accent); font-weight: 400; }
-.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-accent); }
-.pp-slider small { color: var(--pp-muted); font-size: 12px; }
-.pp-delta { font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.pp-slider { margin-bottom: 14px; }
+.pp-slider label { display: flex; justify-content: space-between; gap: 12px; font-weight: 500; font-size: 13px; margin-bottom: 5px; }
+.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-brand-ink); font-weight: 400; }
+.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-brand); }
+.pp-slider small { color: var(--pp-muted); font-size: 11px; }
+.pp-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .pp-delta.up { color: var(--pp-pos); }
 .pp-delta.down { color: var(--pp-neg); }
 
 /* --------------------------------------------------------------- roadmap -- */
-/* The blue gradient trend card — one per screen. */
-.pp-trend { background: var(--pp-gradient-trend); border-radius: var(--pp-radius); padding: var(--pp-card-pad); color: #fff; }
-.pp-trend .pp-eyebrow, .pp-trend .pp-muted { color: rgba(255, 255, 255, 0.82) !important; }
-.pp-trend .pp-kpi { color: #fff; }
-.pp-trend strong { font-weight: 500; color: #fff; }
+/* The single highest-impact move, pulled out of the list. */
+.pp-spot__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pp-spot__head { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 10px; }
 
+/* A recommendation states four things: impact, difficulty, priority, next step. */
 .pp-rec { transition: opacity var(--pp-ease); }
 .pp-rec::before { box-shadow: var(--pp-shadow-soft); transition: box-shadow var(--pp-ease); }
 .pp-rec:hover::before { box-shadow: var(--pp-shadow-card); }
-.pp-rec.done { opacity: 0.55; }
-.pp-rec .impact { font-size: 22px; font-weight: 300; color: var(--pp-pos); letter-spacing: -0.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.pp-rec h4 { font-size: 15px; font-weight: 500; letter-spacing: -0.02em; margin: 8px 0 0; }
-.pp-rec .label { font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--pp-muted); font-weight: 400; margin-bottom: 2px; }
-.pp-rec p { margin-bottom: 10px; font-size: 13px; color: var(--pp-ink-2); }
-.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-left: 16px; margin: 8px 0 0; }
-.pp-rec summary { color: var(--pp-muted); font-size: 12px; cursor: pointer; }
-
-/* Round, and near-black when checked — a completed item is never green. */
-.pp-check {
-  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--pp-line);
-  display: inline-grid; place-items: center; cursor: pointer; background: #fff; color: #fff;
-  font-family: inherit; font-size: 12px; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
+.pp-rec.done { opacity: 0.6; }
+.pp-rec.done h4 { text-decoration: line-through; text-decoration-color: var(--pp-muted); }
+.pp-rec h4 { font-size: 16px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+.pp-rec p { margin: 0; font-size: 13px; color: var(--pp-ink-2); }
+.pp-rec__impact { text-align: right; }
+.pp-rec__impact .v { font-size: var(--pp-fig-lg); font-weight: 300; color: var(--pp-pos); letter-spacing: -0.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pp-rec__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+/* The next action is the point of the card, so it gets its own surface. */
+.pp-rec__action {
+  display: flex; gap: 10px; align-items: flex-start; background: var(--pp-brand-wash);
+  border-radius: var(--pp-radius-md); padding: 12px 14px; font-size: 13px; color: var(--pp-ink-2);
 }
-.pp-check.on { background: var(--pp-action); border-color: var(--pp-action); color: #fff; }
+.pp-rec__action .k { font-size: 11px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 3px; }
+.pp-rec summary { display: flex; align-items: center; gap: 6px; color: var(--pp-muted); font-size: 12px; cursor: pointer; list-style: none; }
+.pp-rec summary::-webkit-details-marker { display: none; }
+.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-left: 18px; margin: 8px 0 0; }
 
-.pp-cat-head { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; }
-.pp-cat-head .icon { font-size: 18px; }
-.pp-cat-head h3 { font-size: 20px; font-weight: 400; letter-spacing: -0.02em; margin: 0; }
+/* Round, brand when checked — a completed item reads as done, not as an alarm. */
+.pp-check {
+  width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--pp-line);
+  display: inline-grid; place-items: center; cursor: pointer; background: #fff; color: var(--pp-muted);
+  font-family: inherit; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
+}
+.pp-check:hover { border-color: var(--pp-brand); color: var(--pp-brand-ink); }
+.pp-check.on { background: var(--pp-pos); border-color: var(--pp-pos); color: #fff; }
 
-/* Ranked 6px pill tracks. */
-.pp-waterfall { display: grid; gap: 10px; }
+.pp-cat-head { display: flex; align-items: center; gap: 11px; margin: 30px 0 12px; }
+.pp-cat-head h3 { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+
+/* Ranked pill tracks. */
+.pp-waterfall { display: grid; gap: 11px; }
 .pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; font-size: 12px; }
-.pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; }
+.pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--pp-ink); }
 .pp-waterfall .track { height: 6px; border-radius: var(--pp-radius-pill); background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
 .pp-waterfall .track span { display: block; height: 100%; background: var(--pp-gradient-bar); border-radius: var(--pp-radius-pill); }
-/* On the trend card the tracks invert to white on translucent white. */
-.pp-trend .pp-waterfall .track { background: rgba(255, 255, 255, 0.22); }
-.pp-trend .pp-waterfall .track span { background: #fff; }
 
 /* ------------------------------------------------------------- animation -- */
 /* Route entry is one keyframe. No bounces, no springs, no scroll reveals. */
 .pp-fade { animation: ppfade var(--pp-ease-slow) both; }
 @keyframes ppfade { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 
+@media (max-width: 768px) {
+  .pp-stat-strip { grid-template-columns: 1fr; }
+}
 @media (max-width: 576px) {
-  .pp-hero { padding: 40px 0 24px; }
-  .pp-kpi { font-size: 20px; }
-  .pp-scenario .price { font-size: 28px; }
-  .pp-split { flex-direction: column; gap: 10px; }
-  .pp-split .side, .pp-split .side.left, .pp-split .side.right { width: 100%; margin: 0; padding: 14px 18px; }
-  .pp-card, .pp-scenario, .pp-rec { padding: calc(var(--pp-panel-pad) + 14px); }
+  .pp-hero { padding: 36px 0 24px; }
+  .pp-card, .pp-scenario, .pp-rec { padding: calc(var(--pp-panel-pad) + 15px); }
+  .pp-card--primary { padding: calc(var(--pp-panel-pad) + 18px); }
+  .pp-card--primary::after { left: calc(var(--pp-panel-pad) + 16px); right: calc(var(--pp-panel-pad) + 16px); }
+  .pp-compare__row { gap: 12px; }
+  .pp-nav a { padding: 6px 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pp-fade, .pp-progress > div, .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass { animation: none; transition: none; }
+  .pp-fade, .pp-progress > div, .pp-steps .seg,
+  .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark { animation: none; transition: none; }
 }

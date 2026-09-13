@@ -7,7 +7,8 @@
 @media (min-width: 768px) { .col-md-4 { width: 33.3333%; } .col-md-5 { width: 41.6667%; } .col-md-7 { width: 58.3333%; } .col-md-8 { width: 66.6667%; } }
 @media (min-width: 992px) { .col-lg-4 { width: 33.3333%; } .col-lg-5 { width: 41.6667%; } .col-lg-7 { width: 58.3333%; } .col-lg-8 { width: 66.6667%; } }
 .d-flex { display: flex; } .d-grid { display: grid; } .d-none { display: none; } .d-block { display: block; }
-@media (min-width: 576px) { .d-sm-block { display: block; } }
+@media (min-width: 576px) { .d-sm-block { display: block; } .d-sm-flex { display: flex; } }
+.ms-auto { margin-left: auto; } .mt-auto { margin-top: auto; }
 .flex-wrap { flex-wrap: wrap; } .flex-grow-1 { flex-grow: 1; } .flex-column { flex-direction: column; }
 .justify-content-between { justify-content: space-between; } .justify-content-center { justify-content: center; } .justify-content-end { justify-content: flex-end; }
 .align-items-center { align-items: center; } .align-items-start { align-items: flex-start; } .align-items-stretch { align-items: stretch; }

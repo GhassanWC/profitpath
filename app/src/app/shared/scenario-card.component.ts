@@ -1,16 +1,27 @@
 import { Component, input } from '@angular/core';
 import { Scenario } from '../core/engine';
+import { IconComponent } from './icon.component';
+import { SCENARIO_ICONS } from './icons';
 import { MoneyPipe, PctPipe } from './pipes';
+
+const STATUS_TEXT: Record<string, string> = {
+  low: 'Thin margin',
+  recommended: 'Recommended',
+  premium: 'Higher margin',
+  loss: 'Loses money',
+};
 
 @Component({
   selector: 'pp-scenario-card',
   standalone: true,
-  imports: [MoneyPipe, PctPipe],
+  imports: [MoneyPipe, PctPipe, IconComponent],
   template: `
     <div class="pp-scenario" [class.recommended]="scenario().key === 'recommended'">
       <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-        <span class="pp-muted" style="font-size: 12px">{{ scenario().label }}</span>
-        <span class="pp-badge" [class]="'pp-badge ' + scenario().status">{{ statusText }}</span>
+        <span class="pp-subhead">{{ scenario().label }}</span>
+        <span class="pp-badge" [class]="'pp-badge ' + scenario().status">
+          <pp-icon [name]="statusIcon" [size]="11" />{{ statusText }}
+        </span>
       </div>
       <div class="price pp-num">{{ scenario().price | money: currency() : 0 }}</div>
       <div class="pp-ledger mt-3">
@@ -36,7 +47,10 @@ export class ScenarioCardComponent {
   unitLabel = input('unit');
 
   get statusText(): string {
-    const s = this.scenario().status;
-    return s === 'low' ? '⚠️ Thin margin' : s === 'recommended' ? '🟢 Recommended' : s === 'premium' ? '🔵 Higher margin' : '🔴 Loss';
+    return STATUS_TEXT[this.scenario().status] ?? this.scenario().status;
+  }
+
+  get statusIcon(): string {
+    return SCENARIO_ICONS[this.scenario().status as keyof typeof SCENARIO_ICONS] ?? 'info';
   }
 }

@@ -10,7 +10,8 @@
 @media (min-width: 768px) { .col-md-4 { width: 33.3333%; } .col-md-5 { width: 41.6667%; } .col-md-7 { width: 58.3333%; } .col-md-8 { width: 66.6667%; } }
 @media (min-width: 992px) { .col-lg-4 { width: 33.3333%; } .col-lg-5 { width: 41.6667%; } .col-lg-7 { width: 58.3333%; } .col-lg-8 { width: 66.6667%; } }
 .d-flex { display: flex; } .d-grid { display: grid; } .d-none { display: none; } .d-block { display: block; }
-@media (min-width: 576px) { .d-sm-block { display: block; } }
+@media (min-width: 576px) { .d-sm-block { display: block; } .d-sm-flex { display: flex; } }
+.ms-auto { margin-left: auto; } .mt-auto { margin-top: auto; }
 .flex-wrap { flex-wrap: wrap; } .flex-grow-1 { flex-grow: 1; } .flex-column { flex-direction: column; }
 .justify-content-between { justify-content: space-between; } .justify-content-center { justify-content: center; } .justify-content-end { justify-content: flex-end; }
 .align-items-center { align-items: center; } .align-items-start { align-items: flex-start; } .align-items-stretch { align-items: stretch; }
@@ -33,104 +34,111 @@ input, select { font: inherit; color: inherit; }
 
 /* ============================================================================
    ProfitPath design system
-   Visual language: the frosted-glass dashboard on a periwinkle wash.
-   Product structure: unchanged — this file only restyles the existing markup.
+   A quiet, premium surface for a profit strategist: soft glass on a periwinkle
+   wash, one brand gradient, and figures that are scannable before they are read.
 
    Two-layer surface model
    -----------------------
-   Content never sits straight on the page wash. `.pp-card` IS the frosted glass
-   panel; the white card inside it is drawn by its `::before` at a 12px inset.
-   That keeps both layers in one element, so the Angular templates and the
-   dependency-free preview share the same markup.
-     .pp-card        glass panel + white card   (the default)
-     .pp-card-soft   glass panel + pale card
-     .pp-card-dark   glass panel + near-black card
-     .pp-card-bare   white card only — use inside an explicit .pp-panel
-     .pp-panel       glass panel only — for grouping several bare cards
+   Content never sits straight on the page wash. `.pp-card` IS the glass panel;
+   the card inside it is drawn by its `::before` at a 12px inset. That keeps both
+   layers in one element, so the Angular templates and the dependency-free
+   preview share the same markup.
+
+   Card hierarchy — four treatments, and one inverted. Do not invent a fifth.
+     .pp-card                 secondary — the default content card
+     .pp-card--primary        the decision on the page: deeper, roomier, brand edge
+     .pp-card--insight        explanation and reasoning: faint brand wash
+     .pp-card--data           dense figures: pale interior
+     .pp-card--dark           inverted, at most one per screen
+     .pp-card-bare            a plain block nested inside one of the above
    ========================================================================== */
 
 /* ---------------------------------------------------------------- tokens -- */
 :root {
   /* Page — periwinkle → pale-blue wash */
-  --pp-bg-1: #9ba5d9;
   --pp-bg-2: #c3cbe6;
-  --pp-bg-3: #dfe4ee;
   --pp-page: linear-gradient(160deg, #9ba5d9 0%, #c3cbe6 46%, #dfe4ee 100%);
-  --pp-bg: var(--pp-bg-2);
 
-  /* Glass */
-  --pp-glass: rgba(255, 255, 255, 0.42);
-  --pp-glass-strong: rgba(255, 255, 255, 0.62);
-  --pp-glass-line: rgba(255, 255, 255, 0.55);
-  --pp-glass-blur: 24px;
+  /* Glass — restrained: more solid, less blur than a typical glass UI, so text
+     on it stays crisp and the effect reads as material rather than as an effect. */
+  --pp-glass: rgba(255, 255, 255, 0.55);
+  --pp-glass-strong: rgba(255, 255, 255, 0.72);
+  --pp-glass-line: rgba(255, 255, 255, 0.6);
+  --pp-glass-blur: 14px;
 
   /* Solid surfaces */
   --pp-card: #ffffff;
   --pp-subtle: #eef1f8;
   --pp-subtle-2: #f6f8fc;
-  --pp-line: #eceff5;
+  --pp-line: #e6eaf2;
 
-  /* Ink */
-  --pp-ink: #1a1c22;
-  --pp-ink-2: #4b505c;
-  --pp-muted: #8b90a0;
+  /* Ink — every value below is >= 4.5:1 on white, on --pp-subtle and on
+     --pp-subtle-2, so secondary text never reads as disabled. */
+  --pp-ink: #1a1c22;        /* 17.0:1 */
+  --pp-ink-2: #4b505c;      /*  8.1:1 */
+  --pp-muted: #656b7b;      /*  5.3:1 white · 4.7:1 on tiles */
 
-  /* Action — near-black pill buttons */
-  --pp-action: #111318;
-  --pp-action-hover: #26292f;
+  /* Brand — one identity across the mark, the primary action, active state and
+     accents. The gradient is the brand; the solid blue is its working colour. */
+  --pp-brand: #2f6bf6;
+  --pp-brand-hover: #255fe8;
+  --pp-brand-ink: #1f57e0;    /* brand as TEXT: 6.0:1 white, 4.8:1 on brand-soft */
+  --pp-brand-2: #6c5ce7;
+  --pp-brand-2-ink: #5b4bd6;
+  --pp-brand-soft: #dbe7ff;
+  --pp-brand-2-soft: #e7e4fb;
+  --pp-brand-wash: #f4f7ff;   /* insight-card interior */
+  --pp-brand-gradient: linear-gradient(135deg, #2f6bf6 0%, #6c5ce7 100%);
 
-  /* Blue accent */
-  --pp-accent: #2f6bf6;
-  --pp-accent-2: #5b8cff;
-  --pp-accent-soft: #dbe7ff;
+  /* Ink-dark surface — the single inverted card, and nothing else. */
+  --pp-dark: #111318;
+  --pp-dark-hover: #26292f;
+  --pp-on-dark: #ffffff;
+  --pp-on-dark-muted: rgba(255, 255, 255, 0.78);
 
-  /* Violet — reserved for the orb */
-  --pp-violet: #6c5ce7;
-  --pp-violet-2: #8f7ff5;
-  --pp-violet-soft: #e7e4fb;
-
-  /* Semantic */
-  --pp-pos: #1f9d64;
+  /* Semantic — the base is for TEXT, the -ink variant for text on its own soft pill. */
+  --pp-pos: #12784a;        /* 5.5:1 white · 4.9:1 on tiles */
   --pp-pos-soft: #dff3e8;
-  --pp-neg: #e2574c;
+  --pp-pos-ink: #0e6b41;    /* on --pp-pos-soft: 5.7:1 */
+  --pp-neg: #c93a30;        /* 5.1:1 */
   --pp-neg-soft: #fde8e6;
-  --pp-warn: #e8a33d;
+  --pp-neg-ink: #b02f26;
   --pp-warn-soft: #fdf0da;
+  --pp-warn-ink: #7a5210;
   --pp-neutral-soft: #eceff5;
 
-  /* Cost-composition series — blue→violet, with fees left neutral. The cost
-     breakdown component names these tokens rather than repeating the hexes. */
-  --pp-series-1: #2f6bf6; --pp-series-2: #5b8cff; --pp-series-3: #8fb0ff; --pp-series-4: #b9cdff;
-  --pp-series-5: #6c5ce7; --pp-series-6: #8f7ff5; --pp-series-7: #c4bdfa;
-  --pp-series-8: #aeb5c6; --pp-series-9: #ccd2de;
-  /* Aliases kept so template inline styles and the preview utilities resolve. */
-  --pp-primary: var(--pp-accent);
+  /* The preview's utility sheet resolves .text-danger through this alias. */
   --pp-danger: var(--pp-neg);
-  --pp-success: var(--pp-pos);
 
-  /* Gradients — three places only, plus the landing headline */
-  --pp-gradient-orb: radial-gradient(circle at 35% 30%, #9d8cff 0%, #6c5ce7 55%, #5a49d6 100%);
-  --pp-gradient-trend: linear-gradient(135deg, #4a7bf7 0%, #7aa8ff 55%, #9dc0ff 100%);
-  --pp-gradient-bar: linear-gradient(180deg, #8fb0ff 0%, #2f6bf6 100%);
+  /* Gradients — the brand mark, the comparison lift, the trend card, the bars,
+     the landing headline. Never behind body text, never on a page background. */
+  --pp-gradient-bar: linear-gradient(90deg, #2f6bf6 0%, #6c5ce7 100%);
   --pp-gradient-text: linear-gradient(90deg, #2f6bf6 0%, #6c5ce7 100%);
 
   /* Type */
   --pp-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  /* Shape — everything round; no square corners, no rectangular buttons */
-  --pp-radius-panel: 28px;
-  --pp-radius: 20px;
-  --pp-radius-md: 16px;
-  --pp-radius-sm: 12px;
+  /* Figure scale — the hierarchy that makes results scannable. */
+  --pp-fig-hero: clamp(46px, 7vw, 68px);
+  --pp-fig-xl: clamp(28px, 3.4vw, 36px);
+  --pp-fig-lg: 26px;
+  --pp-fig-md: 20px;
+  --pp-fig-sm: 15px;
+
+  /* Shape */
+  --pp-radius-panel: 26px;
+  --pp-radius: 18px;
+  --pp-radius-md: 14px;
+  --pp-radius-sm: 10px;
   --pp-radius-pill: 999px;
 
-  --pp-shadow-panel: 0 24px 60px -28px rgba(44, 54, 96, 0.38);
-  --pp-shadow-card: 0 10px 30px -16px rgba(26, 28, 34, 0.2);
-  --pp-shadow-soft: 0 2px 8px -4px rgba(26, 28, 34, 0.12);
-  --pp-shadow-action: 0 8px 20px -10px rgba(17, 19, 24, 0.55);
-  --pp-ring-accent: 0 0 0 4px rgba(47, 107, 246, 0.16);
-  --pp-glow-orb: 0 0 60px 10px rgba(108, 92, 231, 0.35);
-  --pp-shadow: var(--pp-shadow-card);
+  --pp-shadow-panel: 0 18px 44px -26px rgba(38, 48, 88, 0.32);
+  --pp-shadow-panel-lg: 0 28px 64px -30px rgba(38, 48, 88, 0.42);
+  --pp-shadow-card: 0 8px 24px -14px rgba(26, 28, 34, 0.18);
+  --pp-shadow-soft: 0 2px 8px -4px rgba(26, 28, 34, 0.1);
+  --pp-shadow-brand: 0 10px 24px -12px rgba(47, 107, 246, 0.5);
+  --pp-shadow-dark: 0 10px 24px -12px rgba(17, 19, 24, 0.45);
+  --pp-ring-brand: 0 0 0 4px rgba(47, 107, 246, 0.16);
 
   /* Motion */
   --pp-ease: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -142,6 +150,13 @@ input, select { font: inherit; color: inherit; }
   --pp-grid-gap: 12px;
   --pp-panel-pad: 12px;
   --pp-card-pad: 20px;
+  --pp-card-pad-lg: 28px;
+
+  /* Cost-composition series — blue→violet, fees left neutral. The cost
+     breakdown component names these tokens rather than repeating the hexes. */
+  --pp-series-1: #2f6bf6; --pp-series-2: #5b8cff; --pp-series-3: #8fb0ff; --pp-series-4: #b9cdff;
+  --pp-series-5: #6c5ce7; --pp-series-6: #8f7ff5; --pp-series-7: #c4bdfa;
+  --pp-series-8: #9aa1b3; --pp-series-9: #c3c9d6;
 }
 
 /* ------------------------------------------------------------------ base -- */
@@ -154,60 +169,89 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 body { font-size: 14px; line-height: 1.5; margin: 0; }
-/* Headings are 300–400 with tight tracking; these also override Bootstrap's scale. */
-h1, h2, h3, h4, h5, .display-pp { letter-spacing: -0.02em; font-weight: 400; color: var(--pp-ink); }
-h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; }
-h2 { font-size: 24px; }
-h3, h4 { font-size: 20px; }
-h5 { font-size: 15px; font-weight: 500; }
-a { color: var(--pp-accent); text-decoration: none; }
-a:hover { color: var(--pp-violet); }
+
+/* Headings are 300–500 with tight tracking; these also override Bootstrap. */
+h1, h2, h3, h4, h5, .display-pp { letter-spacing: -0.02em; font-weight: 500; color: var(--pp-ink); }
+h1 { font-size: clamp(30px, 4vw, 42px); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; }
+h2 { font-size: 24px; font-weight: 400; }
+h3 { font-size: 19px; }
+h4 { font-size: 17px; }
+h5 { font-size: 15px; }
+a { color: var(--pp-brand-ink); text-decoration: none; }
+a:hover { color: var(--pp-brand-2-ink); }
 .text-muted, .pp-muted { color: var(--pp-muted) !important; }
 .pp-container { max-width: var(--pp-container); margin: 0 auto; padding-inline: var(--pp-gutter); }
 .pp-narrow { max-width: 720px; margin: 0 auto; }
 .pp-num { font-variant-numeric: tabular-nums; }
 
+/* Icons: `pp-icon` is the Angular host, `.pp-i` the preview's bare <svg>. */
+pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.pp-i { vertical-align: -0.15em; }
+
 /* Panels tile 12px apart, as the source composition does. */
 .row.g-3, .row.g-4 { --bs-gutter-x: var(--pp-grid-gap); --bs-gutter-y: var(--pp-grid-gap); --g: var(--pp-grid-gap); }
 
+/* ----------------------------------------------------------- type ladder -- */
+/* Labels above figures. Sentence case — nothing here is set in capitals. */
+.pp-eyebrow { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--pp-ink); }
+.pp-subhead { font-size: 12px; color: var(--pp-muted); }
+.pp-label { font-size: 11px; color: var(--pp-muted); font-weight: 400; }
+.pp-body { font-size: 13px; color: var(--pp-ink-2); }
+
+/* Figures are always weight 300 and tabular. Nothing here bolds a number. */
+.pp-kpi {
+  font-size: var(--pp-fig-md); font-weight: 300; letter-spacing: -0.03em; line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: var(--pp-ink);
+}
+.pp-kpi--hero { font-size: var(--pp-fig-hero); line-height: 1; letter-spacing: -0.04em; }
+.pp-kpi--xl { font-size: var(--pp-fig-xl); line-height: 1.05; }
+.pp-kpi--lg { font-size: var(--pp-fig-lg); line-height: 1.1; }
+.pp-kpi--sm { font-size: var(--pp-fig-sm); }
+.pp-kpi--pos { color: var(--pp-pos); }
+/* The currency mark rides high and quiet beside the figure, never level with it.
+   Inline-block rather than a flex item, so the mark and the digits stay one run
+   of text: `$1,149` copies, reads aloud and asserts as a single string. */
+.pp-kpi .cur {
+  display: inline-block; vertical-align: top;
+  font-size: 0.42em; color: var(--pp-muted); letter-spacing: 0;
+  margin: 0.3em 0.1em 0 0;
+}
+
 /* --------------------------------------------------------------- buttons -- */
 /* Every button is a full pill. Hover lifts 1px; there is no press state. */
-.btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+.btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   border: 0; border-radius: var(--pp-radius-pill); font-family: inherit; font-weight: 500;
   line-height: 1.2; padding: 11px 20px; font-size: 13px; white-space: nowrap; cursor: pointer;
-  transition: background var(--pp-ease), box-shadow var(--pp-ease), transform var(--pp-ease), border-color var(--pp-ease);
+  transition: background var(--pp-ease), box-shadow var(--pp-ease), transform var(--pp-ease), border-color var(--pp-ease), color var(--pp-ease);
 }
-.btn-pp { background: var(--pp-action); color: #fff; box-shadow: var(--pp-shadow-action); }
-.btn-pp:hover, .btn-pp:focus { background: var(--pp-action-hover); color: #fff; transform: translateY(-1px); }
+/* Primary action — brand, so the CTA, the mark and the active state agree. */
+.btn-pp { background: var(--pp-brand); color: #fff; box-shadow: var(--pp-shadow-brand); }
+.btn-pp:hover, .btn-pp:focus { background: var(--pp-brand-hover); color: #fff; transform: translateY(-1px); }
 .btn-pp:disabled { opacity: 0.45; transform: none; box-shadow: none; }
+/* The single most important CTA on a screen may carry the full gradient. */
+.btn-pp-hero { background: var(--pp-brand-gradient); }
+.btn-pp-hero:hover, .btn-pp-hero:focus { background: var(--pp-brand-gradient); filter: brightness(1.06); }
 
 .btn-pp-ghost { background: transparent; color: var(--pp-ink-2); border: 1px solid var(--pp-line); }
-.btn-pp-ghost:hover, .btn-pp-ghost:focus { border-color: var(--pp-muted); color: var(--pp-ink-2); transform: translateY(-1px); }
+.btn-pp-ghost:hover, .btn-pp-ghost:focus { border-color: var(--pp-muted); color: var(--pp-ink); transform: translateY(-1px); }
 
 .btn-pp-white { background: #fff; color: var(--pp-ink); box-shadow: var(--pp-shadow-soft); }
 .btn-pp-white:hover, .btn-pp-white:focus { color: var(--pp-ink); box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
 
-/* Glass button — the secondary hero action, sitting straight on the wash. */
+.btn-pp-dark { background: var(--pp-dark); color: #fff; box-shadow: var(--pp-shadow-dark); }
+.btn-pp-dark:hover, .btn-pp-dark:focus { background: var(--pp-dark-hover); color: #fff; transform: translateY(-1px); }
+
 .btn-pp-glass {
   background: var(--pp-glass); color: var(--pp-ink); border: 1px solid var(--pp-glass-line);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .btn-pp-glass:hover, .btn-pp-glass:focus { background: var(--pp-glass-strong); color: var(--pp-ink); transform: translateY(-1px); }
 
-.btn-pp-lg { padding: 15px 28px; font-size: 15px; }
-.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm { padding: 7px 14px; font-size: 12px; }
+.btn-pp-lg { padding: 14px 26px; font-size: 15px; gap: 9px; }
+.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm, .btn-pp-dark.btn-sm { padding: 7px 14px; font-size: 12px; gap: 6px; }
 
 /* --------------------------------------------------- surfaces: the model -- */
-.pp-panel {
-  background: var(--pp-glass);
-  backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
-  border: 1px solid var(--pp-glass-line);
-  border-radius: var(--pp-radius-panel);
-  box-shadow: var(--pp-shadow-panel);
-  padding: var(--pp-panel-pad);
-}
-
 .pp-card, .pp-scenario, .pp-rec {
   position: relative;
   isolation: isolate;
@@ -216,7 +260,6 @@ a:hover { color: var(--pp-violet); }
   border: 1px solid var(--pp-glass-line);
   border-radius: var(--pp-radius-panel);
   box-shadow: var(--pp-shadow-panel);
-  /* glass gutter + white-card interior */
   padding: calc(var(--pp-panel-pad) + var(--pp-card-pad));
 }
 .pp-card::before, .pp-scenario::before, .pp-rec::before {
@@ -228,38 +271,43 @@ a:hover { color: var(--pp-violet); }
   background: var(--pp-card);
   box-shadow: var(--pp-shadow-card);
 }
-.pp-card-soft::before { background: var(--pp-subtle); box-shadow: none; }
-.pp-card-dark { color: #fff; }
-.pp-card-dark::before { background: var(--pp-action); box-shadow: var(--pp-shadow-action); }
-.pp-card-dark h1, .pp-card-dark h2, .pp-card-dark h3, .pp-card-dark h4,
-.pp-card-dark .pp-eyebrow, .pp-card-dark .pp-kpi { color: #fff; }
-.pp-card-dark .pp-muted, .pp-card-dark ul { color: rgba(255, 255, 255, 0.72) !important; }
 
-/* A plain white card, for use inside an explicit .pp-panel. */
+/* --- tier 1: primary. One per screen: the decision being presented. -------- */
+.pp-card--primary {
+  padding: calc(var(--pp-panel-pad) + var(--pp-card-pad-lg));
+  box-shadow: var(--pp-shadow-panel-lg);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+.pp-card--primary::before { box-shadow: 0 14px 40px -20px rgba(38, 48, 88, 0.4); }
+/* A brand hairline along the top edge of the white card, nothing louder. */
+.pp-card--primary::after {
+  content: ''; position: absolute; z-index: 0; pointer-events: none;
+  left: calc(var(--pp-panel-pad) + 26px); right: calc(var(--pp-panel-pad) + 26px);
+  top: var(--pp-panel-pad); height: 3px; border-radius: var(--pp-radius-pill);
+  background: var(--pp-brand-gradient);
+}
+
+/* --- tier 2: secondary is the bare `.pp-card` above. ---------------------- */
+
+/* --- tier 3: insight. Reasoning, explanation, assumptions. ---------------- */
+.pp-card--insight::before { background: var(--pp-brand-wash); }
+
+/* --- tier 4: data. Dense figures; the interior recedes so numbers lead. --- */
+.pp-card--data::before { background: var(--pp-subtle-2); }
+
+/* --- inverted. At most one per screen. ----------------------------------- */
+.pp-card--dark { color: var(--pp-on-dark); }
+.pp-card--dark::before { background: var(--pp-dark); box-shadow: var(--pp-shadow-dark); }
+.pp-card--dark h1, .pp-card--dark h2, .pp-card--dark h3, .pp-card--dark h4,
+.pp-card--dark .pp-eyebrow, .pp-card--dark .pp-kpi { color: var(--pp-on-dark); }
+.pp-card--dark .pp-muted, .pp-card--dark .pp-subhead, .pp-card--dark ul { color: var(--pp-on-dark-muted) !important; }
+
+/* A plain block nested inside a card — never floated on the page wash. */
 .pp-card-bare {
-  background: var(--pp-card);
-  border-radius: var(--pp-radius);
-  box-shadow: var(--pp-shadow-card);
-  padding: var(--pp-card-pad);
-  border: 0;
+  background: var(--pp-card); border-radius: var(--pp-radius);
+  box-shadow: var(--pp-shadow-card); padding: var(--pp-card-pad); border: 0;
 }
-
-/* Card eyebrow — 12px sentence case. Nothing in this system is uppercase. */
-.pp-eyebrow { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--pp-ink); }
-.pp-subhead { font-size: 12px; color: var(--pp-muted); }
-
-/* --------------------------------------------------------------- figures -- */
-/* Figures are always weight 300 and tabular. Nothing here bolds a number. */
-.pp-kpi {
-  font-size: 22px; font-weight: 300; letter-spacing: -0.03em; line-height: 1.15;
-  font-variant-numeric: tabular-nums; color: var(--pp-ink);
-}
-.pp-kpi-xl { font-size: clamp(34px, 5vw, 44px); line-height: 1.1; }
-.pp-kpi-lg { font-size: clamp(28px, 4vw, 34px); line-height: 1.1; }
-.pp-kpi-sm { font-size: 16px; }
-/* The currency mark rides high and quiet beside the figure, never level with it. */
-.pp-kpi-xl { display: flex; align-items: flex-start; }
-.pp-kpi .cur { font-size: 0.45em; color: var(--pp-muted); margin: 0.45em 2px 0 0; }
+.pp-card-bare--data { background: var(--pp-subtle-2); box-shadow: none; }
 
 /* ----------------------------------------------------------------- shell -- */
 /* The header is the only sticky element, and it floats as a pill. */
@@ -271,239 +319,401 @@ a:hover { color: var(--pp-violet); }
   backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
   border: 1px solid var(--pp-glass-line);
   border-radius: var(--pp-radius-pill);
-  padding: 10px 12px 10px 20px;
+  padding: 9px 10px 9px 18px;
   box-shadow: var(--pp-shadow-panel);
 }
-.pp-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--pp-ink); font-size: 15px; letter-spacing: -0.02em; }
-.pp-logo svg { width: 24px; height: 24px; }
-.pp-nav a { color: var(--pp-ink-2); font-weight: 400; font-size: 13px; margin-left: 22px; }
-.pp-nav a.active { color: var(--pp-ink); font-weight: 500; }
+.pp-logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; color: var(--pp-ink); font-size: 15px; letter-spacing: -0.02em; }
+.pp-logo svg { width: 26px; height: 26px; }
+/* No `display` here: the markup's `d-none d-sm-flex` owns that, and setting it
+   in this file would win on order and leave the nav visible on phones. */
+.pp-nav { align-items: center; gap: 4px; }
+.pp-nav a {
+  display: inline-flex; align-items: center; gap: 6px; color: var(--pp-ink-2);
+  font-weight: 400; font-size: 13px; padding: 6px 12px; border-radius: var(--pp-radius-pill);
+  transition: background var(--pp-ease), color var(--pp-ease);
+}
+.pp-nav a:hover { color: var(--pp-ink); background: rgba(255, 255, 255, 0.55); }
+/* Active state is brand, like the mark and the primary action. */
+.pp-nav a.active { color: var(--pp-brand-ink); background: var(--pp-brand-soft); font-weight: 500; }
 .pp-footer { padding: 32px 0 48px; color: var(--pp-ink-2); font-size: 12px; }
 
 /* Notices are quiet pills; the frosted one is the only translucent inline UI. */
-.pp-notice {
-  display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px;
-  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line); color: var(--pp-ink-2);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+.pp-notice, .pp-warn, .pp-ok {
+  display: inline-flex; align-items: center; gap: 7px; border-radius: var(--pp-radius-pill);
+  padding: 9px 16px; font-size: 12px; line-height: 1.45;
 }
-.pp-warn { display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px; background: var(--pp-warn-soft); color: #8a5d13; }
-.pp-ok { display: inline-block; border-radius: var(--pp-radius-pill); padding: 10px 18px; font-size: 12px; background: var(--pp-pos-soft); color: #16603f; }
+.pp-notice {
+  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line); color: var(--pp-ink-2);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.pp-warn { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
+.pp-ok { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
 /* Notices that wrap relax from a pill to a rounded block. */
-.pp-notice-block, .pp-warn-block, .pp-ok-block { display: block; border-radius: var(--pp-radius-md); padding: 12px 16px; line-height: 1.55; }
+.pp-notice-block, .pp-warn-block, .pp-ok-block {
+  display: flex; align-items: flex-start; border-radius: var(--pp-radius-md); padding: 12px 16px; line-height: 1.55;
+}
+.pp-notice-block pp-icon, .pp-warn-block pp-icon, .pp-ok-block pp-icon,
+.pp-notice-block .pp-i, .pp-warn-block .pp-i, .pp-ok-block .pp-i { margin-top: 1px; }
+
+/* An icon in a soft round chip — used for category heads and step markers. */
+.pp-icon-badge {
+  width: 34px; height: 34px; border-radius: var(--pp-radius-md); display: inline-grid; place-items: center;
+  background: var(--pp-brand-soft); color: var(--pp-brand-ink); flex: 0 0 auto;
+}
+.pp-icon-badge--plain { background: var(--pp-subtle); color: var(--pp-ink-2); }
+.pp-icon-badge--sm { width: 26px; height: 26px; border-radius: var(--pp-radius-sm); }
 
 /* --------------------------------------------------------------- landing -- */
-.pp-hero { padding: 64px 0 40px; text-align: center; }
-.pp-hero h1 { font-size: clamp(34px, 5vw, 52px); font-weight: 300; line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
+.pp-hero { padding: 60px 0 40px; text-align: center; }
+.pp-hero h1 { font-size: clamp(34px, 5vw, 54px); font-weight: 300; line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
 .pp-hero p.lead { font-size: 15px; color: var(--pp-ink-2); max-width: 560px; margin: 18px auto 26px; }
 .pp-gradient-text { background: var(--pp-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .pp-section { padding: 48px 0 0; }
-.pp-section h2 { font-size: 28px; font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
+.pp-section h2 { font-size: clamp(24px, 3vw, 30px); font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
 .pp-section .text-center p { font-size: 13px; }
 .pp-chip {
   display: inline-flex; align-items: center; gap: 6px; border-radius: var(--pp-radius-pill);
   background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line);
   padding: 6px 12px; font-size: 12px; font-weight: 400; color: var(--pp-ink-2);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
+.pp-chip pp-icon { color: var(--pp-brand-ink); }
 .pp-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--pp-grid-gap); }
 .pp-flow h5 { font-size: 15px; font-weight: 500; margin: 12px 0 6px; }
 .pp-flow p { font-size: 13px; color: var(--pp-ink-2); }
 .pp-step-num {
-  width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center;
-  background: var(--pp-accent-soft); color: var(--pp-accent); font-weight: 500; font-size: 13px;
+  width: 32px; height: 32px; border-radius: var(--pp-radius-md); display: inline-grid; place-items: center;
+  background: var(--pp-brand-soft); color: var(--pp-brand-ink); font-weight: 600; font-size: 13px;
 }
 
-.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 8px; column-gap: 16px; font-size: 13px; }
+.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 9px; column-gap: 16px; font-size: 13px; }
 .pp-ledger > :nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
-.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 10px; font-weight: 500; color: inherit; }
-.pp-plus { color: var(--pp-pos); font-weight: 500; }
+.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 11px; font-weight: 500; color: inherit; }
 
 /* --------------------------------------------------------- questionnaire -- */
+/* A consultation, not a form: segments show how far the conversation has run. */
+.pp-steps { display: flex; gap: 5px; }
+.pp-steps .seg {
+  flex: 1; height: 5px; border-radius: var(--pp-radius-pill); background: rgba(255, 255, 255, 0.55);
+  transition: background var(--pp-ease-slow);
+}
+.pp-steps .seg.done { background: var(--pp-brand-2); }
+.pp-steps .seg.current { background: var(--pp-brand); }
+.pp-steps-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: var(--pp-ink-2); margin-bottom: 8px; }
+.pp-steps-meta .now { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--pp-ink); }
+
+/* Progress (roadmap completion) */
 .pp-progress { height: 6px; background: var(--pp-subtle); border-radius: var(--pp-radius-pill); overflow: hidden; }
-.pp-progress > div { height: 100%; background: var(--pp-gradient-text); border-radius: var(--pp-radius-pill); transition: width var(--pp-ease-slow); }
-.pp-q-label { font-size: 14px; font-weight: 500; margin-bottom: 4px; color: var(--pp-ink); }
-.pp-q-help { font-size: 12px; color: var(--pp-muted); margin-bottom: 8px; }
+.pp-progress > div { height: 100%; background: var(--pp-gradient-bar); border-radius: var(--pp-radius-pill); transition: width var(--pp-ease-slow); }
+
+.pp-q { padding: 16px 0; border-top: 1px solid var(--pp-line); }
+.pp-q:first-of-type { border-top: 0; padding-top: 4px; }
+.pp-q-label { font-size: 15px; font-weight: 500; margin-bottom: 4px; color: var(--pp-ink); }
+.pp-q-help { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--pp-muted); margin-bottom: 10px; }
+.pp-q-help pp-icon { margin-top: 1px; color: var(--pp-brand-ink); }
 
 /* Fields show no border until focus, which draws a hairline plus a 4px ring. */
 .pp-input-group {
   display: flex; align-items: stretch; background: var(--pp-subtle);
   border: 1px solid transparent; border-radius: var(--pp-radius-pill); overflow: hidden;
-  transition: border-color var(--pp-ease), box-shadow var(--pp-ease);
+  transition: border-color var(--pp-ease), box-shadow var(--pp-ease), background var(--pp-ease);
 }
-.pp-input-group:focus-within { border-color: var(--pp-accent); box-shadow: var(--pp-ring-accent); }
+.pp-input-group:hover { background: #e8ecf6; }
+.pp-input-group:focus-within { background: #fff; border-color: var(--pp-brand); box-shadow: var(--pp-ring-brand); }
 .pp-input-group input, .pp-input-group select {
-  flex: 1; border: 0; outline: 0; padding: 12px 16px; font-size: 14px; background: transparent;
+  flex: 1; border: 0; outline: 0; padding: 12px 16px; font-size: 15px; background: transparent;
   min-width: 0; font-family: inherit; color: var(--pp-ink); font-variant-numeric: tabular-nums;
 }
 .pp-input-group .affix { display: flex; align-items: center; padding: 0 14px; color: var(--pp-muted); font-size: 13px; white-space: nowrap; }
 .pp-input-group .affix.pre { padding-right: 0; font-weight: 500; color: var(--pp-ink-2); }
 .pp-input-group .affix:not(.pre) { padding-left: 0; }
-.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; }
-.pp-error { color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
+.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; background: #fff; }
+.pp-error { display: flex; align-items: center; gap: 6px; color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
 
 .pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .pp-option {
   background: var(--pp-subtle); border: 1px solid transparent; border-radius: var(--pp-radius-md);
-  padding: 14px 16px; text-align: left; cursor: pointer; font-family: inherit; font-size: 13px;
-  font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: flex-start;
+  padding: 13px 15px; text-align: left; cursor: pointer; font-family: inherit; font-size: 13px;
+  font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: center;
   transition: background var(--pp-ease), border-color var(--pp-ease);
 }
-.pp-option:hover { background: var(--pp-subtle-2); }
-.pp-option.selected { background: var(--pp-accent-soft); border-color: var(--pp-accent); }
-.pp-option .icon { font-size: 18px; line-height: 1; }
+.pp-option:hover { background: #e8ecf6; }
+.pp-option.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); }
+.pp-option .tick { margin-left: auto; color: var(--pp-brand-ink); display: none; }
+.pp-option.selected .tick { display: inline-flex; }
 .pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
 
 .pp-type-card {
-  background: #fff; border: 1px solid transparent; border-radius: var(--pp-radius-md); padding: 16px;
+  background: #fff; border: 1px solid transparent; border-radius: var(--pp-radius-md); padding: 14px;
   cursor: pointer; text-align: left; font-family: inherit; box-shadow: var(--pp-shadow-soft);
+  display: flex; gap: 11px; align-items: flex-start;
   transition: box-shadow var(--pp-ease), transform var(--pp-ease), background var(--pp-ease), border-color var(--pp-ease);
 }
 .pp-type-card:hover { box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
-.pp-type-card.selected { background: var(--pp-accent-soft); border-color: var(--pp-accent); box-shadow: none; transform: none; }
-.pp-type-card .icon { font-size: 20px; line-height: 1; }
-.pp-type-card .name { font-weight: 500; margin-top: 6px; font-size: 13px; color: var(--pp-ink); }
+.pp-type-card.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); box-shadow: none; transform: none; }
+.pp-type-card.selected .pp-icon-badge { background: #fff; }
+.pp-type-card .name { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
 .pp-type-card small { color: var(--pp-muted); display: block; font-size: 12px; margin-top: 2px; }
 
-.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-accent-soft); border-radius: var(--pp-radius-md); padding: 14px 16px; }
-.pp-detect .icon { font-size: 22px; }
+.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-brand-soft); border-radius: var(--pp-radius-md); padding: 13px 15px; }
 .pp-detect .title { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
+.pp-detect .sub { font-size: 12px; color: var(--pp-brand-ink); }
 
 /* --------------------------------------------------------------- results -- */
-/* Metric tiles are pale blocks inside a card, never cards in their own right. */
-.pp-metric { background: var(--pp-subtle); border: 0; border-radius: var(--pp-radius-md); padding: 16px; height: 100%; }
-.pp-metric .pp-eyebrow { font-weight: 400; color: var(--pp-muted); margin-bottom: 6px; }
-.pp-metric .sub { font-size: 12px; color: var(--pp-muted); margin-top: 4px; }
-
-/* The violet orb — one per screen, on the single most important figure. */
-.pp-split { display: flex; align-items: center; }
-.pp-split .side {
-  flex: 1; min-width: 0; background: var(--pp-subtle); border-radius: var(--pp-radius-pill);
-  padding: 18px 22px; text-align: center;
+/* The unit-economics strip under the recommended price: three supporting
+   figures, each clearly subordinate to the price above them. */
+.pp-stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.pp-stat {
+  background: var(--pp-subtle); border-radius: var(--pp-radius-md); padding: 14px 16px; min-width: 0;
 }
-.pp-split .side.left { padding-right: 46px; margin-right: -34px; }
-.pp-split .side.right { padding-left: 46px; margin-left: -34px; }
-.pp-split .fig { font-size: 22px; font-weight: 300; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.pp-split .cap { font-size: 11px; color: var(--pp-muted); margin-top: 2px; }
-.pp-orb {
-  width: 118px; height: 118px; border-radius: 50%; background: var(--pp-gradient-orb);
-  box-shadow: var(--pp-glow-orb); display: grid; place-items: center; color: #fff;
-  position: relative; z-index: 2; flex: 0 0 auto; text-align: center;
-}
-.pp-orb .fig { color: #fff; }
-.pp-orb .cap { color: rgba(255, 255, 255, 0.8); }
+.pp-stat .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
+.pp-stat .v { font-size: var(--pp-fig-lg); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pp-stat--accent { background: var(--pp-brand-soft); }
+.pp-stat--accent .k { color: var(--pp-brand-ink); }
 
-/* The recommended scenario is the near-black card. */
+/* Metric tiles — pale blocks inside a card, never cards in their own right. */
+.pp-metric { background: var(--pp-subtle); border: 0; border-radius: var(--pp-radius-md); padding: 14px 16px; height: 100%; }
+.pp-card--data .pp-metric { background: #fff; box-shadow: var(--pp-shadow-soft); }
+.pp-metric .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
+.pp-metric .sub { font-size: 11px; color: var(--pp-muted); margin-top: 4px; }
+
+/* Current vs optimised — the single clearest statement of what the roadmap is
+   worth. Figures come from the engine; the bar is their real proportion. */
+.pp-compare { display: grid; gap: 14px; }
+.pp-compare__row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px 28px; }
+.pp-compare__side { min-width: 0; }
+.pp-compare__side .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 4px; }
+.pp-compare__arrow { display: flex; align-items: center; color: var(--pp-muted); padding-bottom: 8px; }
+.pp-compare__lift {
+  display: inline-flex; align-items: center; gap: 7px; align-self: center;
+  background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: var(--pp-radius-pill);
+  padding: 8px 15px; font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 500;
+}
+.pp-compare__bar { display: flex; height: 12px; border-radius: var(--pp-radius-pill); overflow: hidden; background: var(--pp-subtle); }
+.pp-compare__bar .now { background: var(--pp-brand); }
+.pp-compare__bar .lift { background: var(--pp-gradient-bar); opacity: 0.45; }
+.pp-compare__key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11px; color: var(--pp-muted); }
+.pp-compare__key i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+
+/* Scenario cards stay a tier below the recommended price. */
 .pp-scenario { height: 100%; }
 .pp-scenario::before { box-shadow: var(--pp-shadow-soft); }
-.pp-scenario.recommended { color: #fff; }
-.pp-scenario.recommended::before { background: var(--pp-action); box-shadow: var(--pp-shadow-action); }
-.pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-eyebrow { color: rgba(255, 255, 255, 0.72) !important; }
-.pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.2); }
-.pp-scenario .price { font-size: 34px; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pp-scenario.recommended { color: var(--pp-on-dark); }
+.pp-scenario.recommended::before { background: var(--pp-dark); box-shadow: var(--pp-shadow-dark); }
+.pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-subhead { color: var(--pp-on-dark-muted) !important; }
+.pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.22); }
+.pp-scenario .price { font-size: var(--pp-fig-xl); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 
-/* Badges are soft pills — quiet, and never colour alone. */
+/* Badges are soft pills — the text carries the meaning, never colour alone. */
 .pp-badge {
   display: inline-flex; align-items: center; gap: 5px; border-radius: var(--pp-radius-pill);
   font-size: 11px; font-weight: 500; padding: 4px 10px; letter-spacing: 0.01em;
   background: var(--pp-neutral-soft); color: var(--pp-ink-2);
 }
-.pp-badge.low { background: var(--pp-warn-soft); color: #8a5d13; }
-.pp-badge.recommended { background: var(--pp-accent-soft); color: var(--pp-accent); }
-.pp-badge.premium { background: var(--pp-violet-soft); color: var(--pp-violet); }
-.pp-badge.loss { background: var(--pp-neg-soft); color: var(--pp-neg); }
-.pp-badge.high { background: var(--pp-accent-soft); color: var(--pp-accent); }
-.pp-badge.medium { background: var(--pp-warn-soft); color: #8a5d13; }
+.pp-badge.low, .pp-badge.medium { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
+.pp-badge.recommended, .pp-badge.high { background: var(--pp-brand-soft); color: var(--pp-brand-ink); }
+.pp-badge.premium, .pp-badge.hard { background: var(--pp-brand-2-soft); color: var(--pp-brand-2-ink); }
+.pp-badge.loss { background: var(--pp-neg-soft); color: var(--pp-neg-ink); }
 .pp-badge.neutral { background: var(--pp-neutral-soft); color: var(--pp-ink-2); }
-.pp-badge.easy { background: var(--pp-pos-soft); color: var(--pp-pos); }
-.pp-badge.hard { background: var(--pp-violet-soft); color: var(--pp-violet); }
+.pp-badge.easy { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
+/* On the inverted card, badges invert too. */
+.pp-scenario.recommended .pp-badge { background: rgba(255, 255, 255, 0.16); color: #fff; }
 
 /* Cost bar — individually pill-rounded segments separated by 3px gaps. */
 .pp-bar { display: flex; gap: 3px; height: 10px; background: transparent; }
 .pp-bar span { display: block; height: 100%; border-radius: var(--pp-radius-pill); }
-.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; font-size: 12px; }
+.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 7px 16px; font-size: 12px; }
 .pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
 
-/* Tabs sit on a frosted bed; the active tab is a near-black pill. */
+/* Tabs sit on a frosted bed; the active tab is the brand. */
 .pp-tabs {
   display: inline-flex; gap: 4px; background: var(--pp-glass-strong);
   border: 1px solid var(--pp-glass-line); border-radius: var(--pp-radius-pill); padding: 4px;
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .pp-tabs button {
-  border: 0; background: transparent; padding: 8px 18px; border-radius: var(--pp-radius-pill);
-  font-weight: 500; font-size: 13px; color: var(--pp-ink-2); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 0; background: transparent; padding: 8px 16px; border-radius: var(--pp-radius-pill);
+  font-family: inherit; font-weight: 500; font-size: 13px; color: var(--pp-ink-2); cursor: pointer;
   transition: background var(--pp-ease), color var(--pp-ease);
 }
-.pp-tabs button.active { background: var(--pp-action); color: #fff; }
+.pp-tabs button:hover { color: var(--pp-ink); }
+.pp-tabs button.active { background: var(--pp-brand); color: #fff; }
 
-.pp-slider label { display: flex; justify-content: space-between; font-weight: 500; font-size: 13px; margin-bottom: 4px; }
-.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-accent); font-weight: 400; }
-.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-accent); }
-.pp-slider small { color: var(--pp-muted); font-size: 12px; }
-.pp-delta { font-size: 12px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.pp-slider { margin-bottom: 14px; }
+.pp-slider label { display: flex; justify-content: space-between; gap: 12px; font-weight: 500; font-size: 13px; margin-bottom: 5px; }
+.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-brand-ink); font-weight: 400; }
+.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-brand); }
+.pp-slider small { color: var(--pp-muted); font-size: 11px; }
+.pp-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .pp-delta.up { color: var(--pp-pos); }
 .pp-delta.down { color: var(--pp-neg); }
 
 /* --------------------------------------------------------------- roadmap -- */
-/* The blue gradient trend card — one per screen. */
-.pp-trend { background: var(--pp-gradient-trend); border-radius: var(--pp-radius); padding: var(--pp-card-pad); color: #fff; }
-.pp-trend .pp-eyebrow, .pp-trend .pp-muted { color: rgba(255, 255, 255, 0.82) !important; }
-.pp-trend .pp-kpi { color: #fff; }
-.pp-trend strong { font-weight: 500; color: #fff; }
+/* The single highest-impact move, pulled out of the list. */
+.pp-spot__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pp-spot__head { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 10px; }
 
+/* A recommendation states four things: impact, difficulty, priority, next step. */
 .pp-rec { transition: opacity var(--pp-ease); }
 .pp-rec::before { box-shadow: var(--pp-shadow-soft); transition: box-shadow var(--pp-ease); }
 .pp-rec:hover::before { box-shadow: var(--pp-shadow-card); }
-.pp-rec.done { opacity: 0.55; }
-.pp-rec .impact { font-size: 22px; font-weight: 300; color: var(--pp-pos); letter-spacing: -0.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.pp-rec h4 { font-size: 15px; font-weight: 500; letter-spacing: -0.02em; margin: 8px 0 0; }
-.pp-rec .label { font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--pp-muted); font-weight: 400; margin-bottom: 2px; }
-.pp-rec p { margin-bottom: 10px; font-size: 13px; color: var(--pp-ink-2); }
-.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-left: 16px; margin: 8px 0 0; }
-.pp-rec summary { color: var(--pp-muted); font-size: 12px; cursor: pointer; }
-
-/* Round, and near-black when checked — a completed item is never green. */
-.pp-check {
-  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--pp-line);
-  display: inline-grid; place-items: center; cursor: pointer; background: #fff; color: #fff;
-  font-family: inherit; font-size: 12px; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
+.pp-rec.done { opacity: 0.6; }
+.pp-rec.done h4 { text-decoration: line-through; text-decoration-color: var(--pp-muted); }
+.pp-rec h4 { font-size: 16px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+.pp-rec p { margin: 0; font-size: 13px; color: var(--pp-ink-2); }
+.pp-rec__impact { text-align: right; }
+.pp-rec__impact .v { font-size: var(--pp-fig-lg); font-weight: 300; color: var(--pp-pos); letter-spacing: -0.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pp-rec__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+/* The next action is the point of the card, so it gets its own surface. */
+.pp-rec__action {
+  display: flex; gap: 10px; align-items: flex-start; background: var(--pp-brand-wash);
+  border-radius: var(--pp-radius-md); padding: 12px 14px; font-size: 13px; color: var(--pp-ink-2);
 }
-.pp-check.on { background: var(--pp-action); border-color: var(--pp-action); color: #fff; }
+.pp-rec__action .k { font-size: 11px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 3px; }
+.pp-rec summary { display: flex; align-items: center; gap: 6px; color: var(--pp-muted); font-size: 12px; cursor: pointer; list-style: none; }
+.pp-rec summary::-webkit-details-marker { display: none; }
+.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-left: 18px; margin: 8px 0 0; }
 
-.pp-cat-head { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; }
-.pp-cat-head .icon { font-size: 18px; }
-.pp-cat-head h3 { font-size: 20px; font-weight: 400; letter-spacing: -0.02em; margin: 0; }
+/* Round, brand when checked — a completed item reads as done, not as an alarm. */
+.pp-check {
+  width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--pp-line);
+  display: inline-grid; place-items: center; cursor: pointer; background: #fff; color: var(--pp-muted);
+  font-family: inherit; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
+}
+.pp-check:hover { border-color: var(--pp-brand); color: var(--pp-brand-ink); }
+.pp-check.on { background: var(--pp-pos); border-color: var(--pp-pos); color: #fff; }
 
-/* Ranked 6px pill tracks. */
-.pp-waterfall { display: grid; gap: 10px; }
+.pp-cat-head { display: flex; align-items: center; gap: 11px; margin: 30px 0 12px; }
+.pp-cat-head h3 { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+
+/* Ranked pill tracks. */
+.pp-waterfall { display: grid; gap: 11px; }
 .pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; font-size: 12px; }
-.pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; }
+.pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--pp-ink); }
 .pp-waterfall .track { height: 6px; border-radius: var(--pp-radius-pill); background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
 .pp-waterfall .track span { display: block; height: 100%; background: var(--pp-gradient-bar); border-radius: var(--pp-radius-pill); }
-/* On the trend card the tracks invert to white on translucent white. */
-.pp-trend .pp-waterfall .track { background: rgba(255, 255, 255, 0.22); }
-.pp-trend .pp-waterfall .track span { background: #fff; }
 
 /* ------------------------------------------------------------- animation -- */
 /* Route entry is one keyframe. No bounces, no springs, no scroll reveals. */
 .pp-fade { animation: ppfade var(--pp-ease-slow) both; }
 @keyframes ppfade { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 
+@media (max-width: 768px) {
+  .pp-stat-strip { grid-template-columns: 1fr; }
+}
 @media (max-width: 576px) {
-  .pp-hero { padding: 40px 0 24px; }
-  .pp-kpi { font-size: 20px; }
-  .pp-scenario .price { font-size: 28px; }
-  .pp-split { flex-direction: column; gap: 10px; }
-  .pp-split .side, .pp-split .side.left, .pp-split .side.right { width: 100%; margin: 0; padding: 14px 18px; }
-  .pp-card, .pp-scenario, .pp-rec { padding: calc(var(--pp-panel-pad) + 14px); }
+  .pp-hero { padding: 36px 0 24px; }
+  .pp-card, .pp-scenario, .pp-rec { padding: calc(var(--pp-panel-pad) + 15px); }
+  .pp-card--primary { padding: calc(var(--pp-panel-pad) + 18px); }
+  .pp-card--primary::after { left: calc(var(--pp-panel-pad) + 16px); right: calc(var(--pp-panel-pad) + 16px); }
+  .pp-compare__row { gap: 12px; }
+  .pp-nav a { padding: 6px 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pp-fade, .pp-progress > div, .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass { animation: none; transition: none; }
+  .pp-fade, .pp-progress > div, .pp-steps .seg,
+  .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark { animation: none; transition: none; }
 }
 
 body { color-scheme: light; }
 </style></head><body><div id="app"></div>
+<script>/**
+ * Icon set — Lucide 1.45.0 (ISC), inlined rather than loaded from a CDN so the
+ * Angular app and the dependency-free preview share one source and neither needs
+ * a network round-trip. Each value is the inner markup of the 24x24 Lucide SVG;
+ * stroke, width and linecaps are set once by IconComponent.
+ *
+ * `preview/build.mjs` reads this file and strips the `export ` keyword to reuse
+ * it verbatim, so keep every declaration here valid plain JavaScript: no type
+ * annotations, no imports.
+ *
+ * To add an icon: copy the inner markup of `lucide-static/icons/<name>.svg`.
+ */
+const ICONS = {
+  'calculator': '<rect width="16" height="20" x="4" y="2" rx="2" /> <line x1="8" x2="16" y1="6" y2="6" /> <line x1="16" x2="16" y1="14" y2="18" /> <path d="M16 10h.01" /> <path d="M12 10h.01" /> <path d="M8 10h.01" /> <path d="M12 14h.01" /> <path d="M8 14h.01" /> <path d="M12 18h.01" /> <path d="M8 18h.01" />',
+  'chart-column': '<path d="M3 3v16a2 2 0 0 0 2 2h16" /> <path d="M18 17V9" /> <path d="M13 17V5" /> <path d="M8 17v-3" />',
+  'map': '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" />',
+  'sparkles': '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /> <path d="M20 2v4" /> <path d="M22 4h-4" /> <circle cx="4" cy="20" r="2" />',
+  'lightbulb': '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" />',
+  'target': '<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" />',
+  'arrow-right': '<path d="M5 12h14" /> <path d="m12 5 7 7-7 7" />',
+  'arrow-left': '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
+  'arrow-up-right': '<path d="M7 7h10v10" /> <path d="M7 17 17 7" />',
+  'arrow-down-right': '<path d="m7 7 10 10" /> <path d="M17 7v10H7" />',
+  'rotate-ccw': '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" />',
+  'square-pen': '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /> <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z" />',
+  'check': '<path d="M20 6 9 17l-5-5" />',
+  'plus': '<path d="M5 12h14" /> <path d="M12 5v14" />',
+  'circle-check': '<circle cx="12" cy="12" r="10" /> <path d="m16 9-5.5 5.5L8 12" />',
+  'triangle-alert': '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" />',
+  'info': '<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />',
+  'circle-help': '<circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" />',
+  'chevron-right': '<path d="m9 18 6-6-6-6" />',
+  'chevrons-up': '<path d="m17 11-5-5-5 5" /> <path d="m17 18-5-5-5 5" />',
+  'package': '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /> <path d="M12 22V12" /> <polyline points="3.29 7 12 12 20.71 7" /> <path d="m7.5 4.27 9 5.15" />',
+  'ship': '<path d="M12 2v2" /> <path d="M12 9.189V13" /> <path d="M19 12V6a2 2 0 00-2-2H7a2 2 0 00-2 2v6" /> <path d="M19.38 19A11.6 11.6 0 0021 13l-8.188-3.639a2 2 0 00-1.624 0L3 13.001a11.6 11.6 0 002.81 7.76" /> <path d="M2 20c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />',
+  'factory': '<path d="M12 16h.01" /> <path d="M16 16h.01" /> <path d="M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z" /> <path d="M8 16h.01" />',
+  'camera': '<path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" /> <circle cx="12" cy="13" r="3" />',
+  'laptop': '<path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z" /> <path d="M20.054 15.987H3.946" />',
+  'flame': '<path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" />',
+  'cake': '<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" /> <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1" /> <path d="M2 21h20" /> <path d="M7 8v3" /> <path d="M12 8v3" /> <path d="M17 8v3" /> <path d="M7 4h.01" /> <path d="M12 4h.01" /> <path d="M17 4h.01" />',
+  'graduation-cap': '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />',
+  'cloud': '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />',
+  'piggy-bank': '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z" /> <path d="M16 10h.01" /> <path d="M2 8v1a2 2 0 0 0 2 2h1" />',
+  'megaphone': '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" /> <path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14" /> <path d="M8 6v8" />',
+  'trending-up': '<path d="M16 7h6v6" /> <path d="m22 7-8.5 8.5-5-5L2 17" />',
+  'trending-down': '<path d="M16 17h6v-6" /> <path d="m22 17-8.5-8.5-5 5L2 7" />',
+  'repeat': '<path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" />',
+  'signal-low': '<path d="M2 20h.01" /> <path d="M7 20v-4" />',
+  'signal-medium': '<path d="M2 20h.01" /> <path d="M7 20v-4" /> <path d="M12 20v-8" />',
+  'signal-high': '<path d="M2 20h.01" /> <path d="M7 20v-4" /> <path d="M12 20v-8" /> <path d="M17 20V8" />',
+  'receipt': '<path d="M12 17V7" /> <path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8" /> <path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z" />',
+  'coins': '<path d="M13.744 17.736a6 6 0 1 1-7.48-7.48" /> <path d="M15 6h1v4" /> <path d="m6.134 14.768.866-.5 2 3.464" /> <circle cx="16" cy="8" r="6" />',
+  'wallet': '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" /> <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />',
+  'scale': '<path d="M12 3v18" /> <path d="m19 8 3 8a5 5 0 0 1-6 0zV7" /> <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1" /> <path d="m5 8 3 8a5 5 0 0 1-6 0zV7" /> <path d="M7 21h10" />',
+  'zap': '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" />',
+  'banknote': '<rect width="20" height="12" x="2" y="6" rx="2" /> <circle cx="12" cy="12" r="2" /> <path d="M6 12h.01M18 12h.01" />',
+  'list-checks': '<path d="M13 5h8" /> <path d="M13 12h8" /> <path d="M13 19h8" /> <path d="m3 17 2 2 4-4" /> <path d="m3 7 2 2 4-4" />',
+  'badge-check': '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /> <path d="m16 9-5.5 5.5L8 12" />',
+};
+
+/** Business type -> icon. Presentation only; the engine's own data is untouched. */
+const BUSINESS_TYPE_ICONS = {
+  resell: 'package',
+  import: 'ship',
+  manufacture: 'factory',
+  service: 'camera',
+  freelance: 'laptop',
+  handmade: 'flame',
+  food: 'cake',
+  digital: 'graduation-cap',
+  saas: 'cloud',
+};
+
+/** Roadmap category -> icon. Presentation only. */
+const CATEGORY_ICONS = {
+  reduce_costs: 'piggy-bank',
+  reduce_cac: 'megaphone',
+  increase_revenue: 'trending-up',
+  increase_value: 'repeat',
+};
+
+/** Difficulty -> icon: the signal bars read as effort at a glance. */
+const DIFFICULTY_ICONS = {
+  easy: 'signal-low',
+  medium: 'signal-medium',
+  hard: 'signal-high',
+};
+
+/** Scenario status -> icon. */
+const SCENARIO_ICONS = {
+  loss: 'triangle-alert',
+  low: 'triangle-alert',
+  recommended: 'badge-check',
+  premium: 'chevrons-up',
+};
+</script>
 <script>var ProfitPathEngine = (function () {
   var defs = {}, cache = {};
   function req(name) {
@@ -1956,11 +2166,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
   const money = (v, cur, d) => (v === null || v === undefined ? '—' : E.formatMoney(v, cur, { decimals: d }));
   const pct = (f, d = 1) => E.formatPct(f, d);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-  /* The hero figure sets its currency mark at 0.45em and muted, so the two
-     halves are rendered separately (no mark for suffix-style currencies). */
-  const splitMoney = (v, cur) => { const s = money(v, cur, 0); const m = /^([^\d-]*)(.*)$/.exec(s); return m ? [m[1].trim(), m[2]] : ['', s]; };
-  const currencyMark = (v, cur) => esc(splitMoney(v, cur)[0]);
-  const figure = (v, cur) => esc(splitMoney(v, cur)[1]);
 
   // ---------- state ----------
   const S = { offering: '', type: null, answers: {}, completedIds: [], complete: false, step: 0, selectedType: null, detection: null, errors: {}, formValues: {}, tab: 'overview', wi: {}, target: { profit: 0, units: 1 } };
@@ -2008,98 +2213,172 @@ Object.defineProperty(exports, "__esModule", { value: true });
     if (routeChanged) window.scrollTo({ top: 0 });
   }
 
+  // ---------- icons ----------
+  /* ICONS and the semantic maps come from app/src/app/shared/icons.ts, injected
+     by build.mjs, so the app and this preview cannot drift. */
+  const icon = (n, size) => `<svg class="pp-i" width="${size || 16}" height="${size || 16}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+  const typeIcon = (t) => BUSINESS_TYPE_ICONS[t] || 'package';
+  const iconBadge = (n, mod, size) => `<span class="pp-icon-badge ${mod || ''}">${icon(n, size || 17)}</span>`;
+
+  /* The hero figure sets its currency mark small and muted beside the digits.
+     Mirrors app/src/app/shared/format.ts — keep the two in step. */
+  const splitMoney = (v, cur) => { const s = money(v, cur, 0); const m = /^([^\d-]*)(.*)$/.exec(s); return m ? [m[1].trim(), m[2]] : ['', s]; };
+  const heroFigure = (v, cur, cls) => { const [c, d] = splitMoney(v, cur); return `<div class="pp-kpi ${cls}"><span class="cur">${esc(c)}</span>${esc(d)}</div>`; };
+
+  /* Current vs optimised — mirrors ProfitCompareComponent. Both figures come
+     from the engine; the bar is their real proportion. */
+  function compare(current, optimised, cur, count, compact) {
+    const lift = optimised - current;
+    const pct2 = current > 0 ? `+${Math.round((lift / current) * 100)}%` : 'more profit';
+    const share = optimised > 0 ? Math.max(2, Math.min(100, (current / optimised) * 100)) : 100;
+    const big = compact ? 'pp-kpi--lg' : 'pp-kpi--xl';
+    return `<div class="pp-compare">
+      <div class="pp-compare__row">
+        <div class="pp-compare__side"><div class="k">${icon('wallet', 12)} Today</div><div class="pp-kpi ${big} pp-num">${money(current, cur, 0)}</div></div>
+        <div class="pp-compare__arrow">${icon('arrow-right', compact ? 16 : 22)}</div>
+        <div class="pp-compare__side"><div class="k">${icon('target', 12)} Following the roadmap</div><div class="pp-kpi ${big} pp-kpi--pos pp-num">${money(optimised, cur, 0)}</div></div>
+        <div class="pp-compare__lift">${icon('trending-up', 15)} +${money(lift, cur, 0)}<span class="pp-muted">·</span>${pct2}</div>
+      </div>
+      <div>
+        <div class="pp-compare__bar" role="img" aria-label="Profit today is ${Math.round(share)}% of the optimised figure">
+          <span class="now" style="width:${share}%"></span><span class="lift" style="width:${100 - share}%"></span>
+        </div>
+        <div class="pp-compare__key mt-2">
+          <span><i style="background:var(--pp-brand)"></i>Profit today</span>
+          <span><i style="background:var(--pp-brand-2)"></i>Added by the ${count} recommendations</span>
+          <span>Estimates from your own numbers · not a forecast</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
   function renderShell(inner) {
     const has = !!pricing();
     const r = route();
-    const nav = (p, l) => `<a href="#/${p}" class="${r === p ? 'active' : ''}">${l}</a>`;
+    const nav = (p, l, ic) => `<a href="#/${p}" class="${r === p ? 'active' : ''}">${icon(ic, 15)} ${l}</a>`;
     return `<header class="pp-header"><div class="pp-container"><div class="pp-header-pill">
-      <a href="#/" class="pp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0f766e"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#a7f3d0"/></svg>ProfitPath</a>
-      <nav class="pp-nav d-none d-sm-block">${nav('analyze', 'Calculator')}${has ? nav('results', 'Results') + nav('roadmap', 'Roadmap') : ''}</nav>
-      <a href="#/analyze" class="btn btn-pp btn-sm">Calculate my price</a></div></div></header>
+      <a href="#/" class="pp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ppmark" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f6bf6"/><stop offset="1" stop-color="#6c5ce7"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#ppmark)"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#dbe7ff"/></svg>ProfitPath</a>
+      <nav class="pp-nav d-none d-sm-flex">${nav('analyze', 'Calculator', 'calculator')}${has ? nav('results', 'Results', 'chart-column') + nav('roadmap', 'Roadmap', 'map') : ''}</nav>
+      <a href="#/analyze" class="btn btn-pp btn-sm">Calculate my price ${icon('arrow-right', 14)}</a></div></div></header>
       <main>${inner}</main>
       <footer class="pp-footer"><div class="pp-container d-flex flex-wrap justify-content-between gap-3"><div>© ${new Date().getFullYear()} ProfitPath · Estimates based on your inputs, not financial advice or a guarantee of results.</div><div>Live preview of the Angular MVP · all calculations deterministic</div></div></footer>`;
   }
 
   // ---------- landing ----------
   function renderLanding() {
-    const s = E.SAMPLES[0]; const m = E.normalizeAnswers(s.type, s.answers, s.offering); const p = E.computePricing(m); const r = E.buildRoadmap(m, p);
-    const chips = E.BUSINESS_TYPE_LIST.map((t) => `<span class="pp-chip">${t.icon} ${t.shortLabel}</span>`).join('');
-    const recMax = Math.max(1, ...r.recommendations.slice(0, 3).map((x) => x.estimatedMonthlyImpact));
-    const recs = r.recommendations.slice(0, 3).map((x) => `<div class="item"><span>${esc(x.title)}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, 'USD', 0)}/mo</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / recMax) * 100}%"></span></div></div>`).join('');
+    /* Every figure below is the sample run through the real engine — nothing on
+       this page is a hardcoded illustration. */
+    const s = E.SAMPLES[0];
+    const m = E.normalizeAnswers(s.type, s.answers, s.offering);
+    const p = E.computePricing(m);
+    const r = E.buildRoadmap(m, p);
+    const cur = p.currency;
+    const chips = E.BUSINESS_TYPE_LIST.map((t) => `<span class="pp-chip">${icon(typeIcon(t.type), 13)} ${t.shortLabel}</span>`).join('');
+    const top3 = r.recommendations.slice(0, 3);
+    const topMax = Math.max(1, ...top3.map((x) => x.estimatedMonthlyImpact));
+    const recs = top3.map((x) => `<div class="item"><span>${esc(x.title)}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}/mo</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / topMax) * 100}%"></span></div></div>`).join('');
+    const ledger = p.costBreakdown.map((l) => `<span class="pp-muted">${esc(l.label)}</span><span class="pp-num">${money(l.amount, cur)}</span>`).join('');
+    const how = [
+      ['square-pen', 'Tell us what you sell', "Type it in plain words. We detect whether it's a product, service, food, digital or SaaS business and ask only the questions that matter for it."],
+      ['list-checks', 'Answer a few questions', 'Costs, fees, fixed expenses and your goals — a few at a time, each with a plain explanation of why we ask.'],
+      ['calculator', 'Get your price', 'True cost, break-even, three pricing scenarios and the price you need to hit your target profit — with the reasoning behind each number.'],
+      ['map', 'Follow your roadmap', 'Prioritised, quantified ways to make more profit at that price: cheaper sourcing, lower acquisition cost, upsells, better channels.'],
+    ];
+    const plans = [
+      ['Free', '$0', '', false, ['Pricing calculator', 'Recommended price &amp; three scenarios', 'Break-even analysis', 'One saved business']],
+      ['Pro', '$9', '/month', true, ['Everything in Free', 'Full Profit Roadmap', 'What-if simulator', 'Unlimited saved businesses', 'PDF reports']],
+      ['Business', '$19', '/month', false, ['Everything in Pro', 'Team members', 'Scenario comparison', 'Market research (coming)']],
+    ];
     return `
     <section class="pp-hero pp-container pp-fade">
-      <span class="pp-chip mb-4">Pricing intelligence + profit roadmap</span>
+      <span class="pp-chip mb-4">${icon('sparkles', 13)} Pricing intelligence + profit roadmap</span>
       <h1>How much should <span class="pp-gradient-text">you charge?</span></h1>
       <p class="lead">Tell us what you're selling, what it costs you, and what you want to earn. We'll calculate your ideal price and show you how to improve your profit.</p>
-      <div class="d-flex flex-wrap justify-content-center gap-2"><a href="#/analyze" class="btn btn-pp btn-pp-lg">Calculate My Price</a><button type="button" class="btn btn-pp-glass btn-pp-lg" data-action="example">See an Example</button></div>
+      <div class="d-flex flex-wrap justify-content-center gap-2"><a href="#/analyze" class="btn btn-pp btn-pp-hero btn-pp-lg">Calculate My Price ${icon('arrow-right', 17)}</a><button type="button" class="btn btn-pp-glass btn-pp-lg" data-action="example">See an Example</button></div>
       <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">${chips}</div>
     </section>
     <section class="pp-section pp-container"><div class="row g-4 align-items-start">
-      <div class="col-lg-5"><div class="pp-card h-100"><div class="pp-eyebrow">Example</div><div class="pp-subhead mb-3">30 units a month · target profit $5,000</div><h3 class="mb-3" style="font-size:20px">"I'm selling iPhones."</h3>
-        <div class="pp-ledger"><span class="pp-muted">Purchase</span><span class="pp-num">${money(850, 'USD', 0)}</span><span class="pp-muted">Shipping</span><span class="pp-num">${money(45, 'USD', 0)}</span><span class="pp-muted">Marketing per unit</span><span class="pp-num">${money(35, 'USD', 0)}</span><span class="pp-muted">Overhead per unit</span><span class="pp-num">${money(p.allocatedOverhead, 'USD', 0)}</span><span class="total">True cost</span><span class="total pp-num">${money(p.trueCostPerUnit, 'USD', 0)}</span></div></div></div>
-      <div class="col-lg-7"><div class="pp-card h-100"><div class="d-flex justify-content-between align-items-start gap-3 mb-3"><div class="pp-eyebrow">ProfitPath calculates</div><button type="button" class="btn btn-pp btn-sm" data-action="example">Open this example</button></div>
-        <div class="row g-3"><div class="col-6 col-md-4"><div class="pp-metric"><div class="pp-eyebrow">Recommended price</div><div class="pp-kpi">${money(p.recommended.price, 'USD', 0)}</div></div></div><div class="col-6 col-md-4"><div class="pp-metric"><div class="pp-eyebrow">Profit / unit</div><div class="pp-kpi">${money(p.recommended.profitPerUnit, 'USD', 0)}</div></div></div><div class="col-6 col-md-4"><div class="pp-metric"><div class="pp-eyebrow">Margin</div><div class="pp-kpi">${pct(p.recommended.marginPct)}</div></div></div></div>
-        <div class="pp-subhead" style="margin:20px 0 12px">Here's how you could make even more</div><div class="pp-waterfall">${recs}</div>
-        <div class="d-flex justify-content-between align-items-center gap-3 pt-3 mt-3" style="border-top:1px solid var(--pp-line);font-size:13px"><span>Estimated monthly profit → optimised</span><span class="pp-kpi pp-kpi-sm">${money(p.recommended.monthlyProfit, 'USD', 0)} → ${money(r.optimisedMonthlyProfit, 'USD', 0)}</span></div>
-        <p class="pp-muted mt-3 mb-0" style="font-size:11px">Estimates, not guarantees. Every number above is computed from the inputs on the left.</p></div></div>
+      <div class="col-lg-5"><div class="pp-card">
+        <div class="d-flex align-items-center gap-2 mb-1">${icon('receipt', 15)}<span class="pp-eyebrow">Worked example</span></div>
+        <h3 class="mb-3" style="font-weight:400">${esc(s.offering)}</h3>
+        <div class="pp-ledger">${ledger}<span class="total">True cost per ${p.unitLabel}</span><span class="total pp-num">${money(p.trueCostPerUnit, cur)}</span></div>
+        <div class="pp-subhead mt-3">${m.goals.expectedUnits} ${p.unitLabel}s a month · target profit ${money(m.goals.targetMonthlyProfit, cur, 0)}</div>
+      </div></div>
+      <div class="col-lg-7"><div class="pp-card pp-card--primary">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3"><span class="pp-eyebrow">What ProfitPath works out</span><button type="button" class="btn btn-pp btn-sm" data-action="example">Open this example ${icon('arrow-right', 13)}</button></div>
+        ${heroFigure(p.recommended.price, cur, 'pp-kpi--xl')}
+        <div class="pp-subhead mb-3">Recommended price per ${p.unitLabel} · ${pct(p.marginBand.mid, 0)} target margin</div>
+        <div class="pp-stat-strip">
+          <div class="pp-stat"><div class="k">${icon('wallet', 12)} True cost</div><div class="v pp-num">${money(p.trueCostPerUnit, cur, 0)}</div></div>
+          <div class="pp-stat"><div class="k">${icon('coins', 12)} Profit / ${p.unitLabel}</div><div class="v pp-num">${money(p.recommended.profitPerUnit, cur, 0)}</div></div>
+          <div class="pp-stat"><div class="k">${icon('scale', 12)} Margin</div><div class="v pp-num">${pct(p.recommended.marginPct)}</div></div>
+        </div>
+        <div class="d-flex align-items-center gap-2" style="margin:22px 0 12px">${icon('trending-up', 14)}<span class="pp-eyebrow">Where more profit comes from</span></div>
+        <div class="pp-waterfall">${recs}</div>
+        <div class="mt-4">${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, true)}</div>
+      </div></div>
     </div></section>
     <section class="pp-section pp-container"><div class="text-center mb-4"><h2>How it works</h2><p class="pp-muted">A conversation, not a spreadsheet. Five minutes from idea to price.</p></div>
-      <div class="pp-flow">
-        <div class="pp-card"><div class="pp-step-num">1</div><h5>Tell us what you sell</h5><p class="pp-muted mb-0">Type it in plain words. We detect whether it's a product, service, food, digital or SaaS business and ask only the questions that matter for it.</p></div>
-        <div class="pp-card"><div class="pp-step-num">2</div><h5>Answer a few questions</h5><p class="pp-muted mb-0">Costs, fees, fixed expenses and your goals — a few at a time, each with a plain explanation of why we ask.</p></div>
-        <div class="pp-card"><div class="pp-step-num">3</div><h5>Get your price</h5><p class="pp-muted mb-0">True cost, break-even, three pricing scenarios and the price you need to hit your target profit — with the reasoning behind each number.</p></div>
-        <div class="pp-card"><div class="pp-step-num">4</div><h5>Follow your roadmap</h5><p class="pp-muted mb-0">Prioritised, quantified ways to make more profit at that price: cheaper sourcing, lower acquisition cost, upsells, better channels.</p></div>
-      </div></section>
+      <div class="pp-flow">${how.map(([ic, t, b], i) => `<div class="pp-card"><div class="d-flex align-items-center gap-2"><span class="pp-step-num">${i + 1}</span>${iconBadge(ic, 'pp-icon-badge--sm pp-icon-badge--plain', 14)}</div><h5>${t}</h5><p class="pp-muted mb-0">${b}</p></div>`).join('')}</div></section>
     <section class="pp-section pp-container"><div class="text-center mb-4"><h2>Simple pricing</h2><p class="pp-muted">Start free. Upgrade when the roadmap pays for itself.</p></div>
-      <div class="row g-3 justify-content-center">
-        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-subhead">Free</div><div class="pp-kpi pp-kpi-lg my-2">$0</div><ul class="pp-muted ps-3 mb-0" style="font-size:13px;line-height:1.9"><li>Pricing calculator</li><li>Recommended price &amp; three scenarios</li><li>Break-even analysis</li><li>One saved business</li></ul></div></div>
-        <div class="col-md-4"><div class="pp-card pp-card-dark h-100"><div class="pp-subhead">Pro</div><div class="pp-kpi pp-kpi-lg my-2">$9<span class="pp-muted" style="font-size:13px">/month</span></div><ul class="ps-3 mb-0" style="font-size:13px;line-height:1.9"><li>Everything in Free</li><li>Full Profit Roadmap</li><li>What-if simulator</li><li>Unlimited saved businesses</li><li>PDF reports</li></ul></div></div>
-        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-subhead">Business</div><div class="pp-kpi pp-kpi-lg my-2">$19<span class="pp-muted" style="font-size:13px">/month</span></div><ul class="pp-muted ps-3 mb-0" style="font-size:13px;line-height:1.9"><li>Everything in Pro</li><li>Team members</li><li>Scenario comparison</li><li>Market research (coming)</li></ul></div></div>
-      </div></section>
-    <section class="pp-section pp-container text-center"><div class="pp-card" style="padding-block:60px"><h2>Ready to find out what to charge?</h2><p class="pp-muted mb-4" style="font-size:13px">No sign-up needed for your first analysis.</p><a href="#/analyze" class="btn btn-pp btn-pp-lg">Calculate My Price</a></div></section>`;
+      <div class="row g-3 justify-content-center">${plans.map(([name, price, per, hot, items]) => `<div class="col-md-4"><div class="pp-card h-100 ${hot ? 'pp-card--dark' : ''}">
+        <div class="d-flex justify-content-between align-items-center gap-2"><span class="pp-subhead">${name}</span>${hot ? `<span class="pp-badge recommended">${icon('sparkles', 11)} Most popular</span>` : ''}</div>
+        <div class="pp-kpi pp-kpi--lg my-2">${price}<span class="pp-subhead">${per}</span></div>
+        <ul class="pp-muted ps-3 mb-0" style="font-size:13px;line-height:1.9">${items.map((i) => `<li>${i}</li>`).join('')}</ul></div></div>`).join('')}</div></section>
+    <section class="pp-section pp-container text-center"><div class="pp-card" style="padding-block:56px"><h2>Ready to find out what to charge?</h2><p class="pp-muted mb-4" style="font-size:13px">No sign-up needed for your first analysis.</p><a href="#/analyze" class="btn btn-pp btn-pp-hero btn-pp-lg">Calculate My Price ${icon('arrow-right', 17)}</a></div></section>`;
   }
 
   // ---------- analyze ----------
   const groups = () => (S.type ? E.questionGroupsFor(S.type) : []);
   const merged = () => ({ ...S.answers, ...S.formValues });
   function currentGroup() { return groups()[S.step - 1] || null; }
+  const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'];
+
+  function detectBanner(d) {
+    if (!d || d.confidence <= 0) return '';
+    const conf = d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess';
+    return `<div class="pp-detect mb-4 pp-fade">${iconBadge(typeIcon(d.type))}<div><div class="title">Looks like: ${E.businessTypeDef(d.type).label}</div><div class="sub">${conf} · not right? Pick a type below.</div></div></div>`;
+  }
 
   function renderAnalyze() {
     const total = groups().length + 1;
     const def = S.type ? E.businessTypeDef(S.type) : null;
+    const g = currentGroup();
+    const stepTitle = g ? g.title : "What you're selling";
+    const stepIcon = S.step === 0 ? 'square-pen' : STEP_ICONS[(S.step - 1) % STEP_ICONS.length];
     let body;
     if (S.step === 0) {
-      const d = S.detection;
-      const detect = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="title">Looks like: ${E.businessTypeDef(d.type).label}</div><div style="font-size:12px;color:var(--pp-ink-2)">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
-      const cards = E.BUSINESS_TYPE_LIST.map((t) => `<button type="button" class="pp-type-card ${S.selectedType === t.type ? 'selected' : ''}" data-type="${t.type}"><div class="icon">${t.icon}</div><div class="name">${t.label}</div><small>${t.description}</small></button>`).join('');
-      body = `<div class="pp-card pp-fade"><h2 class="mb-1">What are you planning to sell?</h2><p class="pp-muted mb-4">Describe it in your own words. We'll tailor the next questions to your kind of business.</p>
-        <div class="pp-input-group mb-3"><input id="offering" type="text" value="${esc(S.offering)}" placeholder="e.g. iPhone 17 Pro, wedding photography, soy candles, online course…" autofocus></div>
-        <div id="detect">${detect}</div><div class="pp-subhead mb-2">Business type</div><div class="pp-option-grid mb-4" id="typegrid">${cards}</div>
-        <div class="d-flex justify-content-end"><button class="btn btn-pp" id="start" ${!S.selectedType || !S.offering.trim() ? 'disabled' : ''}>Continue →</button></div></div>`;
+      const cards = E.BUSINESS_TYPE_LIST.map((t) => `<button type="button" class="pp-type-card ${S.selectedType === t.type ? 'selected' : ''}" data-type="${t.type}">${iconBadge(typeIcon(t.type))}<span><span class="name">${t.label}</span><small>${t.description}</small></span></button>`).join('');
+      body = `<div class="pp-card pp-card--primary pp-fade"><h2 class="mb-1">What are you planning to sell?</h2><p class="pp-body mb-4">Describe it in your own words. We'll tailor the next questions to your kind of business — you will never be asked about costs that do not apply to you.</p>
+        <div class="pp-input-group mb-3"><span class="affix pre">${icon('search', 15)}</span><input id="offering" type="text" value="${esc(S.offering)}" placeholder="e.g. iPhone 17 Pro, wedding photography, soy candles, online course…" autofocus></div>
+        <div id="detect">${detectBanner(S.detection)}</div><div class="pp-subhead mb-2">Business type</div><div class="pp-option-grid mb-4" id="typegrid">${cards}</div>
+        <div class="d-flex justify-content-end"><button class="btn btn-pp" id="start" ${!S.selectedType || !S.offering.trim() ? 'disabled' : ''}>Continue ${icon('arrow-right', 14)}</button></div></div>`;
     } else {
-      const g = currentGroup();
       const cur = merged().currency || 'USD';
       const qs = E.visibleQuestions(g, merged()).map((q) => renderQuestion(q, cur)).join('');
       const last = S.step === groups().length;
-      body = `<form class="pp-card pp-fade" id="qform"><h2 class="mb-1">${g.title}</h2><p class="pp-muted mb-4">${g.intro}</p>${qs}
-        <div class="d-flex justify-content-between align-items-center mt-2"><button type="button" class="btn btn-pp-ghost" id="back">← Back</button><button type="submit" class="btn btn-pp">${last ? 'Calculate my price' : 'Continue →'}</button></div></form>
-        <p class="pp-notice mt-3 text-center">Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</p>`;
+      body = `<form class="pp-card pp-card--primary pp-fade" id="qform"><h2 class="mb-1">${g.title}</h2><p class="pp-body mb-4">${g.intro}</p>${qs}
+        <div class="d-flex justify-content-between align-items-center mt-4"><button type="button" class="btn btn-pp-ghost" id="back">${icon('arrow-left', 14)} Back</button><button type="submit" class="btn btn-pp ${last ? 'btn-pp-hero' : ''}">${last ? 'Calculate my price' : 'Continue'} ${icon(last ? 'sparkles' : 'arrow-right', 14)}</button></div></form>
+        <div class="mt-3 d-flex justify-content-center"><span class="pp-notice">${icon('info', 13)} Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</span></div>`;
     }
+    const segs = Array.from({ length: total }, (_, i) => `<span class="seg ${i < S.step ? 'done' : ''} ${i === S.step ? 'current' : ''}"></span>`).join('');
+    const context = S.step > 0 && def ? `<div class="d-flex flex-wrap gap-2 mb-3"><span class="pp-chip">${icon(typeIcon(def.type), 13)} ${def.label}</span><span class="pp-chip">${esc(S.offering)}</span></div>` : '';
     return `<div class="pp-container py-5"><div class="pp-narrow">
-      <div class="d-flex justify-content-between align-items-center mb-2" style="font-size:12px;color:var(--pp-ink-2)"><span>Step ${S.step + 1} of ${total}</span>${S.step > 0 ? `<span>${def.icon} ${def.label} · ${esc(S.offering)}</span>` : ''}</div>
-      <div class="pp-progress mb-4"><div style="width:${((S.step + 1) / total) * 100}%"></div></div>${body}</div></div>`;
+      <div class="pp-steps-meta"><span class="now">${icon(stepIcon, 14)} ${stepTitle}</span><span>Step ${S.step + 1} of ${total}</span></div>
+      <div class="pp-steps mb-3">${segs}</div>${context}${body}</div></div>`;
   }
 
   function renderQuestion(q, cur) {
     const v = S.formValues[q.key];
     const err = S.errors[q.key];
+    const tick = `<span class="tick">${icon('check', 14)}</span>`;
     let field;
-    if (q.type === 'select') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${v === o.value ? 'selected' : ''}" data-select="${q.key}" data-value="${o.value}"><span>${o.label}${o.hint ? `<small>${o.hint}</small>` : ''}</span></button>`).join('')}</div>`;
-    else if (q.type === 'multiselect') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${Array.isArray(v) && v.includes(o.value) ? 'selected' : ''}" data-multi="${q.key}" data-value="${o.value}"><span>${o.label}</span></button>`).join('')}</div>`;
+    if (q.type === 'select') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${v === o.value ? 'selected' : ''}" data-select="${q.key}" data-value="${o.value}"><span>${o.label}${o.hint ? `<small>${o.hint}</small>` : ''}</span>${tick}</button>`).join('')}</div>`;
+    else if (q.type === 'multiselect') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${Array.isArray(v) && v.includes(o.value) ? 'selected' : ''}" data-multi="${q.key}" data-value="${o.value}"><span>${o.label}</span>${tick}</button>`).join('')}</div>`;
     else if (q.type === 'currency') field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}"><select id="${q.key}" data-field="${q.key}">${q.options.map((o) => `<option value="${o.value}" ${(v || q.defaultValue) === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}</select></div>`;
     else if (q.type === 'text') field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}"><input id="${q.key}" type="text" data-field="${q.key}" value="${esc(v ?? '')}" placeholder="${esc(q.placeholder || '')}"></div>`;
     else field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}">${q.money ? `<span class="affix pre">${cur}</span>` : ''}<input id="${q.key}" type="number" inputmode="decimal" step="any" ${q.min !== undefined ? `min="${q.min}"` : ''} data-field="${q.key}" value="${v ?? ''}" placeholder="${esc(q.placeholder || '')}">${q.suffix ? `<span class="affix">${q.suffix}</span>` : ''}</div>`;
-    return `<div class="mb-4"><label class="pp-q-label d-block" for="${q.key}">${q.label}</label><div class="pp-q-help">${q.help}</div>${field}${err ? `<div class="pp-error">${err}</div>` : ''}</div>`;
+    return `<div class="pp-q"><label class="pp-q-label d-block" for="${q.key}">${q.label}</label><div class="pp-q-help">${icon('lightbulb', 13)}<span>${q.help}</span></div>${field}${err ? `<div class="pp-error">${icon('triangle-alert', 13)}${err}</div>` : ''}</div>`;
   }
 
   function initForm() {
@@ -2126,10 +2405,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
   }
 
   // ---------- results ----------
-  function tile(label, value, sub, color, small) { return `<div class="pp-metric"><div class="pp-eyebrow">${label}</div><div class="pp-kpi ${small ? 'pp-kpi-sm' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`; }
+  function tile(ic, label, value, sub, color, small) {
+    return `<div class="pp-metric"><div class="k">${icon(ic, 12)} ${label}</div><div class="pp-kpi ${small ? 'pp-kpi--sm' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+  }
+  const STATUS_TEXT = { low: 'Thin margin', recommended: 'Recommended', premium: 'Higher margin', loss: 'Loses money' };
   function scenarioCard(sc, cur, unit) {
-    const st = sc.status === 'low' ? '⚠️ Thin margin' : sc.status === 'recommended' ? '🟢 Recommended' : sc.status === 'premium' ? '🔵 Higher margin' : '🔴 Loss';
-    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="pp-muted" style="font-size:12px">${sc.label}</span><span class="pp-badge ${sc.status}">${st}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
+    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="pp-subhead">${sc.label}</span><span class="pp-badge ${sc.status}">${icon(SCENARIO_ICONS[sc.status] || 'info', 11)}${STATUS_TEXT[sc.status] || sc.status}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
       <div class="pp-ledger mt-3"><span class="pp-muted">Profit / ${unit}</span><span class="pp-num" style="${sc.profitPerUnit < 0 ? 'color:var(--pp-neg)' : ''}">${money(sc.profitPerUnit, cur)}</span><span class="pp-muted">Margin</span><span class="pp-num">${pct(sc.marginPct)}</span><span class="pp-muted">Monthly profit</span><span class="pp-num">${money(sc.monthlyProfit, cur, 0)}</span>${sc.breakEvenUnits !== null ? `<span class="pp-muted">Break-even</span><span class="pp-num">${sc.breakEvenUnits} ${unit}s</span>` : ''}</div>
       <p class="pp-muted mt-3 mb-0" style="font-size:12px">${sc.note}</p></div>`;
   }
@@ -2161,6 +2442,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
     list.push(mk('fixedMonthlyTotal', 'Monthly fixed costs', e.F, true));
     return list;
   }
+
   function whatIfMetrics(m, p) {
     const v = S.wi; const cur = p.currency;
     const model = E.applyWhatIf(m, { units: v.units, purchase: v.purchase, materials: v.materials, labor: v.labor, shipping: v.shipping, marketingPerUnit: v.marketingPerUnit, fixedMonthlyTotal: v.fixedMonthlyTotal });
@@ -2169,113 +2451,151 @@ Object.defineProperty(exports, "__esModule", { value: true });
     const contrib = price * (1 - e.f) - e.D - e.V; const req = contrib > 0 ? Math.ceil((model.goals.targetMonthlyProfit + e.F) / contrib) : null;
     const sc = E.evaluatePrice(model, price, 'custom', 'What if');
     const better = sc.monthlyProfit >= p.recommended.monthlyProfit;
-    return `<div class="pp-card"><div class="row g-3">
-      <div class="col-6 col-md-4">${tile('Monthly profit', money(sc.monthlyProfit, cur, 0), delta(sc.monthlyProfit, p.recommended.monthlyProfit, cur), better ? 'var(--pp-pos)' : 'var(--pp-neg)')}</div>
-      <div class="col-6 col-md-4">${tile('Monthly revenue', money(sc.monthlyRevenue, cur, 0), delta(sc.monthlyRevenue, p.recommended.monthlyRevenue, cur))}</div>
-      <div class="col-6 col-md-4">${tile('Profit / ' + p.unitLabel, money(sc.profitPerUnit, cur), delta(sc.profitPerUnit, p.recommended.profitPerUnit, cur))}</div>
-      <div class="col-6 col-md-4">${tile('Margin', pct(sc.marginPct), deltaPts(sc.marginPct, p.recommended.marginPct))}</div>
-      <div class="col-6 col-md-4">${tile('Break-even price', money(pr.breakEvenPrice, cur), delta(pr.breakEvenPrice, p.breakEvenPrice, cur, true))}</div>
-      <div class="col-6 col-md-4">${tile('Break-even units', sc.breakEvenUnits ?? '—', 'was ' + (p.recommended.breakEvenUnits ?? '—'))}</div>
-      <div class="col-12">${tile('Units needed for your target', `${req ?? '—'} ${p.unitLabel}s`, `to reach ${money(p.target.targetMonthlyProfit, cur, 0)} at ${money(price, cur, 0)} — was ${p.target.requiredUnitsAtRecommended ?? '—'}`, '', true)}</div></div>
-      <div class="mt-3" style="font-size:13px;color:var(--pp-ink-2)"><strong style="font-weight:500;color:var(--pp-ink)">${better ? 'This scenario looks stronger.' : 'This scenario looks weaker.'}</strong> Compared with your recommended setup, estimated monthly profit changes by <span class="pp-delta ${better ? 'up' : 'down'}">${E.signed(sc.monthlyProfit - p.recommended.monthlyProfit, cur)}</span>. Volume assumptions are yours; we don't predict demand.</div></div>`;
+    return `<div class="pp-card pp-card--data"><div class="row g-3">
+      <div class="col-6 col-md-4">${tile('trending-up', 'Monthly profit', money(sc.monthlyProfit, cur, 0), delta(sc.monthlyProfit, p.recommended.monthlyProfit, cur), better ? 'var(--pp-pos)' : 'var(--pp-neg)')}</div>
+      <div class="col-6 col-md-4">${tile('banknote', 'Monthly revenue', money(sc.monthlyRevenue, cur, 0), delta(sc.monthlyRevenue, p.recommended.monthlyRevenue, cur))}</div>
+      <div class="col-6 col-md-4">${tile('coins', 'Profit / ' + p.unitLabel, money(sc.profitPerUnit, cur), delta(sc.profitPerUnit, p.recommended.profitPerUnit, cur))}</div>
+      <div class="col-6 col-md-4">${tile('scale', 'Margin', pct(sc.marginPct), deltaPts(sc.marginPct, p.recommended.marginPct))}</div>
+      <div class="col-6 col-md-4">${tile('wallet', 'Break-even price', money(pr.breakEvenPrice, cur), delta(pr.breakEvenPrice, p.breakEvenPrice, cur, true))}</div>
+      <div class="col-6 col-md-4">${tile('zap', 'Break-even units', sc.breakEvenUnits ?? '—', 'was ' + (p.recommended.breakEvenUnits ?? '—'))}</div>
+      <div class="col-12">${tile('target', 'Units needed for your target', `${req ?? '—'} ${p.unitLabel}s`, `to reach ${money(p.target.targetMonthlyProfit, cur, 0)} at ${money(price, cur, 0)} — was ${p.target.requiredUnitsAtRecommended ?? '—'}`, '', true)}</div></div>
+      <div class="mt-3 pp-body"><strong style="font-weight:500;color:var(--pp-ink)">${better ? 'This scenario looks stronger.' : 'This scenario looks weaker.'}</strong> Compared with your recommended setup, estimated monthly profit changes by <span class="pp-delta ${better ? 'up' : 'down'}">${E.signed(sc.monthlyProfit - p.recommended.monthlyProfit, cur)}</span>. Volume assumptions are yours; we don't predict demand.</div></div>`;
   }
+
   function targetMetrics(m, p) {
     const cur = p.currency; const model = E.applyWhatIf(m, { units: S.target.units }); model.goals.targetMonthlyProfit = S.target.profit; const tp = E.computePricing(model);
     const high = tp.target.requiredMarginPct > p.marginBand.high;
-    return `<div class="pp-card"><div class="row g-3">
-      <div class="col-6 col-md-4">${tile('Required profit / ' + p.unitLabel, money(tp.target.requiredProfitPerUnit, cur))}</div>
-      <div class="col-6 col-md-4">${tile('Required price', money(tp.target.requiredPrice, cur), `at ${S.target.units} ${p.unitLabel}s`, 'var(--pp-accent)')}</div>
-      <div class="col-6 col-md-4">${tile('Required margin', pct(tp.target.requiredMarginPct))}</div>
-      <div class="col-6 col-md-4">${tile('True cost at that volume', money(tp.baseCostPerUnit, cur), 'excl. % fees')}</div>
-      <div class="col-6 col-md-8">${tile(`Or keep ${money(p.recommended.price, cur, 0)} and sell`, `${tp.target.requiredUnitsAtRecommended ?? '—'} ${p.unitLabel}s / month`, '', '', true)}</div></div>
-      <div class="mt-3 ${high ? 'pp-warn pp-warn-block' : 'pp-ok pp-ok-block'}">At ${money(tp.target.requiredPrice, cur, 0)}, your estimated margin would be ${pct(tp.target.requiredMarginPct)}. ${high ? `That is above the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business — the roadmap focuses on reaching the target by lowering costs and raising volume instead.` : `That sits within the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business.`}</div></div>`;
+    return `<div class="pp-card pp-card--data"><div class="row g-3">
+      <div class="col-6 col-md-4">${tile('coins', 'Required profit / ' + p.unitLabel, money(tp.target.requiredProfitPerUnit, cur))}</div>
+      <div class="col-6 col-md-4">${tile('target', 'Required price', money(tp.target.requiredPrice, cur), `at ${S.target.units} ${p.unitLabel}s`)}</div>
+      <div class="col-6 col-md-4">${tile('scale', 'Required margin', pct(tp.target.requiredMarginPct))}</div>
+      <div class="col-6 col-md-4">${tile('wallet', 'True cost at that volume', money(tp.baseCostPerUnit, cur), 'excl. % fees')}</div>
+      <div class="col-6 col-md-8">${tile('chart-column', `Or keep ${money(p.recommended.price, cur, 0)} and sell`, `${tp.target.requiredUnitsAtRecommended ?? '—'} ${p.unitLabel}s / month`, '', '', true)}</div></div>
+      <div class="mt-3 ${high ? 'pp-warn pp-warn-block' : 'pp-ok pp-ok-block'}">${icon(high ? 'triangle-alert' : 'circle-check', 14)}<span>At ${money(tp.target.requiredPrice, cur, 0)}, your estimated margin would be ${pct(tp.target.requiredMarginPct)}. ${high ? `That is above the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business — the roadmap focuses on reaching the target by lowering costs and raising volume instead.` : `That sits within the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business.`}</span></div></div>`;
   }
 
   function renderResults() {
-    const m = model(); const p = pricing(); const cur = p.currency; const u = p.unitLabel;
+    const m = model(); const p = pricing(); const r = roadmap(); const cur = p.currency; const u = p.unitLabel;
     if (!S.target) S.target = { profit: m.goals.targetMonthlyProfit, units: m.goals.expectedUnits };
     const sl = sliders(m, p); if (!Object.keys(S.wi).length) sl.forEach((s) => (S.wi[s.key] = s.base));
-    const tabs = ['overview', 'whatif', 'target'].map((t) => `<button class="${S.tab === t ? 'active' : ''}" data-tab="${t}">${t === 'overview' ? 'Pricing' : t === 'whatif' ? 'What if?' : 'Target profit'}</button>`).join('');
+    const tabs = [['overview', 'Pricing', 'receipt'], ['whatif', 'What if?', 'zap'], ['target', 'Target profit', 'target']]
+      .map(([t, l, ic]) => `<button class="${S.tab === t ? 'active' : ''}" data-tab="${t}">${icon(ic, 14)} ${l}</button>`).join('');
     let panel;
     if (S.tab === 'overview') {
       panel = `<h3 class="mb-3">Three ways to price it</h3><div class="row g-3"><div class="col-md-4">${scenarioCard(p.scenarios.minimum, cur, u)}</div><div class="col-md-4">${scenarioCard(p.scenarios.recommended, cur, u)}</div><div class="col-md-4">${scenarioCard(p.scenarios.premium, cur, u)}</div></div>
-        <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card h-100"><h4 class="mb-1">Why ${money(p.recommended.price, cur, 0)}?</h4><div class="pp-subhead">Where each ${cur} of cost goes</div><p style="color:var(--pp-ink-2);font-size:13px;margin:12px 0 20px">${explainPrice(m, p)}</p>${breakdown(p.costBreakdown, cur)}</div></div>
-        <div class="col-lg-5"><div class="pp-card h-100"><h4 class="mb-3">Break-even</h4><div class="pp-ledger">
+        <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card pp-card--insight h-100">
+          <div class="d-flex align-items-center gap-2 mb-1">${iconBadge('lightbulb', 'pp-icon-badge--sm', 14)}<h4 class="mb-0">Why ${money(p.recommended.price, cur, 0)}?</h4></div>
+          <p class="pp-body" style="margin:12px 0 20px">${explainPrice(m, p)}</p><div class="pp-subhead mb-2">Where each ${cur} of cost goes</div>${breakdown(p.costBreakdown, cur)}</div></div>
+        <div class="col-lg-5"><div class="pp-card h-100"><div class="d-flex align-items-center gap-2 mb-3">${icon('scale', 15)}<h4 class="mb-0">Break-even</h4></div><div class="pp-ledger">
           <span class="pp-muted">Break-even price</span><span class="pp-num">${money(p.breakEvenPrice, cur)}</span>
           <span class="pp-muted">Variable break-even</span><span class="pp-num">${money(p.variableBreakEvenPrice, cur)}</span>
           <span class="pp-muted">Monthly fixed costs</span><span class="pp-num">${money(p.fixedMonthly, cur, 0)}</span>
           <span class="total">Break-even sales at ${money(p.recommended.price, cur, 0)}</span><span class="total pp-num">${p.recommended.breakEvenUnits ?? '—'} ${u}s / month</span></div>
           <p class="pp-muted" style="font-size:12px;margin-top:14px">The break-even price is the lowest price that covers every cost — including your share of fixed costs — at ${p.expectedUnits} ${u}s a month. Below the variable break-even you lose money on every single sale, regardless of volume.</p>
-          ${p.recommended.breakEvenUnits !== null ? `<div class="pp-ok">Sell ${p.recommended.breakEvenUnits} of your expected ${p.expectedUnits} ${u}s and the rest is profit.</div>` : ''}</div></div></div>`;
+          ${p.recommended.breakEvenUnits !== null ? `<div class="pp-ok">${icon('circle-check', 13)}Sell ${p.recommended.breakEvenUnits} of your expected ${p.expectedUnits} ${u}s and the rest is profit.</div>` : ''}</div></div></div>`;
     } else if (S.tab === 'whatif') {
       const fmtv = (s, v) => (s.money ? money(v, cur, s.step < 1 ? 2 : 0) : v + (s.unit ? ' ' + s.unit : ''));
-      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">Experiment</h4><button class="btn btn-pp-ghost btn-sm" id="wi-reset">Reset</button></div>
-        ${sl.map((s) => `<div class="pp-slider mb-3"><label>${s.label} <span id="wi-val-${s.key}">${fmtv(s, S.wi[s.key])}</span></label><input type="range" id="wi-${s.key}" data-wi="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${S.wi[s.key]}"><small>Original: ${fmtv(s, s.base)}</small></div>`).join('')}</div></div>
+      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">Experiment</h4><button class="btn btn-pp-ghost btn-sm" id="wi-reset">${icon('rotate-ccw', 13)} Reset</button></div>
+        ${sl.map((s) => `<div class="pp-slider"><label>${s.label} <span id="wi-val-${s.key}">${fmtv(s, S.wi[s.key])}</span></label><input type="range" id="wi-${s.key}" data-wi="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${S.wi[s.key]}"><small>Original: ${fmtv(s, s.base)}</small></div>`).join('')}</div></div>
         <div class="col-lg-7" id="wi-metrics">${whatIfMetrics(m, p)}</div></div>`;
     } else {
-      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><h4 class="mb-1">How much do you want to make per month?</h4><p class="pp-muted">Change the target and volume to see what they demand from your price.</p>
+      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><h4 class="mb-1">How much do you want to make per month?</h4><p class="pp-body" style="margin:6px 0 18px">Change the target and volume to see what they demand from your price.</p>
         <label class="pp-q-label" for="tgt">Target monthly profit</label><div class="pp-input-group mb-3"><span class="affix pre">${cur}</span><input id="tgt" type="number" min="0" step="any" value="${S.target.profit}"></div>
         <label class="pp-q-label" for="tu">Expected ${u}s per month</label><div class="pp-input-group"><input id="tu" type="number" min="1" step="1" value="${S.target.units}"></div></div></div>
         <div class="col-lg-7" id="tgt-metrics">${targetMetrics(m, p)}</div></div>`;
     }
+    const roadmapTeaser = r && r.recommendations.length ? `<div class="pp-card mt-3">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap"><span class="pp-eyebrow">${icon('map', 14)} What your roadmap is worth</span><a href="#/roadmap" class="btn btn-pp-ghost btn-sm">Open the roadmap ${icon('arrow-right', 13)}</a></div>
+      ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>` : '';
     return `<div class="pp-container py-5 pp-fade">
-      <div class="row g-4 align-items-stretch"><div class="col-lg-5"><div class="pp-card h-100 d-flex flex-column justify-content-between"><div><div class="pp-eyebrow mb-3">Your recommended price · ${esc(S.offering)}</div>
-        <div class="pp-kpi pp-kpi-xl"><span class="cur">${currencyMark(p.recommended.price, cur)}</span>${figure(p.recommended.price, cur)}</div><div class="pp-subhead mt-1">per ${u} · ${pct(p.marginBand.mid, 0)} target margin</div>
-        <div class="pp-split mt-4"><div class="side left"><div class="fig">${money(p.trueCostPerUnit, cur, 0)}</div><div class="cap">True cost</div></div>
-          <div class="pp-orb"><div><div class="fig">${money(p.recommended.profitPerUnit, cur, 0)}</div><div class="cap">Profit / ${u}</div></div></div>
-          <div class="side right"><div class="fig">${pct(p.recommended.marginPct)}</div><div class="cap">Margin</div></div></div></div>
-        <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp">See my Profit Roadmap →</a><a href="#/analyze" class="btn btn-pp-white" id="edit-answers">Edit answers</a></div></div></div>
-        <div class="col-lg-7"><div class="pp-card h-100"><div class="d-flex justify-content-between align-items-start gap-3 mb-3"><div class="pp-eyebrow">Monthly outlook</div><span class="pp-notice">Estimates · not a guarantee</span></div><div class="row g-3">
-          <div class="col-6 col-md-4">${tile('True cost', money(p.trueCostPerUnit, cur), `per ${u} incl. overhead &amp; fees`)}</div>
-          <div class="col-6 col-md-4">${tile('Profit per ' + u, money(p.recommended.profitPerUnit, cur))}</div>
-          <div class="col-6 col-md-4">${tile('Profit margin', pct(p.recommended.marginPct))}</div>
-          <div class="col-6 col-md-4">${tile('Expected monthly sales', p.expectedUnits, u + 's per month')}</div>
-          <div class="col-6 col-md-4">${tile('Est. monthly revenue', money(p.recommended.monthlyRevenue, cur, 0))}</div>
-          <div class="col-6 col-md-4">${tile('Est. monthly profit', money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-pos)')}</div></div></div></div></div>
-      ${p.warnings.map((w) => `<div class="mt-3"><span class="pp-warn">${w}</span></div>`).join('')}
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-5 mb-3"><div class="pp-tabs">${tabs}</div><span class="pp-notice">Estimates from your inputs · not a guarantee</span></div>
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-7"><div class="pp-card pp-card--primary">
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><span class="pp-eyebrow">Your recommended price · ${esc(S.offering)}</span><span class="pp-badge recommended">${icon('badge-check', 12)} Recommended</span></div>
+          ${heroFigure(p.recommended.price, cur, 'pp-kpi--hero')}
+          <div class="pp-subhead" style="margin:4px 0 22px">per ${u} · priced for the ${pct(p.marginBand.mid, 0)} margin typical of this kind of business</div>
+          <div class="pp-stat-strip">
+            <div class="pp-stat"><div class="k">${icon('wallet', 12)} True cost</div><div class="v pp-num">${money(p.trueCostPerUnit, cur)}</div></div>
+            <div class="pp-stat"><div class="k">${icon('coins', 12)} Profit per ${u}</div><div class="v pp-num">${money(p.recommended.profitPerUnit, cur)}</div></div>
+            <div class="pp-stat"><div class="k">${icon('scale', 12)} Margin</div><div class="v pp-num">${pct(p.recommended.marginPct)}</div></div>
+          </div>
+          <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp btn-pp-hero">See my Profit Roadmap ${icon('arrow-right', 15)}</a><a href="#/analyze" class="btn btn-pp-white" id="edit-answers">${icon('square-pen', 14)} Edit answers</a></div>
+        </div></div>
+        <div class="col-lg-5"><div class="pp-card pp-card--data h-100">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><span class="pp-eyebrow">${icon('chart-column', 14)} Monthly outlook</span><span class="pp-subhead">at ${p.expectedUnits} ${u}s</span></div>
+          <div class="d-grid" style="gap:10px">
+            ${tile('banknote', 'Est. monthly revenue', money(p.recommended.monthlyRevenue, cur, 0))}
+            ${tile('trending-up', 'Est. monthly profit', money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-pos)')}
+            ${tile('zap', 'Break-even sales', `${p.recommended.breakEvenUnits ?? '—'} ${u}s`, `of your expected ${p.expectedUnits}`)}
+          </div>
+          <div class="pp-subhead mt-3">Estimates from your inputs · not a guarantee</div>
+        </div></div>
+      </div>
+      ${p.warnings.map((w) => `<div class="mt-3"><span class="pp-warn">${icon('triangle-alert', 13)}${w}</span></div>`).join('')}
+      ${roadmapTeaser}
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-5 mb-3"><div class="pp-tabs">${tabs}</div></div>
       <div class="pp-fade">${panel}</div></div>`;
   }
 
   // ---------- roadmap ----------
   function renderRoadmap() {
-    const m = model(); const p = pricing(); const r = roadmap(); const cur = p.currency; const u = p.unitLabel;
+    const m = model(); const p = pricing(); const r = roadmap(); const cur = p.currency;
     const max = Math.max(1, ...r.recommendations.map((x) => x.estimatedMonthlyImpact));
     const done = r.recommendations.filter((x) => x.done).length;
     const order = ['reduce_costs', 'reduce_cac', 'increase_revenue', 'increase_value'];
-    const cats = order.map((k) => ({ k, meta: E.CATEGORY_META[k], items: r.recommendations.filter((x) => x.category === k) })).filter((c) => c.items.length);
-    const card = (rec) => `<article class="pp-rec ${rec.done ? 'done' : ''}"><div class="d-flex align-items-start" style="gap:14px"><button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${rec.done ? 'Mark as not done' : 'Mark as done'}">${rec.done ? '✓' : ''}</button><div class="flex-grow-1" style="min-width:0">
-      <div class="d-flex flex-wrap gap-2 align-items-center"><span class="pp-badge ${rec.priority}">${E.priorityLabel(rec.priority)} priority</span><span class="pp-badge ${rec.difficulty}">${rec.difficulty}</span></div>
-      <div class="d-flex justify-content-between align-items-start" style="gap:16px"><h4>${esc(rec.title)}</h4><div class="text-end"><div class="impact">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-muted" style="font-size:11px">est. per month</div></div></div>
-      <div style="margin-top:12px"><div class="label">Why</div><p>${esc(rec.why)}</p><div class="label">Suggested action</div><p>${esc(rec.action)}</p></div>
-      ${rec.assumptions.length ? `<details><summary>Assumptions behind this estimate</summary><ul>${rec.assumptions.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details>` : ''}</div></div></article>`;
-    return `<div class="pp-container py-5 pp-fade">
-      <div class="pp-narrow text-center mb-4"><span class="pp-chip mb-3">🗺️ Profit Roadmap · ${esc(S.offering)}</span><h1>How to make more profit at ${money(r.current.price, cur, 0)}</h1><p class="pp-muted" style="font-size:14px;margin:10px 0 0">There are more ways to grow profit than raising your price. These are the levers that matter most for your numbers, ranked by estimated impact and effort.</p></div>
-      <div class="row g-4 align-items-start"><div class="col-lg-4"><div class="pp-card h-100"><div class="pp-eyebrow mb-3">Current situation</div><div class="pp-ledger">
-        <span class="pp-muted">Selling price</span><span class="pp-num">${money(r.current.price, cur, 0)}</span><span class="pp-muted">True cost</span><span class="pp-num">${money(r.current.trueCostPerUnit, cur)}</span><span class="pp-muted">Profit / ${u}</span><span class="pp-num">${money(r.current.profitPerUnit, cur)}</span><span class="pp-muted">${u}s / month</span><span class="pp-num">${r.current.units}</span><span class="pp-muted">Margin</span><span class="pp-num">${pct(r.current.marginPct)}</span><span class="total">Monthly profit</span><span class="total pp-num">${money(r.current.monthlyProfit, cur, 0)}</span></div></div></div>
-        <div class="col-lg-8"><div class="pp-panel h-100"><div class="row g-3 align-items-stretch"><div class="col-md-5"><div class="pp-trend h-100"><div class="pp-eyebrow">Optimised estimated monthly profit</div><div class="pp-kpi pp-kpi-lg mt-2">${money(r.optimisedMonthlyProfit, cur, 0)}</div><div class="pp-muted" style="font-size:11px">from ${money(r.current.monthlyProfit, cur, 0)} today · <strong>+${money(r.optimisedMonthlyProfit - r.current.monthlyProfit, cur, 0)}</strong></div>
-          <div style="position:relative;margin-top:14px;height:64px"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible" role="img" aria-label="Cumulative profit as each roadmap item lands"><path d="${trendPath(r)}" fill="none" stroke="#fff" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="position:absolute;left:0;bottom:-4px;font-size:10px;color:rgba(255,255,255,.8)">today</span><span style="position:absolute;right:0;top:-6px;font-size:10px;color:rgba(255,255,255,.8)">optimised</span></div></div></div>
-          <div class="col-md-7"><div class="pp-card-bare h-100"><div class="pp-eyebrow mb-3">Where the lift comes from</div><div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span>${esc(x.title)}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}</div><div class="pp-muted mt-3" style="font-size:11px">Sum of items ${money(r.sumOfImpacts, cur, 0)}, reduced by ${pct(r.interactionDiscountPct, 0)} because improvements overlap.${p.target.targetMonthlyProfit > 0 ? ` ${r.targetReached ? 'Reaches' : 'Still short of'} your ${money(p.target.targetMonthlyProfit, cur, 0)} target.` : ''}</div></div></div></div></div></div></div>
-      <div class="pp-card mt-3"><div class="d-flex justify-content-between flex-wrap gap-2 align-items-center"><div style="font-size:13px"><strong style="font-weight:500">Roadmap progress:</strong> ${done}/${r.recommendations.length} completed</div><div class="pp-progress" style="width:min(320px,100%)"><div style="width:${(done / r.recommendations.length) * 100}%"></div></div></div><p class="mb-0 mt-2" style="font-size:13px;color:var(--pp-ink-2)">${explainRoadmap(m, r)}</p></div>
-      ${cats.map((c) => `<div class="pp-cat-head"><span class="icon">${c.meta.icon}</span><div><h3 class="mb-0">${c.meta.label}</h3><div class="pp-muted" style="font-size:12px">${c.meta.blurb}</div></div></div><div class="d-grid" style="gap:var(--pp-grid-gap)">${c.items.map(card).join('')}</div>`).join('')}
-      <div class="pp-notice pp-notice-block mt-5">${r.disclaimer}</div>
-      <div class="d-flex flex-wrap gap-2 mt-4"><a href="#/results" class="btn btn-pp-white">← Back to pricing</a><a href="#/analyze" class="btn btn-pp-ghost" id="new-analysis">Analyse another business</a></div></div>`;
-  }
+    const cats = order.map((k) => ({ k, meta: E.CATEGORY_META[k], items: r.recommendations.filter((x) => x.category === k) }))
+      .filter((c) => c.items.length)
+      .map((c) => ({ ...c, total: c.items.reduce((s, x) => s + x.estimatedMonthlyImpact, 0) }));
+    const top = r.recommendations.find((x) => !x.done) || r.recommendations[0] || null;
+    const topShare = top && r.sumOfImpacts > 0 ? Math.round((top.estimatedMonthlyImpact / r.sumOfImpacts) * 100) : 0;
+    const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  /* The trend line is cumulative, not decorative: profit today, then each
-     recommendation's share of the (discounted) lift in rank order, so the last
-     point is exactly the optimised figure shown above it. */
-  function trendPath(r) {
-    const lift = r.optimisedMonthlyProfit - r.current.monthlyProfit;
-    const sum = r.sumOfImpacts || 1;
-    let cumulative = 0;
-    const points = [r.current.monthlyProfit].concat(r.recommendations.map((rec) => {
-      cumulative += rec.estimatedMonthlyImpact;
-      return r.current.monthlyProfit + (cumulative / sum) * lift;
-    }));
-    if (points.length < 2) return '';
-    const hi = Math.max(...points); const lo = Math.min(...points);
-    return points.map((v, i) => `${i ? 'L' : 'M'}${((i / (points.length - 1)) * 100).toFixed(2)} ${(100 - ((v - lo) / (hi - lo || 1)) * 100).toFixed(2)}`).join(' ');
+    const card = (rec) => {
+      const share = r.sumOfImpacts > 0 ? Math.round((rec.estimatedMonthlyImpact / r.sumOfImpacts) * 100) : 0;
+      return `<article class="pp-rec ${rec.done ? 'done' : ''}"><div class="d-flex align-items-start" style="gap:14px">
+      <button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${rec.done ? 'Mark as not done' : 'Mark as done'}">${icon(rec.done ? 'check' : 'plus', 13)}</button>
+      <div class="flex-grow-1" style="min-width:0">
+        <div class="d-flex justify-content-between align-items-start" style="gap:16px"><h4>${esc(rec.title)}</h4><div class="pp-rec__impact"><div class="v">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-label">est. per month</div></div></div>
+        <div class="pp-rec__meta mt-2"><span class="pp-badge ${rec.priority}">${icon('chevrons-up', 11)}${E.priorityLabel(rec.priority)} priority</span><span class="pp-badge ${rec.difficulty}">${icon(DIFFICULTY_ICONS[rec.difficulty] || 'signal-medium', 11)}${rec.difficulty} to do</span>${share > 0 ? `<span class="pp-label">${share}% of the total lift</span>` : ''}</div>
+        <p class="pp-body mt-3">${esc(rec.why)}</p>
+        <div class="pp-rec__action mt-3">${icon('arrow-up-right', 15)}<div><div class="k">Next action</div>${esc(rec.action)}</div></div>
+        ${rec.assumptions.length ? `<details class="mt-3"><summary>${icon('chevron-right', 13)} Assumptions behind this estimate</summary><ul>${rec.assumptions.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details>` : ''}
+      </div></div></article>`;
+    };
+
+    return `<div class="pp-container py-5 pp-fade">
+      <div class="pp-narrow text-center mb-4"><span class="pp-chip mb-3">${icon('map', 13)} Profit Roadmap · ${esc(S.offering)}</span><h1>How to make more profit at ${money(r.current.price, cur, 0)}</h1><p class="pp-muted" style="font-size:14px;margin:10px 0 0">There are more ways to grow profit than raising your price. These are the levers that matter most for your numbers, ranked by estimated impact and effort.</p></div>
+
+      <div class="pp-card pp-card--primary">
+        ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}
+        <div class="row g-3 mt-1">
+          <div class="col-md-7"><div class="pp-card-bare pp-card-bare--data h-100">
+            <div class="d-flex align-items-center gap-2 mb-3">${icon('chart-column', 14)}<span class="pp-eyebrow">Where the lift comes from</span></div>
+            <div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span>${esc(x.title)}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}</div>
+            <div class="pp-label mt-3">Sum of items ${money(r.sumOfImpacts, cur, 0)}, reduced by ${pct(r.interactionDiscountPct, 0)} because improvements overlap.</div>
+          </div></div>
+          <div class="col-md-5"><div class="pp-card-bare pp-card-bare--data h-100 d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-3">${icon('list-checks', 14)}<span class="pp-eyebrow">Your progress</span></div>
+            <div class="pp-kpi pp-kpi--lg">${done}<span class="pp-subhead"> / ${r.recommendations.length} done</span></div>
+            <div class="pp-progress mt-2 mb-3"><div style="width:${r.recommendations.length ? (done / r.recommendations.length) * 100 : 0}%"></div></div>
+            ${p.target.targetMonthlyProfit > 0 ? `<div class="mt-auto ${r.targetReached ? 'pp-ok pp-ok-block' : 'pp-warn pp-warn-block'}">${icon(r.targetReached ? 'circle-check' : 'triangle-alert', 14)}<span>${r.targetReached ? 'Reaches' : 'Still short of'} your ${money(p.target.targetMonthlyProfit, cur, 0)} monthly target.</span></div>` : ''}
+          </div></div>
+        </div>
+      </div>
+
+      ${top ? `<div class="pp-card pp-card--insight mt-3">
+        <div class="pp-spot__head">${iconBadge('sparkles', 'pp-icon-badge--sm', 14)} Start here — your best next move</div>
+        <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap:16px">
+          <div style="min-width:0;flex:1 1 320px"><h3 class="mb-2">${esc(top.title)}</h3><p class="pp-body mb-3">${esc(top.action)}</p>
+            <div class="pp-spot__meta"><span class="pp-badge ${top.priority}">${icon('chevrons-up', 11)}${cap(top.priority)} priority</span><span class="pp-badge ${top.difficulty}">${icon(DIFFICULTY_ICONS[top.difficulty] || 'signal-medium', 11)}${top.difficulty} to do</span></div></div>
+          <div class="pp-stat pp-stat--accent" style="flex:0 0 auto;min-width:190px"><div class="k">${icon('trending-up', 12)} Estimated impact</div><div class="v pp-num">+${money(top.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-label mt-1">per month · ${topShare}% of the total lift</div></div>
+        </div></div>` : ''}
+
+      <div class="pp-card pp-card--insight mt-3"><div class="d-flex align-items-start gap-2">${iconBadge('lightbulb', 'pp-icon-badge--sm', 14)}<p class="pp-body mb-0">${explainRoadmap(m, r)}</p></div></div>
+
+      ${cats.map((c) => `<div class="pp-cat-head">${iconBadge(CATEGORY_ICONS[c.k] || 'trending-up')}<div><h3 class="mb-0">${c.meta.label}</h3><div class="pp-muted" style="font-size:12px">${c.meta.blurb}</div></div><span class="pp-badge ms-auto">+${money(c.total, cur, 0)} / mo</span></div><div class="d-grid" style="gap:var(--pp-grid-gap)">${c.items.map(card).join('')}</div>`).join('')}
+
+      <div class="pp-notice pp-notice-block mt-5">${icon('info', 14)}<span>${r.disclaimer}</span></div>
+      <div class="d-flex flex-wrap gap-2 mt-4"><a href="#/results" class="btn btn-pp-white">${icon('arrow-left', 14)} Back to pricing</a><a href="#/analyze" class="btn btn-pp-ghost" id="new-analysis">${icon('rotate-ccw', 14)} Analyse another business</a></div></div>`;
   }
 
   // ---------- events ----------
@@ -2285,7 +2605,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
     if (off) off.addEventListener('input', (ev) => {
       S.offering = ev.target.value; const d = S.offering.trim().length >= 3 ? E.detectBusinessType(S.offering) : null; S.detection = d;
       if (d && d.confidence > 0) S.selectedType = d.type;
-      const det = root.querySelector('#detect'); det.innerHTML = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="title">Looks like: ${E.businessTypeDef(d.type).label}</div><div style="font-size:12px;color:var(--pp-ink-2)">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
+      root.querySelector('#detect').innerHTML = detectBanner(d);
       root.querySelectorAll('[data-type]').forEach((b) => b.classList.toggle('selected', b.dataset.type === S.selectedType));
       root.querySelector('#start').disabled = !S.selectedType || !S.offering.trim();
     });

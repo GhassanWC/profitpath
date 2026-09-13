@@ -15,39 +15,57 @@ import {
   visibleQuestions,
 } from '../../core/engine';
 import { AnalysisStore } from '../../core/state/analysis.store';
+import { IconComponent } from '../../shared/icon.component';
+import { BUSINESS_TYPE_ICONS } from '../../shared/icons';
+
+/** Cycled over the question groups, whose count varies by business type. */
+const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'];
 
 @Component({
   selector: 'pp-analyze',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, IconComponent],
   template: `
     <div class="pp-container py-5">
       <div class="pp-narrow">
-        <!-- Progress -->
-        <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 12px; color: var(--pp-ink-2)">
+        <!-- A consultation, not a form: the segments show how far it has run and
+             what this step is about, and the context chip shows what we inferred. -->
+        <div class="pp-steps-meta">
+          <span class="now">
+            <pp-icon [name]="stepIcon()" [size]="14" />
+            {{ stepTitle() }}
+          </span>
           <span>Step {{ stepIndex() + 1 }} of {{ totalSteps() }}</span>
-          @if (stepIndex() > 0) {
-            <span>{{ typeDef()?.icon }} {{ typeDef()?.label }} · {{ store.offering() }}</span>
+        </div>
+        <div class="pp-steps mb-3">
+          @for (s of stepMarks(); track $index) {
+            <span class="seg" [class.done]="$index < stepIndex()" [class.current]="$index === stepIndex()"></span>
           }
         </div>
-        <div class="pp-progress mb-4"><div [style.width.%]="((stepIndex() + 1) / totalSteps()) * 100"></div></div>
+        @if (stepIndex() > 0 && typeDef(); as t) {
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="pp-chip"><pp-icon [name]="typeIcon(t.type)" [size]="13" /> {{ t.label }}</span>
+            <span class="pp-chip">{{ store.offering() }}</span>
+          </div>
+        }
 
         <!-- Step 0: what are you selling -->
         @if (stepIndex() === 0) {
-          <div class="pp-card pp-fade">
+          <div class="pp-card pp-card--primary pp-fade">
             <h2 class="mb-1">What are you planning to sell?</h2>
-            <p class="pp-muted mb-4">Describe it in your own words. We'll tailor the next questions to your kind of business.</p>
+            <p class="pp-body mb-4">Describe it in your own words. We'll tailor the next questions to your kind of business — you will never be asked about costs that do not apply to you.</p>
             <div class="pp-input-group mb-3">
+              <span class="affix pre"><pp-icon name="search" [size]="15" /></span>
               <input type="text" [value]="offering()" (input)="onOffering($any($event.target).value)" placeholder="e.g. iPhone 17 Pro, wedding photography, soy candles, online course…" autofocus />
             </div>
 
             @if (detection(); as d) {
               @if (d.confidence > 0) {
                 <div class="pp-detect mb-4 pp-fade">
-                  <span class="icon">{{ businessTypeDef(d.type).icon }}</span>
+                  <span class="pp-icon-badge"><pp-icon [name]="typeIcon(d.type)" [size]="17" /></span>
                   <div>
                     <div class="title">Looks like: {{ businessTypeDef(d.type).label }}</div>
-                    <div style="font-size: 12px; color: var(--pp-ink-2)">{{ confidenceText(d) }} · Not right? Pick a type below.</div>
+                    <div class="sub">{{ confidenceText(d) }} · not right? Pick a type below.</div>
                   </div>
                 </div>
               }
@@ -57,28 +75,32 @@ import { AnalysisStore } from '../../core/state/analysis.store';
             <div class="pp-option-grid mb-4">
               @for (t of types; track t.type) {
                 <button type="button" class="pp-type-card" [class.selected]="selectedType() === t.type" (click)="selectedType.set(t.type)">
-                  <div class="icon">{{ t.icon }}</div>
-                  <div class="name">{{ t.label }}</div>
-                  <small>{{ t.description }}</small>
+                  <span class="pp-icon-badge"><pp-icon [name]="typeIcon(t.type)" [size]="17" /></span>
+                  <span>
+                    <span class="name">{{ t.label }}</span>
+                    <small>{{ t.description }}</small>
+                  </span>
                 </button>
               }
             </div>
             <div class="d-flex justify-content-end">
-              <button class="btn btn-pp" [disabled]="!selectedType() || !offering().trim()" (click)="startQuestions()">Continue →</button>
+              <button class="btn btn-pp" [disabled]="!selectedType() || !offering().trim()" (click)="startQuestions()">
+                Continue <pp-icon name="arrow-right" [size]="14" />
+              </button>
             </div>
           </div>
         }
 
         <!-- Steps 1..N: question groups -->
         @if (currentGroup(); as group) {
-          <form class="pp-card pp-fade" [formGroup]="form" (ngSubmit)="next()">
+          <form class="pp-card pp-card--primary pp-fade" [formGroup]="form" (ngSubmit)="next()">
             <h2 class="mb-1">{{ group.title }}</h2>
-            <p class="pp-muted mb-4">{{ group.intro }}</p>
+            <p class="pp-body mb-4">{{ group.intro }}</p>
 
             @for (q of visible(); track q.key) {
-              <div class="mb-4">
+              <div class="pp-q">
                 <label class="pp-q-label d-block" [for]="q.key">{{ q.label }}</label>
-                <div class="pp-q-help">{{ q.help }}</div>
+                <div class="pp-q-help"><pp-icon name="lightbulb" [size]="13" /><span>{{ q.help }}</span></div>
 
                 @switch (q.type) {
                   @case ('select') {
@@ -86,6 +108,7 @@ import { AnalysisStore } from '../../core/state/analysis.store';
                       @for (o of q.options ?? []; track o.value) {
                         <button type="button" class="pp-option" [class.selected]="form.value[q.key] === o.value" (click)="setValue(q.key, o.value)">
                           <span>{{ o.label }} @if (o.hint) { <small>{{ o.hint }}</small> }</span>
+                          <pp-icon class="tick" name="check" [size]="14" />
                         </button>
                       }
                     </div>
@@ -95,6 +118,7 @@ import { AnalysisStore } from '../../core/state/analysis.store';
                       @for (o of q.options ?? []; track o.value) {
                         <button type="button" class="pp-option" [class.selected]="isChecked(q.key, o.value)" (click)="toggleMulti(q.key, o.value)">
                           <span>{{ o.label }}</span>
+                          <pp-icon class="tick" name="check" [size]="14" />
                         </button>
                       }
                     </div>
@@ -126,17 +150,22 @@ import { AnalysisStore } from '../../core/state/analysis.store';
                   }
                 }
                 @if (errors()[q.key]) {
-                  <div class="pp-error">{{ errors()[q.key] }}</div>
+                  <div class="pp-error"><pp-icon name="triangle-alert" [size]="13" />{{ errors()[q.key] }}</div>
                 }
               </div>
             }
 
-            <div class="d-flex justify-content-between align-items-center mt-2">
-              <button type="button" class="btn btn-pp-ghost" (click)="back()">← Back</button>
-              <button type="submit" class="btn btn-pp">{{ isLast() ? 'Calculate my price' : 'Continue →' }}</button>
+            <div class="d-flex justify-content-between align-items-center mt-4">
+              <button type="button" class="btn btn-pp-ghost" (click)="back()"><pp-icon name="arrow-left" [size]="14" /> Back</button>
+              <button type="submit" class="btn btn-pp" [class.btn-pp-hero]="isLast()">
+                {{ isLast() ? 'Calculate my price' : 'Continue' }}
+                <pp-icon [name]="isLast() ? 'sparkles' : 'arrow-right'" [size]="14" />
+              </button>
             </div>
           </form>
-          <p class="pp-notice mt-3 text-center">Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</p>
+          <div class="mt-3 d-flex justify-content-center">
+            <span class="pp-notice"><pp-icon name="info" [size]="13" /> Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</span>
+          </div>
         }
       </div>
     </div>
@@ -173,6 +202,15 @@ export class AnalyzeComponent {
     return g ? visibleQuestions(g, this.mergedAnswers()) : [];
   });
   readonly currency = computed(() => (this.mergedAnswers()['currency'] as string) || 'USD');
+
+  /** One segment per step, so progress reads as a conversation with a shape. */
+  readonly stepMarks = computed(() => new Array(this.totalSteps()));
+  readonly stepTitle = computed(() => this.currentGroup()?.title ?? "What you're selling");
+  readonly stepIcon = computed(() => (this.stepIndex() === 0 ? 'square-pen' : STEP_ICONS[(this.stepIndex() - 1) % STEP_ICONS.length]));
+
+  typeIcon(type: string): string {
+    return BUSINESS_TYPE_ICONS[type as keyof typeof BUSINESS_TYPE_ICONS] ?? 'package';
+  }
 
   constructor() {
     effect(() => {
