@@ -2,7 +2,8 @@ import { chromium } from 'playwright';
 import { resolve } from 'node:path';
 
 const url = 'file://' + resolve('dist/profitpath-preview.html');
-const browser = await chromium.launch();
+// Set PP_CHROMIUM when the sandbox's browser build differs from the pinned one.
+const browser = await chromium.launch(process.env.PP_CHROMIUM ? { executablePath: process.env.PP_CHROMIUM } : {});
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
@@ -88,6 +89,25 @@ await page.setViewportSize({ width: 390, height: 800 });
 await page.screenshot({ path: 'shots/09-mobile-results.png', fullPage: true, animations: 'disabled' });
 const scrollW = await page.evaluate(() => document.documentElement.scrollWidth);
 console.log('mobile scrollWidth:', scrollW);
+
+/* Right-to-left pass. A fresh context with an Arabic locale is what a first-time
+   reader in Arabic gets — no stored choice, detection only. */
+const rtl = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'ar' });
+const ar = await rtl.newPage();
+ar.on('pageerror', (e) => errors.push('rtl pageerror: ' + e.message));
+await ar.goto(url);
+await ar.waitForSelector('.pp-hero');
+await ar.screenshot({ path: 'shots/10-rtl-landing.png', fullPage: true, animations: 'disabled' });
+await ar.locator('[data-action="example"]').first().click();
+await ar.waitForSelector('.pp-kpi--hero');
+await ar.screenshot({ path: 'shots/11-rtl-results.png', fullPage: true, animations: 'disabled' });
+await ar.locator('a[href="#/roadmap"]').first().click();
+await ar.waitForSelector('.pp-rec');
+await ar.screenshot({ path: 'shots/12-rtl-roadmap.png', fullPage: true, animations: 'disabled' });
+await ar.setViewportSize({ width: 390, height: 800 });
+await ar.screenshot({ path: 'shots/13-rtl-mobile.png', fullPage: true, animations: 'disabled' });
+console.log('rtl dir:', await ar.evaluate(() => document.documentElement.getAttribute('dir')));
+console.log('rtl mobile scrollWidth:', await ar.evaluate(() => document.documentElement.scrollWidth));
 
 console.log('errors:', errors);
 await browser.close();

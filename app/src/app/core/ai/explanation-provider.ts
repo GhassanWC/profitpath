@@ -29,7 +29,11 @@ export class TemplateExplanationProvider implements ExplanationProvider {
     const parts = [
       t('explain.price.cost', { cur, unit, cost: p.trueCostPerUnit }),
       top ? t('explain.price.topLine', { label: t([`costLine.${top.key}`], {}), share: top.share }) : '',
-      p.marginBand.rationaleI18n ? t(p.marginBand.rationaleI18n.key, p.marginBand.rationaleI18n.params) : p.marginBand.rationale,
+      // Without a requested margin the rationale is the static one for the
+      // business type, which the catalogue already carries under its own key.
+      p.marginBand.rationaleI18n
+        ? t(p.marginBand.rationaleI18n.key, p.marginBand.rationaleI18n.params)
+        : t([`businessType.${m.meta.businessType}.rationale`]),
       t('explain.price.outcome', {
         cur,
         unit,

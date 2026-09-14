@@ -374,11 +374,11 @@ export class ResultsComponent {
 
   /** The hero figure sets its currency mark small and muted beside the digits. */
   currencyMark(value: number, currency: string): string {
-    return splitMoney(value, currency)[0];
+    return splitMoney(this.i18n.money(value, currency, 0))[0];
   }
 
   figure(value: number, currency: string): string {
-    return splitMoney(value, currency)[1];
+    return splitMoney(this.i18n.money(value, currency, 0))[1];
   }
 
   deltaPts(now: number, was: number): string {

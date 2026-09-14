@@ -213,10 +213,10 @@ export class LandingComponent {
 
   /** The hero figure sets its currency mark small and muted beside the digits. */
   mark(value: number): string {
-    return splitMoney(value, this.ex().currency)[0];
+    return splitMoney(this.i18n.money(value, this.ex().currency, 0))[0];
   }
   fig(value: number): string {
-    return splitMoney(value, this.ex().currency)[1];
+    return splitMoney(this.i18n.money(value, this.ex().currency, 0))[1];
   }
 
   seeExample() {

@@ -133,8 +133,10 @@ const walk = (dir) => readdirSync(dir).flatMap((f) => {
   return statSync(full).isDirectory() ? walk(full) : full.endsWith('.ts') ? [full] : [];
 });
 const srcDir = new URL('../app/src/app', import.meta.url).pathname;
+// The preview renders from the same catalogue, so it is held to the same rule.
+const sources = [...walk(srcDir), new URL('./app.js', import.meta.url).pathname];
 const literalKeys = new Set();
-for (const file of walk(srcDir)) {
+for (const file of sources) {
   const text = readFileSync(file, 'utf8');
   // t('some.key') / t(['some.key'])  — dynamic keys built by concatenation are
   // covered by the runtime checks in verify.mjs instead.
