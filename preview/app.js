@@ -101,9 +101,6 @@
     else if (r === 'results') page = pricing() ? renderResults() : (go('analyze'), '');
     else if (r === 'roadmap') page = pricing() ? renderRoadmap() : (go('analyze'), '');
     else page = renderLanding();
-    /* The landing is the one screen on paper; the flag goes on <html> so the
-       fixed page background changes with it. Mirrors AppComponent. */
-    document.documentElement.classList.toggle('pp-shell--paper', r === '');
     root.innerHTML = renderShell(page);
     bind();
     persist();
@@ -169,7 +166,7 @@
     const r = route();
     const nav = (p, l, ic) => `<a href="#/${p}" class="${r === p ? 'active' : ''}">${icon(ic, 15)} ${t(l)}</a>`;
     return `<header class="pp-header"><div class="pp-container"><div class="pp-header-pill">
-      <a href="#/" class="pp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ppmark" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f6bf6"/><stop offset="1" stop-color="#6c5ce7"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#ppmark)"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#dbe7ff"/></svg>ProfitPath</a>
+      <a href="#/" class="pp-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="0.8" y="0.8" width="30.4" height="30.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 23l7-8 5 4 8-12" fill="none" stroke="var(--pp-brand)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="7" r="2.4" fill="var(--pp-brand)"/></svg>ProfitPath</a>
       <nav class="pp-nav d-none d-sm-flex">${nav('analyze', 'nav.calculator', 'calculator')}${has ? nav('results', 'nav.results', 'chart-column') + nav('roadmap', 'nav.roadmap', 'map') : ''}</nav>
       <div class="d-flex align-items-center gap-2">${languagePicker()}<a href="#/analyze" class="btn btn-pp btn-sm">${t('nav.cta')} ${icon('arrow-right', 14, 'pp-icon-flip')}</a></div></div></div></header>
       <main>${inner}</main>

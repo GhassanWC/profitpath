@@ -55,72 +55,75 @@ input, select { font: inherit; color: inherit; }
 
 /* ---------------------------------------------------------------- tokens -- */
 :root {
-  /* Page — periwinkle → pale-blue wash */
-  --pp-bg-2: #c3cbe6;
-  --pp-page: linear-gradient(160deg, #9ba5d9 0%, #c3cbe6 46%, #dfe4ee 100%);
+  /* Page — warm paper, flat. The ground is stock, not a wash: nothing behind
+     the content moves, and every surface above it is told apart by a rule. */
+  --pp-bg-2: #f7f4ee;
+  --pp-page: none;
 
-  /* Glass — restrained: more solid, less blur than a typical glass UI, so text
-     on it stays crisp and the effect reads as material rather than as an effect. */
-  --pp-glass: rgba(255, 255, 255, 0.55);
-  --pp-glass-strong: rgba(255, 255, 255, 0.72);
-  --pp-glass-line: rgba(255, 255, 255, 0.6);
-  --pp-glass-blur: 14px;
+  /* There is no glass in this system any more. The tokens stay because shared
+     components still name them; they now resolve to paper and a hairline. */
+  --pp-glass: transparent;
+  --pp-glass-strong: var(--pp-card);
+  --pp-glass-line: var(--pp-line);
+  --pp-glass-blur: 0px;
 
-  /* Solid surfaces */
-  --pp-card: #ffffff;
-  --pp-subtle: #eef1f8;
-  --pp-subtle-2: #f6f8fc;
-  --pp-line: #e6eaf2;
+  /* Solid surfaces — raised paper, two recessed tints, and the rules between. */
+  --pp-card: #fffdf8;
+  --pp-subtle: #efeade;
+  --pp-subtle-2: #f3efe5;
+  --pp-line: #dcd5c6;
+  --pp-line-2: #ede8dc;
 
-  /* Ink — every value below is >= 4.5:1 on white, on --pp-subtle and on
-     --pp-subtle-2, so secondary text never reads as disabled. */
-  --pp-ink: #1a1c22;        /* 17.0:1 */
-  --pp-ink-2: #4b505c;      /*  8.1:1 */
-  --pp-muted: #656b7b;      /*  5.3:1 white · 4.7:1 on tiles */
+  /* Ink — every value below clears AA on paper, on --pp-subtle and on
+     --pp-subtle-2, audited by preview/contrast.mjs. */
+  --pp-ink: #16181d;        /* 16.2:1 on paper */
+  --pp-ink-2: #3d4049;      /*  9.4:1 */
+  --pp-muted: #67635a;      /*  5.5:1 paper · 5.0:1 on tiles */
 
-  /* Brand — one identity across the mark, the primary action, active state and
-     accents. The gradient is the brand; the solid blue is its working colour. */
-  --pp-brand: #2f6bf6;
-  --pp-brand-hover: #255fe8;
-  --pp-brand-ink: #1f57e0;    /* brand as TEXT: 6.0:1 white, 4.8:1 on brand-soft */
-  --pp-brand-2: #6c5ce7;
+  /* Brand — one ink blue, dark enough to carry white text at 6:1 and to read
+     as text on paper without a second, darker variant. */
+  --pp-brand: #1f57e0;
+  --pp-brand-hover: #16409f;
+  --pp-brand-ink: #1f57e0;
+  --pp-brand-2: #5b4bd6;
   --pp-brand-2-ink: #5b4bd6;
-  --pp-brand-soft: #dbe7ff;
-  --pp-brand-2-soft: #e7e4fb;
-  --pp-brand-wash: #f4f7ff;   /* insight-card interior */
-  --pp-brand-gradient: linear-gradient(135deg, #2f6bf6 0%, #6c5ce7 100%);
+  --pp-brand-soft: #e3e9fb;
+  --pp-brand-2-soft: #e8e5fa;
+  --pp-brand-wash: #f4f5fd;   /* insight-card interior */
+  --pp-brand-gradient: linear-gradient(135deg, #1f57e0 0%, #5b4bd6 100%);
 
-  /* Ink-dark surface — the single inverted card, and nothing else. */
-  --pp-dark: #111318;
-  --pp-dark-hover: #26292f;
-  --pp-on-dark: #ffffff;
-  --pp-on-dark-muted: rgba(255, 255, 255, 0.78);
+  /* The dark plate — the inverted card, the recommended scenario, the hero. */
+  --pp-dark: #14151a;
+  --pp-dark-hover: #262932;
+  --pp-on-dark: #f2efe8;
+  --pp-on-dark-muted: #9aa1b3;
+  --pp-pos-dark: #6fdca0;     /* a positive figure ON the plate */
 
-  /* Semantic — the base is for TEXT, the -ink variant for text on its own soft pill. */
-  --pp-pos: #12784a;        /* 5.5:1 white · 4.9:1 on tiles */
-  --pp-pos-soft: #dff3e8;
-  --pp-pos-ink: #0e6b41;    /* on --pp-pos-soft: 5.7:1 */
-  --pp-neg: #c93a30;        /* 5.1:1 */
-  --pp-neg-soft: #fde8e6;
+  /* Semantic — the base is for TEXT, the -ink variant for text on its own tint. */
+  --pp-pos: #12784a;        /* 5.0:1 on paper */
+  --pp-pos-soft: #dfeee4;
+  --pp-pos-ink: #0e6b41;    /* on --pp-pos-soft: 5.5:1 */
+  --pp-neg: #b8322a;
+  --pp-neg-soft: #fbe6e2;
   --pp-neg-ink: #b02f26;
-  --pp-warn-soft: #fdf0da;
+  --pp-warn-soft: #f7ecd6;
   --pp-warn-ink: #7a5210;
-  --pp-neutral-soft: #eceff5;
+  --pp-neutral-soft: #eae5d9;
 
   /* The preview's utility sheet resolves .text-danger through this alias. */
   --pp-danger: var(--pp-neg);
 
-  /* Gradients — the brand mark, the comparison lift, the trend card, the bars,
-     the landing headline. Never behind body text, never on a page background. */
-  --pp-gradient-bar: linear-gradient(90deg, #2f6bf6 0%, #6c5ce7 100%);
-  --pp-gradient-text: linear-gradient(90deg, #2f6bf6 0%, #6c5ce7 100%);
+  /* Rules, not gradients. The bar keeps a gradient because it encodes two
+     quantities in one strip; nothing else in the system ramps. */
+  --pp-gradient-bar: linear-gradient(90deg, #1f57e0 0%, #5b4bd6 100%);
 
-  /* Type */
-  /* Font fallback is per-glyph, so the Arabic faces at the end are only ever
-     reached by Arabic text: Latin copy and every figure still set in Plus
-     Jakarta Sans. Without them Arabic lands on the browser's last-resort face,
-     where the vowel marks collide with the letters beneath them. */
+  /* Type — three faces, each with a job. The serif carries voice, the mono
+     carries every figure so columns of money line up, the sans carries
+     reading copy. Arabic faces sit at the end of each stack: font fallback is
+     per-glyph, so Latin text never reaches them. */
   --pp-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
+  --pp-serif: 'Instrument Serif', Georgia, 'Times New Roman', 'Noto Naskh Arabic', serif;
+  --pp-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, 'Noto Sans Arabic', monospace;
 
   /* Figure scale — the hierarchy that makes results scannable. */
   --pp-fig-hero: clamp(46px, 7vw, 68px);
@@ -129,64 +132,89 @@ input, select { font: inherit; color: inherit; }
   --pp-fig-md: 20px;
   --pp-fig-sm: 15px;
 
-  /* Shape */
-  --pp-radius-panel: 26px;
-  --pp-radius: 18px;
-  --pp-radius-md: 14px;
-  --pp-radius-sm: 10px;
-  --pp-radius-pill: 999px;
+  /* Shape — print has no rounded corners. The tokens stay so the components
+     that name them keep resolving; they resolve to square. */
+  --pp-radius-panel: 0px;
+  --pp-radius: 0px;
+  --pp-radius-md: 0px;
+  --pp-radius-sm: 0px;
+  --pp-radius-pill: 0px;
 
-  --pp-shadow-panel: 0 18px 44px -26px rgba(38, 48, 88, 0.32);
-  --pp-shadow-panel-lg: 0 28px 64px -30px rgba(38, 48, 88, 0.42);
-  --pp-shadow-card: 0 8px 24px -14px rgba(26, 28, 34, 0.18);
-  --pp-shadow-soft: 0 2px 8px -4px rgba(26, 28, 34, 0.1);
-  --pp-shadow-brand: 0 10px 24px -12px rgba(47, 107, 246, 0.5);
-  --pp-shadow-dark: 0 10px 24px -12px rgba(17, 19, 24, 0.45);
-  --pp-ring-brand: 0 0 0 4px rgba(47, 107, 246, 0.16);
+  /* Depth comes from rules and tint, not from shadow. Kept as tokens so a
+     component can still name one; all but the menu resolve to nothing. */
+  --pp-shadow-panel: none;
+  --pp-shadow-panel-lg: none;
+  --pp-shadow-card: none;
+  --pp-shadow-soft: none;
+  --pp-shadow-brand: none;
+  --pp-shadow-dark: none;
+  --pp-shadow-menu: 0 18px 40px -24px rgba(38, 34, 24, 0.45);
+  --pp-ring-brand: 0 0 0 3px rgba(31, 87, 224, 0.18);
 
   /* Motion */
   --pp-ease: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
   --pp-ease-slow: 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
 
-  /* Layout */
-  --pp-container: 1120px;
+  /* Layout — one measure for the whole product, masthead and footer included. */
+  --pp-container: 1200px;
   --pp-gutter: 24px;
   --pp-grid-gap: 12px;
-  --pp-panel-pad: 12px;
-  --pp-card-pad: 20px;
-  --pp-card-pad-lg: 28px;
+  --pp-panel-pad: 0px;
+  --pp-card-pad: 22px;
+  --pp-card-pad-lg: 30px;
 
-  /* Cost-composition series — blue→violet, fees left neutral. The cost
-     breakdown component names these tokens rather than repeating the hexes. */
-  --pp-series-1: #2f6bf6; --pp-series-2: #5b8cff; --pp-series-3: #8fb0ff; --pp-series-4: #b9cdff;
-  --pp-series-5: #6c5ce7; --pp-series-6: #8f7ff5; --pp-series-7: #c4bdfa;
-  --pp-series-8: #9aa1b3; --pp-series-9: #c3c9d6;
+  /* Cost-composition series — blue→violet, fees left neutral. */
+  --pp-series-1: #1f57e0; --pp-series-2: #4c7cea; --pp-series-3: #86a6f2; --pp-series-4: #b5c9f8;
+  --pp-series-5: #5b4bd6; --pp-series-6: #8577e4; --pp-series-7: #bdb4f0;
+  --pp-series-8: #8d8778; --pp-series-9: #bdb6a5;
+
+  /* The landing names these; they are the same paper, one source. */
+  --lp-paper: var(--pp-bg-2);
+  --lp-raised: var(--pp-card);
+  --lp-ink: var(--pp-ink);
+  --lp-ink-2: var(--pp-ink-2);
+  --lp-muted: var(--pp-muted);
+  --lp-rule: var(--pp-line);
+  --lp-rule-2: var(--pp-line-2);
+  --lp-plate: var(--pp-dark);
+  --lp-on-plate: var(--pp-on-dark);
+  --lp-on-plate-2: var(--pp-on-dark-muted);
+  --lp-pos-plate: var(--pp-pos-dark);
+  --lp-serif: var(--pp-serif);
+  --lp-mono: var(--pp-mono);
+  --lp-gutter: var(--pp-gutter);
 }
 
 /* ------------------------------------------------------------------ base -- */
 html, body {
   background: var(--pp-bg-2);
-  background-image: var(--pp-page);
-  background-attachment: fixed;
   color: var(--pp-ink);
   font-family: var(--pp-font);
   -webkit-font-smoothing: antialiased;
 }
 body { font-size: 14px; line-height: 1.5; margin: 0; }
 
-/* Headings are 300–500 with tight tracking; these also override Bootstrap. */
-h1, h2, h3, h4, h5, .display-pp { letter-spacing: -0.02em; font-weight: 500; color: var(--pp-ink); }
-h1 { font-size: clamp(30px, 4vw, 42px); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; }
-h2 { font-size: 24px; font-weight: 400; }
-h3 { font-size: 19px; }
-h4 { font-size: 17px; }
-h5 { font-size: 15px; }
+/* Headings are the serif — it is the one place the product has a voice. Copy,
+   labels and controls stay in the sans, which is what you actually read. */
+h1, h2, h3, h4, h5, .display-pp {
+  font-family: var(--pp-serif); font-weight: 400; letter-spacing: -0.02em; color: var(--pp-ink);
+}
+h1 { font-size: clamp(32px, 4.4vw, 46px); letter-spacing: -0.028em; line-height: 1.04; }
+h2 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.08; }
+h3 { font-size: 22px; }
+h4 { font-size: 19px; }
+h5 { font-size: 16px; }
 a { color: var(--pp-brand-ink); text-decoration: none; }
-a:hover { color: var(--pp-brand-2-ink); }
+a:hover { color: var(--pp-brand-hover); }
 .text-muted, .pp-muted { color: var(--pp-muted) !important; }
 .pp-container { max-width: var(--pp-container); margin: 0 auto; padding-inline: var(--pp-gutter); }
 .pp-narrow { max-width: 720px; margin: 0 auto; }
-.pp-num { font-variant-numeric: tabular-nums; }
+/* Every figure in the product is mono and tabular, so columns of money line
+   up down a ledger and across a row of tiles. */
+.pp-num, .pp-kpi, .pp-stat .v, .pp-metric .pp-kpi, .pp-scenario .price,
+.pp-rec__impact .v, .pp-waterfall .item > :nth-child(2), .pp-delta, .pp-slider label span {
+  font-family: var(--pp-mono); font-variant-numeric: tabular-nums;
+}
 
 /* Icons: `pp-icon` is the Angular host, `.pp-i` the preview's bare <svg>. */
 pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
@@ -213,13 +241,14 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   background: transparent; border-radius: var(--pp-radius-pill); padding: 7px 11px;
   transition: background var(--pp-ease), color var(--pp-ease);
 }
-.pp-lang__button:hover { background: rgba(255, 255, 255, 0.55); color: var(--pp-ink); }
+.pp-lang__button { font-family: var(--pp-mono); }
+.pp-lang__button:hover { background: transparent; color: var(--pp-ink); }
 .pp-lang__code { letter-spacing: 0.04em; }
 .pp-lang__menu {
   position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 60;
-  margin: 0; padding: 6px; list-style: none; min-width: 190px;
-  background: #fff; border-radius: var(--pp-radius-md); box-shadow: var(--pp-shadow-panel-lg);
-  border: 1px solid var(--pp-line);
+  margin: 0; padding: 0; list-style: none; min-width: 200px;
+  background: var(--pp-card); border-radius: 0; box-shadow: var(--pp-shadow-menu);
+  border: 1px solid var(--pp-ink);
 }
 .pp-lang__item {
   display: flex; align-items: center; gap: 10px; width: 100%; border: 0; cursor: pointer;
@@ -245,9 +274,12 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 /* Figures are always weight 300 and tabular. Nothing here bolds a number. */
 .pp-kpi {
-  font-size: var(--pp-fig-md); font-weight: 300; letter-spacing: -0.03em; line-height: 1.15;
+  font-size: var(--pp-fig-md); font-weight: 400; letter-spacing: -0.01em; line-height: 1.15;
   font-variant-numeric: tabular-nums; color: var(--pp-ink);
 }
+/* The hero figure is the one that carries the serif: it is a headline that
+   happens to be a number, and it sits at the top of the results page alone. */
+.pp-kpi--hero, .pp-kpi--xl { font-family: var(--pp-serif); letter-spacing: -0.03em; }
 .pp-kpi--hero { font-size: var(--pp-fig-hero); line-height: 1; letter-spacing: -0.04em; }
 .pp-kpi--xl { font-size: var(--pp-fig-xl); line-height: 1.05; }
 .pp-kpi--lg { font-size: var(--pp-fig-lg); line-height: 1.1; }
@@ -264,133 +296,120 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 /* --------------------------------------------------------------- buttons -- */
 /* Every button is a full pill. Hover lifts 1px; there is no press state. */
+/* Square and ruled, set in the mono: an action reads as a stamp on the page.
+   No lift on hover — nothing in a printed system floats. */
 .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark {
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  border: 0; border-radius: var(--pp-radius-pill); font-family: inherit; font-weight: 500;
-  line-height: 1.2; padding: 11px 20px; font-size: 13px; white-space: nowrap; cursor: pointer;
-  transition: background var(--pp-ease), box-shadow var(--pp-ease), transform var(--pp-ease), border-color var(--pp-ease), color var(--pp-ease);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 0; font-family: var(--pp-mono); font-weight: 400;
+  line-height: 1.2; padding: 12px 22px; font-size: 13px; white-space: nowrap; cursor: pointer;
+  transition: background var(--pp-ease), border-color var(--pp-ease), color var(--pp-ease);
 }
 /* Primary action — brand, so the CTA, the mark and the active state agree. */
-.btn-pp { background: var(--pp-brand); color: #fff; box-shadow: var(--pp-shadow-brand); }
-.btn-pp:hover, .btn-pp:focus { background: var(--pp-brand-hover); color: #fff; transform: translateY(-1px); }
-.btn-pp:disabled { opacity: 0.45; transform: none; box-shadow: none; }
-/* The single most important CTA on a screen may carry the full gradient. */
-.btn-pp-hero { background: var(--pp-brand-gradient); }
-.btn-pp-hero:hover, .btn-pp-hero:focus { background: var(--pp-brand-gradient); filter: brightness(1.06); }
+.btn-pp { background: var(--pp-brand); color: #fff; }
+.btn-pp:hover, .btn-pp:focus { background: var(--pp-brand-hover); color: #fff; }
+.btn-pp:disabled { opacity: 0.4; }
+/* There is no louder primary than the primary. The hero modifier now only
+   buys size, so a screen cannot end up with two competing first actions. */
+.btn-pp-hero { padding: 15px 28px; font-size: 14px; }
 
-.btn-pp-ghost { background: transparent; color: var(--pp-ink-2); border: 1px solid var(--pp-line); }
-.btn-pp-ghost:hover, .btn-pp-ghost:focus { border-color: var(--pp-muted); color: var(--pp-ink); transform: translateY(-1px); }
-
-.btn-pp-white { background: #fff; color: var(--pp-ink); box-shadow: var(--pp-shadow-soft); }
-.btn-pp-white:hover, .btn-pp-white:focus { color: var(--pp-ink); box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
-
-.btn-pp-dark { background: var(--pp-dark); color: #fff; box-shadow: var(--pp-shadow-dark); }
-.btn-pp-dark:hover, .btn-pp-dark:focus { background: var(--pp-dark-hover); color: #fff; transform: translateY(-1px); }
-
-.btn-pp-glass {
-  background: var(--pp-glass); color: var(--pp-ink); border: 1px solid var(--pp-glass-line);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+.btn-pp-ghost, .btn-pp-white {
+  background: transparent; color: var(--pp-ink); border: 1.4px solid var(--pp-ink);
 }
-.btn-pp-glass:hover, .btn-pp-glass:focus { background: var(--pp-glass-strong); color: var(--pp-ink); transform: translateY(-1px); }
+.btn-pp-ghost:hover, .btn-pp-ghost:focus,
+.btn-pp-white:hover, .btn-pp-white:focus { background: var(--pp-ink); color: var(--pp-bg-2); }
 
-.btn-pp-lg { padding: 14px 26px; font-size: 15px; gap: 9px; }
-.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm, .btn-pp-dark.btn-sm { padding: 7px 14px; font-size: 12px; gap: 6px; }
+.btn-pp-dark { background: var(--pp-dark); color: var(--pp-on-dark); }
+.btn-pp-dark:hover, .btn-pp-dark:focus { background: var(--pp-dark-hover); color: var(--pp-on-dark); }
+
+/* The quiet action: a ruled underline, not a box. */
+.btn-pp-glass {
+  background: transparent; color: var(--pp-ink); padding: 4px 0;
+  border-bottom: 1px solid var(--pp-line); border-radius: 0;
+}
+.btn-pp-glass:hover, .btn-pp-glass:focus { background: transparent; color: var(--pp-ink); border-bottom-color: var(--pp-ink); }
+
+.btn-pp-lg { padding: 16px 30px; font-size: 14px; gap: 10px; }
+.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm, .btn-pp-dark.btn-sm { padding: 9px 16px; font-size: 12px; gap: 7px; }
 
 /* --------------------------------------------------- surfaces: the model -- */
+/* One layer, not two. The glass system drew a white card inside a frosted
+   panel with `::before`; on paper a card IS the sheet, told apart from the
+   ground by a rule and a tint. The `::before` stays in the cascade, disabled,
+   because the templates still carry the markup that assumed it. */
 .pp-card, .pp-scenario, .pp-rec {
   position: relative;
-  isolation: isolate;
-  background: var(--pp-glass);
-  backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
-  border: 1px solid var(--pp-glass-line);
-  border-radius: var(--pp-radius-panel);
-  box-shadow: var(--pp-shadow-panel);
-  padding: calc(var(--pp-panel-pad) + var(--pp-card-pad));
-}
-.pp-card::before, .pp-scenario::before, .pp-rec::before {
-  content: '';
-  position: absolute;
-  inset: var(--pp-panel-pad);
-  z-index: -1;
-  border-radius: var(--pp-radius);
   background: var(--pp-card);
-  box-shadow: var(--pp-shadow-card);
+  border: 1px solid var(--pp-line);
+  border-radius: 0;
+  padding: var(--pp-card-pad);
 }
+.pp-card::before, .pp-scenario::before, .pp-rec::before { content: none; }
 
 /* --- tier 1: primary. One per screen: the decision being presented. -------- */
+/* It is not raised — it is ruled heavier and given more room, which is how a
+   printed page says "this one". */
 .pp-card--primary {
-  padding: calc(var(--pp-panel-pad) + var(--pp-card-pad-lg));
-  box-shadow: var(--pp-shadow-panel-lg);
-  border-color: rgba(255, 255, 255, 0.75);
+  padding: var(--pp-card-pad-lg);
+  border-color: var(--pp-ink);
 }
-.pp-card--primary::before { box-shadow: 0 14px 40px -20px rgba(38, 48, 88, 0.4); }
-/* A brand hairline along the top edge of the white card, nothing louder. */
+/* A brand rule along the top edge, full bleed to the card. */
 .pp-card--primary::after {
-  content: ''; position: absolute; z-index: 0; pointer-events: none;
-  inset-inline: calc(var(--pp-panel-pad) + 26px);
-  top: var(--pp-panel-pad); height: 3px; border-radius: var(--pp-radius-pill);
-  background: var(--pp-brand-gradient);
+  content: ''; position: absolute; pointer-events: none;
+  inset-inline: -1px; top: -1px; height: 3px;
+  background: var(--pp-brand);
 }
 
 /* --- tier 2: secondary is the bare `.pp-card` above. ---------------------- */
 
 /* --- tier 3: insight. Reasoning, explanation, assumptions. ---------------- */
-.pp-card--insight::before { background: var(--pp-brand-wash); }
+.pp-card--insight { background: var(--pp-brand-wash); }
 
 /* --- tier 4: data. Dense figures; the interior recedes so numbers lead. --- */
-.pp-card--data::before { background: var(--pp-subtle-2); }
+.pp-card--data { background: var(--pp-subtle-2); }
 
 /* --- inverted. At most one per screen. ----------------------------------- */
-.pp-card--dark { color: var(--pp-on-dark); }
-.pp-card--dark::before { background: var(--pp-dark); box-shadow: var(--pp-shadow-dark); }
+.pp-card--dark { background: var(--pp-dark); border-color: var(--pp-dark); color: var(--pp-on-dark); }
 .pp-card--dark h1, .pp-card--dark h2, .pp-card--dark h3, .pp-card--dark h4,
 .pp-card--dark .pp-eyebrow, .pp-card--dark .pp-kpi { color: var(--pp-on-dark); }
 .pp-card--dark .pp-muted, .pp-card--dark .pp-subhead, .pp-card--dark ul { color: var(--pp-on-dark-muted) !important; }
 
-/* A plain block nested inside a card — never floated on the page wash. */
+/* A plain block nested inside a card — never floated on the page ground. */
 .pp-card-bare {
-  background: var(--pp-card); border-radius: var(--pp-radius);
-  box-shadow: var(--pp-shadow-card); padding: var(--pp-card-pad); border: 0;
+  background: var(--pp-bg-2); border: 1px solid var(--pp-line-2);
+  border-radius: 0; padding: var(--pp-card-pad);
 }
-.pp-card-bare--data { background: var(--pp-subtle-2); box-shadow: none; }
+.pp-card-bare--data { background: var(--pp-subtle-2); }
 
 /* ----------------------------------------------------------------- shell -- */
-/* The header is the only sticky element, and it floats as a pill. */
-.pp-header { position: sticky; top: 0; z-index: 50; }
-.pp-header .pp-container { padding-block: 14px; }
+/* A masthead: one rule across the page, and nothing floating above it. */
+.pp-header { position: sticky; top: 0; z-index: 50; background: var(--pp-bg-2); border-bottom: 1px solid var(--pp-line); }
+.pp-header .pp-container { padding-block: 0; }
 .pp-header-pill {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  background: var(--pp-glass);
-  backdrop-filter: blur(var(--pp-glass-blur)); -webkit-backdrop-filter: blur(var(--pp-glass-blur));
-  border: 1px solid var(--pp-glass-line);
-  border-radius: var(--pp-radius-pill);
-  padding: 9px 10px 9px 18px;
-  box-shadow: var(--pp-shadow-panel);
+  background: transparent; border: 0; border-radius: 0; padding: 0; height: 74px;
 }
-.pp-logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; color: var(--pp-ink); font-size: 15px; letter-spacing: -0.02em; }
+.pp-logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--pp-serif); font-weight: 400; color: var(--pp-ink); font-size: 21px; letter-spacing: -0.01em; }
 .pp-logo svg { width: 26px; height: 26px; }
 /* No `display` here: the markup's `d-none d-sm-flex` owns that, and setting it
    in this file would win on order and leave the nav visible on phones. */
 .pp-nav { align-items: center; gap: 4px; }
 .pp-nav a {
-  display: inline-flex; align-items: center; gap: 6px; color: var(--pp-ink-2);
-  font-weight: 400; font-size: 13px; padding: 6px 12px; border-radius: var(--pp-radius-pill);
-  transition: background var(--pp-ease), color var(--pp-ease);
+  display: inline-flex; align-items: center; gap: 7px; color: var(--pp-ink-2);
+  font-family: var(--pp-mono); font-size: 12px; padding: 8px 12px;
+  border-bottom: 2px solid transparent;
+  transition: color var(--pp-ease), border-color var(--pp-ease);
 }
-.pp-nav a:hover { color: var(--pp-ink); background: rgba(255, 255, 255, 0.55); }
-/* Active state is brand, like the mark and the primary action. */
-.pp-nav a.active { color: var(--pp-brand-ink); background: var(--pp-brand-soft); font-weight: 500; }
-.pp-footer { padding: 32px 0 48px; color: var(--pp-ink-2); font-size: 12px; }
+.pp-nav a:hover { color: var(--pp-ink); }
+/* Active state is a rule under the word — a tab, not a filled pill. */
+.pp-nav a.active { color: var(--pp-ink); border-bottom-color: var(--pp-brand); }
+.pp-footer { border-top: 1px solid var(--pp-line); margin-top: 64px; padding: 26px 0 34px; color: var(--pp-muted); font-family: var(--pp-mono); font-size: 11px; }
 
 /* Notices are quiet pills; the frosted one is the only translucent inline UI. */
 .pp-notice, .pp-warn, .pp-ok {
   display: inline-flex; align-items: center; gap: 7px; border-radius: var(--pp-radius-pill);
   padding: 9px 16px; font-size: 12px; line-height: 1.45;
 }
-.pp-notice {
-  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line); color: var(--pp-ink-2);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-}
+.pp-notice { background: var(--pp-subtle-2); border: 1px solid var(--pp-line); color: var(--pp-ink-2); }
 .pp-warn { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
 .pp-ok { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
 /* Notices that wrap relax from a pill to a rounded block. */
@@ -402,35 +421,13 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 /* An icon in a soft round chip — used for category heads and step markers. */
 .pp-icon-badge {
-  width: 34px; height: 34px; border-radius: var(--pp-radius-md); display: inline-grid; place-items: center;
-  background: var(--pp-brand-soft); color: var(--pp-brand-ink); flex: 0 0 auto;
+  width: 34px; height: 34px; border-radius: 0; display: inline-grid; place-items: center;
+  border: 1px solid var(--pp-line); background: transparent; color: var(--pp-brand-ink); flex: 0 0 auto;
 }
-.pp-icon-badge--plain { background: var(--pp-subtle); color: var(--pp-ink-2); }
-.pp-icon-badge--sm { width: 26px; height: 26px; border-radius: var(--pp-radius-sm); }
+.pp-icon-badge--plain { color: var(--pp-ink-2); }
+.pp-icon-badge--sm { width: 26px; height: 26px; }
 
-/* --------------------------------------------------------------- landing -- */
-.pp-hero { padding: 60px 0 40px; text-align: center; }
-.pp-hero h1 { font-size: clamp(34px, 5vw, 54px); font-weight: 300; line-height: 1.08; letter-spacing: -0.03em; margin: 0; }
-.pp-hero p.lead { font-size: 15px; color: var(--pp-ink-2); max-width: 560px; margin: 18px auto 26px; }
-.pp-gradient-text { background: var(--pp-gradient-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.pp-section { padding: 48px 0 0; }
-.pp-section h2 { font-size: clamp(24px, 3vw, 30px); font-weight: 400; letter-spacing: -0.02em; margin-bottom: 4px; }
-.pp-section .text-center p { font-size: 13px; }
-.pp-chip {
-  display: inline-flex; align-items: center; gap: 6px; border-radius: var(--pp-radius-pill);
-  background: var(--pp-glass-strong); border: 1px solid var(--pp-glass-line);
-  padding: 6px 12px; font-size: 12px; font-weight: 400; color: var(--pp-ink-2);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-}
-.pp-chip pp-icon { color: var(--pp-brand-ink); }
-.pp-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--pp-grid-gap); }
-.pp-flow h5 { font-size: 15px; font-weight: 500; margin: 12px 0 6px; }
-.pp-flow p { font-size: 13px; color: var(--pp-ink-2); }
-.pp-step-num {
-  width: 32px; height: 32px; border-radius: var(--pp-radius-md); display: inline-grid; place-items: center;
-  background: var(--pp-brand-soft); color: var(--pp-brand-ink); font-weight: 600; font-size: 13px;
-}
-
+/* ---------------------------------------------------------------- ledger -- */
 .pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 9px; column-gap: 16px; font-size: 13px; }
 .pp-ledger > :nth-child(even) { text-align: end; font-variant-numeric: tabular-nums; }
 .pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 11px; font-weight: 500; color: inherit; }
@@ -438,18 +435,15 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* --------------------------------------------------------- questionnaire -- */
 /* A consultation, not a form: segments show how far the conversation has run. */
 .pp-steps { display: flex; gap: 5px; }
-.pp-steps .seg {
-  flex: 1; height: 5px; border-radius: var(--pp-radius-pill); background: rgba(255, 255, 255, 0.55);
-  transition: background var(--pp-ease-slow);
-}
+.pp-steps .seg { flex: 1; height: 4px; border-radius: 0; background: var(--pp-line); transition: background var(--pp-ease-slow); }
 .pp-steps .seg.done { background: var(--pp-brand-2); }
 .pp-steps .seg.current { background: var(--pp-brand); }
 .pp-steps-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: var(--pp-ink-2); margin-bottom: 8px; }
 .pp-steps-meta .now { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--pp-ink); }
 
 /* Progress (roadmap completion) */
-.pp-progress { height: 6px; background: var(--pp-subtle); border-radius: var(--pp-radius-pill); overflow: hidden; }
-.pp-progress > div { height: 100%; background: var(--pp-gradient-bar); border-radius: var(--pp-radius-pill); transition: width var(--pp-ease-slow); }
+.pp-progress { height: 6px; background: var(--pp-subtle); border-radius: 0; overflow: hidden; }
+.pp-progress > div { height: 100%; background: var(--pp-brand); border-radius: 0; transition: width var(--pp-ease-slow); }
 
 .pp-q { padding: 16px 0; border-top: 1px solid var(--pp-line); }
 .pp-q:first-of-type { border-top: 0; padding-top: 4px; }
@@ -458,49 +452,52 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-q-help pp-icon { margin-top: 1px; color: var(--pp-brand-ink); }
 
 /* Fields show no border until focus, which draws a hairline plus a 4px ring. */
+/* A ruled field, like a line on a form: the rule is always there, and focus
+   darkens it and adds a ring rather than conjuring a border from nothing. */
 .pp-input-group {
-  display: flex; align-items: stretch; background: var(--pp-subtle);
-  border: 1px solid transparent; border-radius: var(--pp-radius-pill); overflow: hidden;
-  transition: border-color var(--pp-ease), box-shadow var(--pp-ease), background var(--pp-ease);
+  display: flex; align-items: stretch; background: var(--pp-card);
+  border: 1px solid var(--pp-line); border-radius: 0; overflow: hidden;
+  transition: border-color var(--pp-ease), box-shadow var(--pp-ease);
 }
-.pp-input-group:hover { background: #e8ecf6; }
-.pp-input-group:focus-within { background: #fff; border-color: var(--pp-brand); box-shadow: var(--pp-ring-brand); }
+.pp-input-group:hover { border-color: var(--pp-muted); }
+.pp-input-group:focus-within { border-color: var(--pp-brand); box-shadow: var(--pp-ring-brand); }
 .pp-input-group input, .pp-input-group select {
-  flex: 1; border: 0; outline: 0; padding: 12px 16px; font-size: 15px; background: transparent;
+  flex: 1; border: 0; outline: 0; padding: 13px 16px; font-size: 15px; background: transparent;
   min-width: 0; font-family: inherit; color: var(--pp-ink); font-variant-numeric: tabular-nums;
 }
-.pp-input-group .affix { display: flex; align-items: center; padding: 0 14px; color: var(--pp-muted); font-size: 13px; white-space: nowrap; }
+.pp-input-group input[type='number'], .pp-input-group input[inputmode='decimal'] { font-family: var(--pp-mono); }
+.pp-input-group .affix { display: flex; align-items: center; padding: 0 14px; color: var(--pp-muted); font-family: var(--pp-mono); font-size: 12px; white-space: nowrap; }
 .pp-input-group .affix.pre { padding-inline-end: 0; font-weight: 500; color: var(--pp-ink-2); }
 .pp-input-group .affix:not(.pre) { padding-inline-start: 0; }
-.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; background: #fff; }
+.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; }
 .pp-error { display: flex; align-items: center; gap: 6px; color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
 
 .pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .pp-option {
-  background: var(--pp-subtle); border: 1px solid transparent; border-radius: var(--pp-radius-md);
-  padding: 13px 15px; text-align: start; cursor: pointer; font-family: inherit; font-size: 13px;
+  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 0;
+  padding: 14px 15px; text-align: start; cursor: pointer; font-family: inherit; font-size: 13px;
   font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: center;
   transition: background var(--pp-ease), border-color var(--pp-ease);
 }
-.pp-option:hover { background: #e8ecf6; }
+.pp-option:hover { border-color: var(--pp-muted); }
 .pp-option.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); }
 .pp-option .tick { margin-inline-start: auto; color: var(--pp-brand-ink); display: none; }
 .pp-option.selected .tick { display: inline-flex; }
 .pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
 
 .pp-type-card {
-  background: #fff; border: 1px solid transparent; border-radius: var(--pp-radius-md); padding: 14px;
-  cursor: pointer; text-align: start; font-family: inherit; box-shadow: var(--pp-shadow-soft);
-  display: flex; gap: 11px; align-items: flex-start;
-  transition: box-shadow var(--pp-ease), transform var(--pp-ease), background var(--pp-ease), border-color var(--pp-ease);
+  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 0; padding: 15px;
+  cursor: pointer; text-align: start; font-family: inherit;
+  display: flex; gap: 12px; align-items: flex-start;
+  transition: background var(--pp-ease), border-color var(--pp-ease);
 }
-.pp-type-card:hover { box-shadow: var(--pp-shadow-card); transform: translateY(-1px); }
-.pp-type-card.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); box-shadow: none; transform: none; }
-.pp-type-card.selected .pp-icon-badge { background: #fff; }
+.pp-type-card:hover { border-color: var(--pp-muted); }
+.pp-type-card.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); }
+.pp-type-card.selected .pp-icon-badge { border-color: var(--pp-brand); }
 .pp-type-card .name { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
 .pp-type-card small { color: var(--pp-muted); display: block; font-size: 12px; margin-top: 2px; }
 
-.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-brand-soft); border-radius: var(--pp-radius-md); padding: 13px 15px; }
+.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-brand-soft); border: 1px solid var(--pp-brand); border-radius: 0; padding: 14px 15px; }
 .pp-detect .title { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
 .pp-detect .sub { font-size: 12px; color: var(--pp-brand-ink); }
 
@@ -508,17 +505,15 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* The unit-economics strip under the recommended price: three supporting
    figures, each clearly subordinate to the price above them. */
 .pp-stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.pp-stat {
-  background: var(--pp-subtle); border-radius: var(--pp-radius-md); padding: 14px 16px; min-width: 0;
-}
+.pp-stat { background: transparent; border-top: 1px solid var(--pp-line); border-radius: 0; padding: 16px 0 0; min-width: 0; }
 .pp-stat .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
-.pp-stat .v { font-size: var(--pp-fig-lg); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.pp-stat--accent { background: var(--pp-brand-soft); }
+.pp-stat .v { font-size: var(--pp-fig-lg); font-weight: 400; letter-spacing: -0.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pp-stat--accent { border-top-color: var(--pp-brand); }
 .pp-stat--accent .k { color: var(--pp-brand-ink); }
 
 /* Metric tiles — pale blocks inside a card, never cards in their own right. */
-.pp-metric { background: var(--pp-subtle); border: 0; border-radius: var(--pp-radius-md); padding: 14px 16px; height: 100%; }
-.pp-card--data .pp-metric { background: #fff; box-shadow: var(--pp-shadow-soft); }
+.pp-metric { background: var(--pp-card); border: 1px solid var(--pp-line-2); border-radius: 0; padding: 15px 16px; height: 100%; }
+.pp-card--data .pp-metric { background: var(--pp-card); }
 .pp-metric .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
 .pp-metric .sub { font-size: 11px; color: var(--pp-muted); margin-top: 4px; }
 
@@ -531,29 +526,28 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-compare__arrow { display: flex; align-items: center; color: var(--pp-muted); padding-bottom: 8px; }
 .pp-compare__lift {
   display: inline-flex; align-items: center; gap: 7px; align-self: center;
-  background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: var(--pp-radius-pill);
-  padding: 8px 15px; font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 500;
+  background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: 0;
+  padding: 8px 14px; font-family: var(--pp-mono); font-size: 12.5px; font-variant-numeric: tabular-nums;
 }
-.pp-compare__bar { display: flex; height: 12px; border-radius: var(--pp-radius-pill); overflow: hidden; background: var(--pp-subtle); }
+.pp-compare__bar { display: flex; height: 9px; border-radius: 0; overflow: hidden; background: var(--pp-subtle); }
 .pp-compare__bar .now { background: var(--pp-brand); }
-.pp-compare__bar .lift { background: var(--pp-gradient-bar); opacity: 0.45; }
-.pp-compare__key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11px; color: var(--pp-muted); }
-.pp-compare__key i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-inline-end: 7px; }
+.pp-compare__bar .lift { background: var(--pp-brand-2); }
+.pp-compare__key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--pp-mono); font-size: 11px; color: var(--pp-muted); }
+.pp-compare__key i { width: 8px; height: 8px; border-radius: 0; display: inline-block; margin-inline-end: 7px; }
 
 /* Scenario cards stay a tier below the recommended price. */
 .pp-scenario { height: 100%; }
-.pp-scenario::before { box-shadow: var(--pp-shadow-soft); }
-.pp-scenario.recommended { color: var(--pp-on-dark); }
-.pp-scenario.recommended::before { background: var(--pp-dark); box-shadow: var(--pp-shadow-dark); }
+.pp-scenario.recommended { background: var(--pp-dark); border-color: var(--pp-dark); color: var(--pp-on-dark); }
 .pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-subhead { color: var(--pp-on-dark-muted) !important; }
 .pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.22); }
-.pp-scenario .price { font-size: var(--pp-fig-xl); font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pp-scenario .price { font-family: var(--pp-serif); font-size: var(--pp-fig-xl); letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 
 /* Badges are soft pills — the text carries the meaning, never colour alone. */
+/* Badges are tinted blocks; the word carries the meaning, never colour alone. */
 .pp-badge {
-  display: inline-flex; align-items: center; gap: 5px; border-radius: var(--pp-radius-pill);
-  font-size: 11px; font-weight: 500; padding: 4px 10px; letter-spacing: 0.01em;
-  background: var(--pp-neutral-soft); color: var(--pp-ink-2);
+  display: inline-flex; align-items: center; gap: 6px; border-radius: 0;
+  font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 5px 9px; background: var(--pp-neutral-soft); color: var(--pp-ink-2);
 }
 .pp-badge.low, .pp-badge.medium { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
 .pp-badge.recommended, .pp-badge.high { background: var(--pp-brand-soft); color: var(--pp-brand-ink); }
@@ -562,28 +556,28 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-badge.neutral { background: var(--pp-neutral-soft); color: var(--pp-ink-2); }
 .pp-badge.easy { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
 /* On the inverted card, badges invert too. */
-.pp-scenario.recommended .pp-badge { background: rgba(255, 255, 255, 0.16); color: #fff; }
+.pp-scenario.recommended .pp-badge, .pp-card--dark .pp-badge { background: rgba(242, 239, 232, 0.14); color: var(--pp-on-dark); }
 
-/* Cost bar — individually pill-rounded segments separated by 3px gaps. */
-.pp-bar { display: flex; gap: 3px; height: 10px; background: transparent; }
-.pp-bar span { display: block; height: 100%; border-radius: var(--pp-radius-pill); }
-.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 7px 16px; font-size: 12px; }
-.pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-inline-end: 8px; }
+/* Cost bar — one continuous strip, the way a composition is printed. */
+.pp-bar { display: flex; height: 7px; background: transparent; }
+.pp-bar span { display: block; height: 100%; border-radius: 0; }
+.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; font-size: 12px; }
+.pp-legend .dot { width: 8px; height: 8px; border-radius: 0; display: inline-block; margin-inline-end: 8px; }
 
 /* Tabs sit on a frosted bed; the active tab is the brand. */
 .pp-tabs {
-  display: inline-flex; gap: 4px; background: var(--pp-glass-strong);
-  border: 1px solid var(--pp-glass-line); border-radius: var(--pp-radius-pill); padding: 4px;
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: inline-flex; gap: 26px; background: transparent;
+  border: 0; border-bottom: 1px solid var(--pp-line); border-radius: 0; padding: 0;
 }
 .pp-tabs button {
-  display: inline-flex; align-items: center; gap: 6px;
-  border: 0; background: transparent; padding: 8px 16px; border-radius: var(--pp-radius-pill);
-  font-family: inherit; font-weight: 500; font-size: 13px; color: var(--pp-ink-2); cursor: pointer;
-  transition: background var(--pp-ease), color var(--pp-ease);
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 0; border-bottom: 2px solid transparent; background: transparent;
+  padding: 10px 0; border-radius: 0; margin-bottom: -1px;
+  font-family: var(--pp-mono); font-size: 12.5px; color: var(--pp-muted); cursor: pointer;
+  transition: color var(--pp-ease), border-color var(--pp-ease);
 }
 .pp-tabs button:hover { color: var(--pp-ink); }
-.pp-tabs button.active { background: var(--pp-brand); color: #fff; }
+.pp-tabs button.active { color: var(--pp-ink); border-bottom-color: var(--pp-brand); }
 
 .pp-slider { margin-bottom: 14px; }
 .pp-slider label { display: flex; justify-content: space-between; gap: 12px; font-weight: 500; font-size: 13px; margin-bottom: 5px; }
@@ -608,12 +602,13 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-rec h4 { font-size: 16px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
 .pp-rec p { margin: 0; font-size: 13px; color: var(--pp-ink-2); }
 .pp-rec__impact { text-align: end; }
-.pp-rec__impact .v { font-size: var(--pp-fig-lg); font-weight: 300; color: var(--pp-pos); letter-spacing: -0.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pp-rec__impact .v { font-size: var(--pp-fig-lg); font-weight: 400; color: var(--pp-pos); letter-spacing: -0.01em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pp-rec__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 /* The next action is the point of the card, so it gets its own surface. */
 .pp-rec__action {
   display: flex; gap: 10px; align-items: flex-start; background: var(--pp-brand-wash);
-  border-radius: var(--pp-radius-md); padding: 12px 14px; font-size: 13px; color: var(--pp-ink-2);
+  border-inline-start: 2px solid var(--pp-brand); border-radius: 0;
+  padding: 13px 15px; font-size: 13px; color: var(--pp-ink-2);
 }
 .pp-rec__action .k { font-size: 11px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 3px; }
 .pp-rec summary { display: flex; align-items: center; gap: 6px; color: var(--pp-muted); font-size: 12px; cursor: pointer; list-style: none; }
@@ -622,8 +617,8 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 /* Round, brand when checked — a completed item reads as done, not as an alarm. */
 .pp-check {
-  width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--pp-line);
-  display: inline-grid; place-items: center; cursor: pointer; background: #fff; color: var(--pp-muted);
+  width: 24px; height: 24px; border-radius: 0; border: 1.4px solid var(--pp-line);
+  display: inline-grid; place-items: center; cursor: pointer; background: var(--pp-card); color: var(--pp-muted);
   font-family: inherit; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
 }
 .pp-check:hover { border-color: var(--pp-brand); color: var(--pp-brand-ink); }
@@ -636,8 +631,8 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-waterfall { display: grid; gap: 11px; }
 .pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; font-size: 12px; }
 .pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--pp-ink); }
-.pp-waterfall .track { height: 6px; border-radius: var(--pp-radius-pill); background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
-.pp-waterfall .track span { display: block; height: 100%; background: var(--pp-gradient-bar); border-radius: var(--pp-radius-pill); }
+.pp-waterfall .track { height: 5px; border-radius: 0; background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
+.pp-waterfall .track span { display: block; height: 100%; background: var(--pp-brand); border-radius: 0; }
 
 /* ------------------------------------------------------------- animation -- */
 /* Route entry is one keyframe. No bounces, no springs, no scroll reveals. */
@@ -676,52 +671,15 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
    only place the product speaks to someone who has not used it yet, so it gets
    an editorial register the working screens do not.
 
-   Everything here is scoped under `.pp-lp`, and the shell picks up
-   `.pp-shell--paper` only on the landing route — so the glass system that the
-   analyze, results and roadmap screens depend on is untouched by this block.
+   The whole product now shares this ground; what stays scoped under `.pp-lp`
+   is only what the landing alone needs — the video hero, the five-step strip,
+   the range grid and the plan table.
    ========================================================================== */
 .pp-lp {
-  --lp-paper: #f7f4ee;
-  --lp-raised: #fffdf8;
-  --lp-ink: #16181d;
-  --lp-ink-2: #3d4049;
-  --lp-muted: #6e6a60;   /* 4.95:1 on paper — audited in preview/contrast.mjs */
-  --lp-rule: #dcd5c6;
-  --lp-rule-2: #ede8dc;
-  --lp-plate: #14151a;
-  --lp-on-plate: #f2efe8;
-  --lp-on-plate-2: #9aa1b3;
-  --lp-pos-plate: #6fdca0; /* positive figures on the dark plate only */
-  --lp-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
-  --lp-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --lp-gutter: 24px;
-
   display: block;
   background: var(--lp-paper);
   color: var(--lp-ink);
 }
-/* The page wash and the glass header belong to the app, not to this page. */
-.pp-shell--paper, .pp-shell--paper body { background: var(--lp-paper); background-image: none; }
-.pp-shell--paper .pp-header { position: static; padding: 0; border-bottom: 1px solid #dcd5c6; }
-/* The shell's container is narrower than the landing's measure; on paper they
-   have to agree or the masthead sits inboard of the headline beneath it. */
-.pp-shell--paper .pp-header .pp-container,
-.pp-shell--paper .pp-footer .pp-container { max-width: 1200px; }
-.pp-shell--paper .pp-header-pill {
-  background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
-  border: 0; border-radius: 0; box-shadow: none; padding: 0; height: 74px;
-}
-.pp-shell--paper .pp-logo { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 21px; }
-.pp-shell--paper .pp-nav a,
-.pp-shell--paper .pp-lang__button { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; }
-.pp-shell--paper .btn-pp {
-  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 400;
-  background: transparent; background-image: none; color: #16181d;
-  border: 1.4px solid #16181d; border-radius: 0; box-shadow: none;
-}
-.pp-shell--paper .pp-footer { border-top: 1px solid #dcd5c6; background: #f7f4ee; }
-.pp-shell--paper .pp-footer .pp-container { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #6e6a60; }
-
 .pp-lp__inner { max-width: 1200px; margin: 0 auto; padding-inline: var(--lp-gutter); }
 
 /* ------------------------------------------------------------ type ladder */
@@ -1008,6 +966,7 @@ const ICONS = {
   'sparkles': '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /> <path d="M20 2v4" /> <path d="M22 4h-4" /> <circle cx="4" cy="20" r="2" />',
   'lightbulb': '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" />',
   'target': '<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" />',
+  'search': '<circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" />',
   'arrow-right': '<path d="M5 12h14" /> <path d="m12 5 7 7-7 7" />',
   'arrow-left': '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
   'arrow-up-right': '<path d="M7 7h10v10" /> <path d="M7 17 17 7" />',
@@ -5976,9 +5935,6 @@ exports.FR = {
     else if (r === 'results') page = pricing() ? renderResults() : (go('analyze'), '');
     else if (r === 'roadmap') page = pricing() ? renderRoadmap() : (go('analyze'), '');
     else page = renderLanding();
-    /* The landing is the one screen on paper; the flag goes on <html> so the
-       fixed page background changes with it. Mirrors AppComponent. */
-    document.documentElement.classList.toggle('pp-shell--paper', r === '');
     root.innerHTML = renderShell(page);
     bind();
     persist();
@@ -6044,7 +6000,7 @@ exports.FR = {
     const r = route();
     const nav = (p, l, ic) => `<a href="#/${p}" class="${r === p ? 'active' : ''}">${icon(ic, 15)} ${t(l)}</a>`;
     return `<header class="pp-header"><div class="pp-container"><div class="pp-header-pill">
-      <a href="#/" class="pp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ppmark" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2f6bf6"/><stop offset="1" stop-color="#6c5ce7"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#ppmark)"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#dbe7ff"/></svg>ProfitPath</a>
+      <a href="#/" class="pp-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="0.8" y="0.8" width="30.4" height="30.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 23l7-8 5 4 8-12" fill="none" stroke="var(--pp-brand)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="7" r="2.4" fill="var(--pp-brand)"/></svg>ProfitPath</a>
       <nav class="pp-nav d-none d-sm-flex">${nav('analyze', 'nav.calculator', 'calculator')}${has ? nav('results', 'nav.results', 'chart-column') + nav('roadmap', 'nav.roadmap', 'map') : ''}</nav>
       <div class="d-flex align-items-center gap-2">${languagePicker()}<a href="#/analyze" class="btn btn-pp btn-sm">${t('nav.cta')} ${icon('arrow-right', 14, 'pp-icon-flip')}</a></div></div></div></header>
       <main>${inner}</main>

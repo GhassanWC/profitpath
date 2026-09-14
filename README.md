@@ -19,51 +19,56 @@ preview/                           Dependency-free live preview built from the s
 
 ## Design system
 
-Soft glass on a periwinkle wash, one brand gradient, and figures that are scannable before
-they are read. Every token and class lives in `app/src/styles.css`, which the preview
-compiles in verbatim, so the two surfaces cannot drift.
+Warm paper, one ink, and figures that are scannable before they are read. Every token and
+class lives in `app/src/styles.css`, which the preview compiles in verbatim, so the two
+surfaces cannot drift — retargeting the tokens there moves the whole product at once.
 
-**Two-layer surface model.** Content never sits straight on the page wash. `.pp-card` *is*
-the glass panel, and the card inside it is drawn by the element's own `::before` at a 12px
-inset — so a card stays one element in the markup.
+**An editorial register, not a dashboard one.** The product prices things for people who
+sell things, so it reads as financial print: a flat paper ground, rules instead of shadows,
+square corners, **Instrument Serif** for headings and the hero figure, **IBM Plex Mono** for
+every number, and **Plus Jakarta Sans** for the copy you actually read. Nothing floats and
+nothing is rounded; a surface is told apart from the ground by a rule and a tint.
+
+**One surface layer.** A card *is* the sheet. (The glass system this replaced drew a white
+card inside a frosted panel with `::before`; that pseudo-element is still in the cascade,
+disabled, because the templates carry markup that assumed it.)
 
 **Card hierarchy — four treatments and one inverted. Do not add a fifth.**
 
 | Class | Use |
 | --- | --- |
-| `.pp-card` | secondary: the default content card |
-| `.pp-card--primary` | the decision on the page — deeper, roomier, brand edge. One per screen |
+| `.pp-card` | secondary: the default sheet |
+| `.pp-card--primary` | the decision on the page — ruled in ink, roomier, brand rule on top. One per screen |
 | `.pp-card--insight` | explanation and reasoning: faint brand wash |
-| `.pp-card--data` | dense figures: pale interior |
+| `.pp-card--data` | dense figures: the interior recedes so numbers lead |
 | `.pp-card--dark` | inverted, at most one per screen |
 | `.pp-card-bare` | a plain block nested inside one of the above |
 
-**Brand.** The mark, the primary button, the active nav item and the accents are all the
-same blue→violet identity (`--pp-brand`, `--pp-brand-gradient`). Near-black is ink and the
-inverted card only. Brand *text* uses `--pp-brand-ink`, which is darkened to clear AA.
+**Brand.** One ink blue (`--pp-brand`), dark enough to carry white text at 6:1 and to be
+read as text on paper — so there is no second, darker variant to keep in step. It marks the
+primary action, the active nav rule, the top rule of the primary card and the accents, and
+nothing else. There is no gradient anywhere except the composition bar, which encodes two
+quantities in one strip.
 
-**Contrast.** Every ink token clears WCAG AA (4.5:1) on white, on `--pp-subtle` and on
-`--pp-subtle-2`. `node preview/contrast.mjs` audits the shipped stylesheet and fails if a
-pair drops below that — run it after touching a colour.
-
-**The landing page is a second surface.** It is the only screen a visitor sees before they
-have used anything, so it gets an editorial register rather than the glass one: warm paper,
-one ink, Instrument Serif for voice and IBM Plex Mono for every figure. All of it is scoped
-under `.pp-lp`, and `AppComponent` puts `.pp-shell--paper` on `<html>` only on the landing
-route — so the analyze, results and roadmap screens are untouched by that block. Its
-drawings live in `app/src/app/shared/illustrations.ts` (same plain-data trick as the icons,
-so the preview reuses the file) and carry no colour of their own: stroke weight and hue come
-from the page, so one accent recolours the set.
+**Contrast.** Every ink token clears WCAG AA (4.5:1) on paper, on the raised sheet, on both
+recessed tints and on the dark plate. `node preview/contrast.mjs` audits 28 pairs read
+straight out of the shipped stylesheet and fails if one drops below that — run it after
+touching a colour.
 
 **Icons.** Lucide, inlined in `app/src/app/shared/icons.ts` rather than loaded from a CDN,
 so both surfaces share one registry and neither needs a network round-trip. Angular renders
 them through `<pp-icon name="…">`; `preview/build.mjs` strips the `export` keyword and
 reuses the same file. Add one by copying the inner markup of `lucide-static/icons/<name>.svg`.
-No emoji anywhere in the interface.
+A name with no entry renders an empty `<svg>` and complains to nobody, so `i18n-check.mjs`
+asserts every referenced name resolves. No emoji anywhere in the interface.
 
-Typeface is **Plus Jakarta Sans** (Google Fonts, 300–700), loaded in `app/src/index.html`
-and `preview/build.mjs`. Arabic faces sit at the end of `--pp-font`: font fallback is
-per-glyph, so Latin copy and every figure still set in Plus Jakarta Sans.
+**Illustrations.** The landing page's drawings live in `app/src/app/shared/illustrations.ts`
+(same plain-data trick as the icons, so the preview reuses the file). They carry no colour
+of their own — stroke weight and hue come from the page, so one accent recolours the set.
+
+Type is loaded from Google Fonts in `app/src/index.html` and `preview/build.mjs`. Arabic
+faces sit at the end of every stack: font fallback is per-glyph, so Latin copy and every
+figure still set in the Latin face.
 
 ## Languages
 
@@ -71,7 +76,7 @@ per-glyph, so Latin copy and every figure still set in Plus Jakarta Sans.
 compile-time `$localize`: that would need a separate build per language, could not switch
 without a reload, and could not be shared with the dependency-free preview. `core/i18n` has
 no framework imports, so the app, the engine-adjacent code and the preview all read the same
-725 entries.
+733 entries.
 
 A reader's language is detected from the browser and remembered in `localStorage`; the
 switcher in the header lists every language in its own script.
@@ -108,7 +113,7 @@ overflows at 390px.
 
 `i18n-check.mjs` guards the catalogues themselves: fidelity against the engine's prose, key
 parity across locales, no placeholder a translation invents, and no key a template asks for
-that the catalogue lacks.
+that the catalogue lacks, plus every icon name a template asks for.
 
 ```bash
 cd app && npx tsc -p tsconfig.engine.json && npx tsc -p tsconfig.i18n.json && npx ng build

@@ -152,5 +152,27 @@ else console.log(`  ✓ ${literalKeys.size} literal keys, all present`);
 const unusedUi = Object.keys(EN).filter((k) => /^(landing|analyze|results|roadmap|compare|nav|footer|lang|chart)\./.test(k) && !literalKeys.has(k));
 console.log(`  ${unusedUi.length} interface key(s) reached only through a built key (business type, plan, step number) — expected`);
 
+// ------------------------------------------------------- 5. icon registry
+// An icon name with no entry renders an empty <svg>: the space is reserved,
+// nothing is drawn, and nothing anywhere complains. `search` shipped that way.
+console.log('\nIcons — every name a template asks for is in the registry');
+const iconSrc = readFileSync(new URL('../app/src/app/shared/icons.ts', import.meta.url).pathname, 'utf8');
+const registry = new Set(
+  [...iconSrc.slice(iconSrc.indexOf('export const ICONS'), iconSrc.indexOf('BUSINESS_TYPE_ICONS'))
+    .matchAll(/^\s*'([a-z0-9-]+)':/gm)].map((m) => m[1]),
+);
+const asked = new Set();
+for (const file of walk(srcDir)) {
+  const text = readFileSync(file, 'utf8');
+  for (const m of text.matchAll(/name="([a-z0-9-]+)"/g)) asked.add(m[1]);
+  for (const m of text.matchAll(/\[name\]="'([a-z0-9-]+)'"/g)) asked.add(m[1]);
+}
+for (const m of readFileSync(new URL('./app.js', import.meta.url).pathname, 'utf8').matchAll(/icon\('([a-z0-9-]+)'/g)) asked.add(m[1]);
+// The semantic maps (business type, category, difficulty) name registry keys too.
+for (const m of iconSrc.slice(iconSrc.indexOf('BUSINESS_TYPE_ICONS')).matchAll(/:\s*'([a-z0-9-]+)',/g)) asked.add(m[1]);
+const noIcon = [...asked].filter((n) => !registry.has(n)).sort();
+if (noIcon.length) noIcon.forEach((n) => fail(`icon "${n}" is referenced but not in the registry`));
+else console.log(`  ✓ ${asked.size} names asked for, all ${registry.size} registry entries resolve`);
+
 console.log(failures ? `\nFAILED — ${failures} problem(s)` : '\nCatalogues are consistent with the engine and with each other.');
 process.exit(failures ? 1 : 0);
