@@ -119,7 +119,7 @@
      puts the currency after the number simply has no mark to demote. */
   const splitMoney = (s) => { const m = /^([^\d-]*)(.*)$/.exec(s); return m ? [m[1].trim(), m[2]] : ['', s]; };
   /* The landing figure sets its currency mark small and muted beside the digits. */
-  const heroMark = (v, cur) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<span style="font-size:0.42em;color:var(--lp-muted);vertical-align:top">${esc(c)}</span>${esc(d)}`; };
+  const heroMark = (v, cur) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<span style="font-size:0.42em;color:var(--pp-muted);vertical-align:top">${esc(c)}</span>${esc(d)}`; };
   const heroFigure = (v, cur, cls) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<div class="pp-kpi ${cls}"><span class="cur">${esc(c)}</span>${esc(d)}</div>`; };
 
   /* Current vs optimised — mirrors ProfitCompareComponent. Both figures come
@@ -219,22 +219,22 @@
     const bar = p.costBreakdown.map((l, i) => `<span style="width:${l.share * 100}%;background:${seriesColor(i)}"></span>`).join('');
 
     const recs = r.recommendations.slice(0, 4).map((x, i) => `<div style="border-inline-end-color:rgba(242,239,232,0.14);padding-block:28px 30px">
-        <div class="n" style="color:var(--lp-on-plate-2)">${stepNo(i)}</div>
-        <h3 style="margin-top:14px;color:var(--lp-on-plate)">${esc(msg(x.i18n && x.i18n.title, x.title))}</h3>
+        <div class="n" style="color:var(--pp-on-dark-muted)">${stepNo(i)}</div>
+        <h3 style="margin-top:14px;color:var(--pp-on-dark)">${esc(msg(x.i18n && x.i18n.title, x.title))}</h3>
         <div class="impact">
-          <div class="pp-lp-mono" style="font-size:22px;color:var(--lp-pos-plate)">+${money(x.estimatedMonthlyImpact, cur, 0)}</div>
-          <div class="pp-lp-cap" style="margin-top:12px;color:var(--lp-on-plate-2)">${t('roadmap.priority', { priority: t('priority.' + x.priority) })} · ${t('roadmap.difficulty', { difficulty: t('difficulty.' + x.difficulty) })}</div>
+          <div class="pp-lp-mono" style="font-size:22px;color:var(--pp-pos-dark)">+${money(x.estimatedMonthlyImpact, cur, 0)}</div>
+          <div class="pp-lp-cap" style="margin-top:12px;color:var(--pp-on-dark-muted)">${t('roadmap.priority', { priority: t('priority.' + x.priority) })} · ${t('roadmap.difficulty', { difficulty: t('difficulty.' + x.difficulty) })}</div>
         </div>
       </div>`).join('');
 
     const range = E.BUSINESS_TYPE_LIST.map((x) => `<div>${catArt(x.type)}
         <div class="name">${t('businessType.' + x.type + '.label')}</div>
-        <div class="pp-lp-mono mt-2" style="font-size:11px;color:var(--lp-muted)">${t('landing.range.band', { low: x.marginBand.low, high: x.marginBand.high })}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:11px;color:var(--pp-muted)">${t('landing.range.band', { low: x.marginBand.low, high: x.marginBand.high })}</div>
       </div>`).join('');
 
     const planHeads = LP_PLANS.map(([id, price, per]) => `<div class="head">
         <div class="pp-lp-serif" style="font-size:30px">${t('landing.plan.' + id + '.name')}</div>
-        <div class="pp-lp-mono mt-2" style="font-size:13px;color:${id === 'pro' ? 'var(--pp-brand-ink)' : 'var(--lp-muted)'}">${price}${per ? t('landing.pricing.perMonth') : ''}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:13px;color:${id === 'pro' ? 'var(--pp-brand-ink)' : 'var(--pp-muted)'}">${price}${per ? t('landing.pricing.perMonth') : ''}</div>
       </div>`).join('');
     const planRows = LP_FEATURES.map(([key, f, pr, b]) => `<div class="feat">${t(key)}</div>
       <div class="cell">${f ? lpTick(t('landing.plan.free.name')) : lpNone}</div>
@@ -283,7 +283,7 @@
     <section class="pp-lp-section pp-lp__inner">
       <div class="pp-lp-head">
         <div><div class="pp-lp-eyebrow mb-3">${t('landing.example.eyebrow')}</div><h2>${esc(s.offering)}</h2></div>
-        <p class="pp-lp-mono mb-0" style="max-width:330px;font-size:11.5px;line-height:1.9;color:var(--lp-muted)">${t('landing.example.note')}</p>
+        <p class="pp-lp-mono mb-0" style="max-width:330px;font-size:11.5px;line-height:1.9;color:var(--pp-muted)">${t('landing.example.note')}</p>
       </div>
       <hr class="pp-lp-rule--ink">
       <div class="pp-lp-split">
@@ -299,14 +299,14 @@
         <div>
           <div class="pp-lp-eyebrow">${t('landing.calc.eyebrow')}</div>
           <div class="pp-lp-figure">${heroMark(p.recommended.price, cur)}</div>
-          <div class="pp-lp-mono mt-3" style="font-size:12px;color:var(--lp-muted)">${t('landing.calc.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
+          <div class="pp-lp-mono mt-3" style="font-size:12px;color:var(--pp-muted)">${t('landing.calc.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
           <div class="pp-lp-stats mt-4">
             <div><div class="pp-lp-cap">${t('results.trueCost')}</div><div class="v">${money(p.trueCostPerUnit, cur)}</div></div>
             <div><div class="pp-lp-cap">${t('results.profitPerUnit', u)}</div><div class="v">${money(p.recommended.profitPerUnit, cur)}</div></div>
             <div><div class="pp-lp-cap">${t('results.margin')}</div><div class="v">${pct(p.recommended.marginPct)}</div></div>
             <div><div class="pp-lp-cap">${t('results.revenue')}</div><div class="v">${money(p.recommended.monthlyRevenue, cur, 0)}</div></div>
             <div><div class="pp-lp-cap">${t('results.profit')}</div><div class="v pos">${money(p.recommended.monthlyProfit, cur, 0)}</div></div>
-            <div><div class="pp-lp-cap">${t('results.breakEvenSales')}</div><div class="v">${p.recommended.breakEvenUnits ?? '—'} <span style="font-size:13px;color:var(--lp-muted)">${t('results.breakEvenSales.sub', { count: p.expectedUnits })}</span></div></div>
+            <div><div class="pp-lp-cap">${t('results.breakEvenSales')}</div><div class="v">${p.recommended.breakEvenUnits ?? '—'} <span style="font-size:13px;color:var(--pp-muted)">${t('results.breakEvenSales.sub', { count: p.expectedUnits })}</span></div></div>
           </div>
           <p class="pp-lp-body mt-4 mb-0" style="font-size:13.5px;max-width:470px">${t('landing.example.goals', { cur, count: m.goals.expectedUnits, units: u.units, target: m.goals.targetMonthlyProfit })}</p>
         </div>
@@ -316,7 +316,7 @@
     <section class="pp-lp-plate"><div class="pp-lp__inner">
       <div class="pp-lp-head" style="padding-bottom:20px;border-bottom:1.5px solid rgba(242,239,232,0.28)">
         <h2>${t('results.roadmapWorth')}</h2>
-        <p class="pp-lp-mono mb-0" style="font-size:11.5px;line-height:1.9;color:var(--lp-on-plate-2);max-width:340px">${t('roadmap.intro')}</p>
+        <p class="pp-lp-mono mb-0" style="font-size:11.5px;line-height:1.9;color:var(--pp-on-dark-muted);max-width:340px">${t('roadmap.intro')}</p>
       </div>
       <div class="mt-5">${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>
       <div class="pp-lp-steps pp-lp-steps--4 mt-5" style="border-top:1px solid rgba(242,239,232,0.22)">${recs}</div>

@@ -108,7 +108,7 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
           <div class="pp-lp-eyebrow mb-3">{{ t('landing.example.eyebrow') }}</div>
           <h2>{{ sampleOffering }}</h2>
         </div>
-        <p class="pp-lp-mono mb-0" style="max-width: 330px; font-size: 11.5px; line-height: 1.9; color: var(--lp-muted)">
+        <p class="pp-lp-mono mb-0" style="max-width: 330px; font-size: 11.5px; line-height: 1.9; color: var(--pp-muted)">
           {{ t('landing.example.note') }}
         </p>
       </div>
@@ -142,9 +142,9 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
         <div>
           <div class="pp-lp-eyebrow">{{ t('landing.calc.eyebrow') }}</div>
           <div class="pp-lp-figure">
-            <span style="font-size: 0.42em; color: var(--lp-muted); vertical-align: top">{{ mark(ex().recommended.price) }}</span>{{ fig(ex().recommended.price) }}
+            <span style="font-size: 0.42em; color: var(--pp-muted); vertical-align: top">{{ mark(ex().recommended.price) }}</span>{{ fig(ex().recommended.price) }}
           </div>
-          <div class="pp-lp-mono mt-3" style="font-size: 12px; color: var(--lp-muted)">
+          <div class="pp-lp-mono mt-3" style="font-size: 12px; color: var(--pp-muted)">
             {{ t('landing.calc.sub', { unit: unitKey, margin: ex().marginBand.mid }) }}
           </div>
 
@@ -171,7 +171,7 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
             </div>
             <div>
               <div class="pp-lp-cap">{{ t('results.breakEvenSales') }}</div>
-              <div class="v">{{ ex().recommended.breakEvenUnits ?? '—' }} <span style="font-size: 13px; color: var(--lp-muted)">{{ t('results.breakEvenSales.sub', { count: ex().expectedUnits }) }}</span></div>
+              <div class="v">{{ ex().recommended.breakEvenUnits ?? '—' }} <span style="font-size: 13px; color: var(--pp-muted)">{{ t('results.breakEvenSales.sub', { count: ex().expectedUnits }) }}</span></div>
             </div>
           </div>
 
@@ -187,7 +187,7 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
       <div class="pp-lp__inner">
         <div class="pp-lp-head" style="padding-bottom: 20px; border-bottom: 1.5px solid rgba(242, 239, 232, 0.28)">
           <h2>{{ t('results.roadmapWorth') }}</h2>
-          <p class="pp-lp-mono mb-0" style="font-size: 11.5px; line-height: 1.9; color: var(--lp-on-plate-2); max-width: 340px">
+          <p class="pp-lp-mono mb-0" style="font-size: 11.5px; line-height: 1.9; color: var(--pp-on-dark-muted); max-width: 340px">
             {{ t('roadmap.intro') }}
           </p>
         </div>
@@ -203,13 +203,13 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
         <div class="pp-lp-steps pp-lp-steps--4 mt-5" style="border-top: 1px solid rgba(242, 239, 232, 0.22)">
           @for (r of topFour(); track r.id; let i = $index) {
             <div style="border-inline-end-color: rgba(242, 239, 232, 0.14); padding-block: 28px 30px">
-              <div class="n" style="color: var(--lp-on-plate-2)">{{ stepNumber(i) }}</div>
-              <h3 style="margin-top: 14px; color: var(--lp-on-plate)">{{ recTitle(r) }}</h3>
+              <div class="n" style="color: var(--pp-on-dark-muted)">{{ stepNumber(i) }}</div>
+              <h3 style="margin-top: 14px; color: var(--pp-on-dark)">{{ recTitle(r) }}</h3>
               <div class="impact">
-                <div class="pp-lp-mono" style="font-size: 22px; color: var(--lp-pos-plate)">
+                <div class="pp-lp-mono" style="font-size: 22px; color: var(--pp-pos-dark)">
                   +{{ r.estimatedMonthlyImpact | money: ex().currency : 0 }}
                 </div>
-                <div class="pp-lp-cap" style="margin-top: 12px; color: var(--lp-on-plate-2)">
+                <div class="pp-lp-cap" style="margin-top: 12px; color: var(--pp-on-dark-muted)">
                   {{ t('roadmap.priority', { priority: t('priority.' + r.priority) }) }} ·
                   {{ t('roadmap.difficulty', { difficulty: t('difficulty.' + r.difficulty) }) }}
                 </div>
@@ -233,7 +233,7 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
             <pp-illustration [name]="bt.type" set="category" />
             <div class="name">{{ t('businessType.' + bt.type + '.label') }}</div>
             <!-- The band is the engine's own, per type: nothing invented here. -->
-            <div class="pp-lp-mono mt-2" style="font-size: 11px; color: var(--lp-muted)">
+            <div class="pp-lp-mono mt-2" style="font-size: 11px; color: var(--pp-muted)">
               {{ t('landing.range.band', { low: bt.marginBand.low, high: bt.marginBand.high }) }}
             </div>
           </div>
@@ -254,7 +254,7 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
         @for (p of plans; track p.id) {
           <div class="head">
             <div class="pp-lp-serif" style="font-size: 30px">{{ t('landing.plan.' + p.id + '.name') }}</div>
-            <div class="pp-lp-mono mt-2" style="font-size: 13px" [style.color]="p.id === 'pro' ? 'var(--pp-brand-ink)' : 'var(--lp-muted)'">
+            <div class="pp-lp-mono mt-2" style="font-size: 13px" [style.color]="p.id === 'pro' ? 'var(--pp-brand-ink)' : 'var(--pp-muted)'">
               {{ p.price }}{{ p.per ? t('landing.pricing.perMonth') : '' }}
             </div>
           </div>

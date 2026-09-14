@@ -1,20 +1,22 @@
 /* ============================================================================
    ProfitPath design system
-   A quiet, premium surface for a profit strategist: soft glass on a periwinkle
-   wash, one brand gradient, and figures that are scannable before they are read.
+   Warm paper, one ink, and figures that are scannable before they are read.
 
-   Two-layer surface model
-   -----------------------
-   Content never sits straight on the page wash. `.pp-card` IS the glass panel;
-   the card inside it is drawn by its `::before` at a 12px inset. That keeps both
-   layers in one element, so the Angular templates and the dependency-free
-   preview share the same markup.
+   An editorial register, not a dashboard one. The product prices things for
+   people who sell things, so it reads as financial print: a flat ground, rules
+   and tint instead of shadow and blur, square corners, a serif for headings
+   and the hero figure, a mono for every number, a sans for the copy you
+   actually read. Nothing floats and nothing is rounded.
+
+   This file is the whole system. `preview/build.mjs` compiles it in verbatim,
+   so retargeting a token here moves the Angular app and the dependency-free
+   preview together and neither can drift from the other.
 
    Card hierarchy — four treatments, and one inverted. Do not invent a fifth.
-     .pp-card                 secondary — the default content card
-     .pp-card--primary        the decision on the page: deeper, roomier, brand edge
+     .pp-card                 secondary — the default sheet
+     .pp-card--primary        the decision on the page: ruled in ink, roomier
      .pp-card--insight        explanation and reasoning: faint brand wash
-     .pp-card--data           dense figures: pale interior
+     .pp-card--data           dense figures: the interior recedes
      .pp-card--dark           inverted, at most one per screen
      .pp-card-bare            a plain block nested inside one of the above
    ========================================================================== */
@@ -26,12 +28,6 @@
   --pp-bg-2: #f7f4ee;
   --pp-page: none;
 
-  /* There is no glass in this system any more. The tokens stay because shared
-     components still name them; they now resolve to paper and a hairline. */
-  --pp-glass: transparent;
-  --pp-glass-strong: var(--pp-card);
-  --pp-glass-line: var(--pp-line);
-  --pp-glass-blur: 0px;
 
   /* Solid surfaces — raised paper, two recessed tints, and the rules between. */
   --pp-card: #fffdf8;
@@ -79,9 +75,6 @@
   /* The preview's utility sheet resolves .text-danger through this alias. */
   --pp-danger: var(--pp-neg);
 
-  /* Rules, not gradients. The bar keeps a gradient because it encodes two
-     quantities in one strip; nothing else in the system ramps. */
-  --pp-gradient-bar: linear-gradient(90deg, #1f57e0 0%, #5b4bd6 100%);
 
   /* Type — three faces, each with a job. The serif carries voice, the mono
      carries every figure so columns of money line up, the sans carries
@@ -98,22 +91,10 @@
   --pp-fig-md: 20px;
   --pp-fig-sm: 15px;
 
-  /* Shape — print has no rounded corners. The tokens stay so the components
-     that name them keep resolving; they resolve to square. */
-  --pp-radius-panel: 0px;
-  --pp-radius: 0px;
-  --pp-radius-md: 0px;
-  --pp-radius-sm: 0px;
-  --pp-radius-pill: 0px;
 
-  /* Depth comes from rules and tint, not from shadow. Kept as tokens so a
-     component can still name one; all but the menu resolve to nothing. */
-  --pp-shadow-panel: none;
-  --pp-shadow-panel-lg: none;
-  --pp-shadow-card: none;
-  --pp-shadow-soft: none;
-  --pp-shadow-brand: none;
-  --pp-shadow-dark: none;
+  /* Print has no rounded corners and no shadow: a surface is told apart by a
+     rule and a tint. The one exception is the language menu, which floats over
+     the page and needs to read as lifted off it. */
   --pp-shadow-menu: 0 18px 40px -24px rgba(38, 34, 24, 0.45);
   --pp-ring-brand: 0 0 0 3px rgba(31, 87, 224, 0.18);
 
@@ -125,7 +106,6 @@
   --pp-container: 1200px;
   --pp-gutter: 24px;
   --pp-grid-gap: 12px;
-  --pp-panel-pad: 0px;
   --pp-card-pad: 22px;
   --pp-card-pad-lg: 30px;
 
@@ -134,21 +114,6 @@
   --pp-series-5: #5b4bd6; --pp-series-6: #8577e4; --pp-series-7: #bdb4f0;
   --pp-series-8: #8d8778; --pp-series-9: #bdb6a5;
 
-  /* The landing names these; they are the same paper, one source. */
-  --lp-paper: var(--pp-bg-2);
-  --lp-raised: var(--pp-card);
-  --lp-ink: var(--pp-ink);
-  --lp-ink-2: var(--pp-ink-2);
-  --lp-muted: var(--pp-muted);
-  --lp-rule: var(--pp-line);
-  --lp-rule-2: var(--pp-line-2);
-  --lp-plate: var(--pp-dark);
-  --lp-on-plate: var(--pp-on-dark);
-  --lp-on-plate-2: var(--pp-on-dark-muted);
-  --lp-pos-plate: var(--pp-pos-dark);
-  --lp-serif: var(--pp-serif);
-  --lp-mono: var(--pp-mono);
-  --lp-gutter: var(--pp-gutter);
 }
 
 /* ------------------------------------------------------------------ base -- */
@@ -204,7 +169,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-lang__button {
   display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer;
   font-family: inherit; font-size: 12px; font-weight: 500; color: var(--pp-ink-2);
-  background: transparent; border-radius: var(--pp-radius-pill); padding: 7px 11px;
+  background: transparent; padding: 7px 11px;
   transition: background var(--pp-ease), color var(--pp-ease);
 }
 .pp-lang__button { font-family: var(--pp-mono); }
@@ -219,7 +184,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-lang__item {
   display: flex; align-items: center; gap: 10px; width: 100%; border: 0; cursor: pointer;
   background: transparent; font-family: inherit; text-align: start;
-  padding: 9px 11px; border-radius: var(--pp-radius-sm); color: var(--pp-ink);
+  padding: 9px 11px; color: var(--pp-ink);
   transition: background var(--pp-ease);
 }
 .pp-lang__item:hover { background: var(--pp-subtle); }
@@ -264,7 +229,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* Every button is a full pill. Hover lifts 1px; there is no press state. */
 /* Square and ruled, set in the mono: an action reads as a stamp on the page.
    No lift on hover — nothing in a printed system floats. */
-.btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark {
+.btn-pp, .btn-pp-ghost, .btn-pp-white {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   border: 0; border-radius: 0; font-family: var(--pp-mono); font-weight: 400;
   line-height: 1.2; padding: 12px 22px; font-size: 13px; white-space: nowrap; cursor: pointer;
@@ -284,32 +249,18 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .btn-pp-ghost:hover, .btn-pp-ghost:focus,
 .btn-pp-white:hover, .btn-pp-white:focus { background: var(--pp-ink); color: var(--pp-bg-2); }
 
-.btn-pp-dark { background: var(--pp-dark); color: var(--pp-on-dark); }
-.btn-pp-dark:hover, .btn-pp-dark:focus { background: var(--pp-dark-hover); color: var(--pp-on-dark); }
-
-/* The quiet action: a ruled underline, not a box. */
-.btn-pp-glass {
-  background: transparent; color: var(--pp-ink); padding: 4px 0;
-  border-bottom: 1px solid var(--pp-line); border-radius: 0;
-}
-.btn-pp-glass:hover, .btn-pp-glass:focus { background: transparent; color: var(--pp-ink); border-bottom-color: var(--pp-ink); }
-
 .btn-pp-lg { padding: 16px 30px; font-size: 14px; gap: 10px; }
-.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm, .btn-pp-dark.btn-sm { padding: 9px 16px; font-size: 12px; gap: 7px; }
+.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm { padding: 9px 16px; font-size: 12px; gap: 7px; }
 
 /* --------------------------------------------------- surfaces: the model -- */
-/* One layer, not two. The glass system drew a white card inside a frosted
-   panel with `::before`; on paper a card IS the sheet, told apart from the
-   ground by a rule and a tint. The `::before` stays in the cascade, disabled,
-   because the templates still carry the markup that assumed it. */
+/* One layer: a card IS the sheet, told apart from the
+   ground by a rule and a tint. */
 .pp-card, .pp-scenario, .pp-rec {
   position: relative;
   background: var(--pp-card);
   border: 1px solid var(--pp-line);
-  border-radius: 0;
   padding: var(--pp-card-pad);
 }
-.pp-card::before, .pp-scenario::before, .pp-rec::before { content: none; }
 
 /* --- tier 1: primary. One per screen: the decision being presented. -------- */
 /* It is not raised — it is ruled heavier and given more room, which is how a
@@ -372,7 +323,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 /* Notices are quiet pills; the frosted one is the only translucent inline UI. */
 .pp-notice, .pp-warn, .pp-ok {
-  display: inline-flex; align-items: center; gap: 7px; border-radius: var(--pp-radius-pill);
+  display: inline-flex; align-items: center; gap: 7px;
   padding: 9px 16px; font-size: 12px; line-height: 1.45;
 }
 .pp-notice { background: var(--pp-subtle-2); border: 1px solid var(--pp-line); color: var(--pp-ink-2); }
@@ -380,7 +331,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-ok { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
 /* Notices that wrap relax from a pill to a rounded block. */
 .pp-notice-block, .pp-warn-block, .pp-ok-block {
-  display: flex; align-items: flex-start; border-radius: var(--pp-radius-md); padding: 12px 16px; line-height: 1.55;
+  display: flex; align-items: flex-start; padding: 12px 16px; line-height: 1.55;
 }
 .pp-notice-block pp-icon, .pp-warn-block pp-icon, .pp-ok-block pp-icon,
 .pp-notice-block .pp-i, .pp-warn-block .pp-i, .pp-ok-block .pp-i { margin-top: 1px; }
@@ -392,6 +343,14 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 }
 .pp-icon-badge--plain { color: var(--pp-ink-2); }
 .pp-icon-badge--sm { width: 26px; height: 26px; }
+
+/* A chip labels the run in progress: the business type, what is being priced. */
+.pp-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: transparent; border: 1px solid var(--pp-line);
+  padding: 7px 13px; font-family: var(--pp-mono); font-size: 11.5px; color: var(--pp-ink-2);
+}
+.pp-chip pp-icon, .pp-chip .pp-i { color: var(--pp-brand-ink); }
 
 /* ---------------------------------------------------------------- ledger -- */
 .pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 9px; column-gap: 16px; font-size: 13px; }
@@ -560,10 +519,9 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-spot__head { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 10px; }
 
 /* A recommendation states four things: impact, difficulty, priority, next step. */
-.pp-rec { transition: opacity var(--pp-ease); }
-.pp-rec::before { box-shadow: var(--pp-shadow-soft); transition: box-shadow var(--pp-ease); }
-.pp-rec:hover::before { box-shadow: var(--pp-shadow-card); }
-.pp-rec.done { opacity: 0.6; }
+.pp-rec { transition: border-color var(--pp-ease), opacity var(--pp-ease); }
+.pp-rec:hover { border-color: var(--pp-muted); }
+.pp-rec.done { opacity: 0.55; }
 .pp-rec.done h4 { text-decoration: line-through; text-decoration-color: var(--pp-muted); }
 .pp-rec h4 { font-size: 16px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
 .pp-rec p { margin: 0; font-size: 13px; color: var(--pp-ink-2); }
@@ -610,9 +568,8 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 }
 @media (max-width: 576px) {
   .pp-hero { padding: 36px 0 24px; }
-  .pp-card, .pp-scenario, .pp-rec { padding: calc(var(--pp-panel-pad) + 15px); }
-  .pp-card--primary { padding: calc(var(--pp-panel-pad) + 18px); }
-  .pp-card--primary::after { inset-inline: calc(var(--pp-panel-pad) + 16px); }
+  .pp-card, .pp-scenario, .pp-rec { padding: 15px; }
+  .pp-card--primary { padding: 18px; }
   .pp-compare__row { gap: 12px; }
   .pp-nav a { padding: 6px 9px; }
   /* The header pill holds the mark, the switcher and the primary action on one
@@ -626,7 +583,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 @media (prefers-reduced-motion: reduce) {
   .pp-fade, .pp-progress > div, .pp-steps .seg,
-  .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark { animation: none; transition: none; }
+  .btn-pp, .btn-pp-ghost, .btn-pp-white { animation: none; transition: none; }
 }
 
 /* ==========================================================================
@@ -643,24 +600,24 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
    ========================================================================== */
 .pp-lp {
   display: block;
-  background: var(--lp-paper);
-  color: var(--lp-ink);
+  background: var(--pp-bg-2);
+  color: var(--pp-ink);
 }
-.pp-lp__inner { max-width: 1200px; margin: 0 auto; padding-inline: var(--lp-gutter); }
+.pp-lp__inner { max-width: 1200px; margin: 0 auto; padding-inline: var(--pp-gutter); }
 
 /* ------------------------------------------------------------ type ladder */
-.pp-lp-serif { font-family: var(--lp-serif); font-weight: 400; letter-spacing: -0.02em; }
-.pp-lp-mono { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; }
+.pp-lp-serif { font-family: var(--pp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp-mono { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; }
 .pp-lp-eyebrow {
-  font-family: var(--lp-mono); font-size: 11px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--lp-muted);
+  font-family: var(--pp-mono); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--pp-muted);
 }
-.pp-lp-body { font-size: 14.5px; line-height: 1.72; color: var(--lp-ink-2); font-weight: 300; }
-.pp-lp-cap { font-family: var(--lp-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-muted); }
-.pp-lp h1, .pp-lp h2, .pp-lp h3 { font-family: var(--lp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp-body { font-size: 14.5px; line-height: 1.72; color: var(--pp-ink-2); font-weight: 300; }
+.pp-lp-cap { font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pp-muted); }
+.pp-lp h1, .pp-lp h2, .pp-lp h3 { font-family: var(--pp-serif); font-weight: 400; letter-spacing: -0.02em; }
 .pp-lp h2 { font-size: clamp(32px, 3.4vw, 46px); line-height: 1.05; margin: 0; }
-.pp-lp-rule { border: 0; border-top: 1px solid var(--lp-rule); margin: 0; }
-.pp-lp-rule--ink { border: 0; border-top: 1.5px solid var(--lp-ink); margin: 0; }
+.pp-lp-rule { border: 0; border-top: 1px solid var(--pp-line); margin: 0; }
+.pp-lp-rule--ink { border: 0; border-top: 1.5px solid var(--pp-ink); margin: 0; }
 .pp-lp-section { padding-top: 86px; }
 .pp-lp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; padding-bottom: 18px; }
 
@@ -670,12 +627,12 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-lp .ink, .pp-lp .ink-thin, .pp-lp .hatch, .pp-lp .ink-accent, .pp-lp .ink-pos {
   fill: none; stroke-linecap: round; stroke-linejoin: round;
 }
-.pp-lp .ink { stroke: var(--lp-ink); stroke-width: 1.6; }
-.pp-lp .ink-thin { stroke: var(--lp-ink); stroke-width: 1; }
-.pp-lp .hatch { stroke: var(--lp-ink); stroke-width: 0.9; opacity: 0.42; }
+.pp-lp .ink { stroke: var(--pp-ink); stroke-width: 1.6; }
+.pp-lp .ink-thin { stroke: var(--pp-ink); stroke-width: 1; }
+.pp-lp .hatch { stroke: var(--pp-ink); stroke-width: 0.9; opacity: 0.42; }
 .pp-lp .ink-accent { stroke: var(--pp-brand-ink); stroke-width: 2.2; }
 .pp-lp .ink-pos { stroke: var(--pp-pos); stroke-width: 2.2; }
-.pp-lp .ink-fill-paper { fill: var(--lp-paper); }
+.pp-lp .ink-fill-paper { fill: var(--pp-bg-2); }
 .pp-lp .ink-fill-pos { fill: var(--pp-pos-soft); stroke: none; }
 
 /* ------------------------------------------------------------------- hero */
@@ -683,7 +640,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
    long grows the hero instead of sliding underneath the figures. */
 .pp-lp-hero {
   position: relative; min-height: 740px; display: flex; flex-direction: column;
-  overflow: hidden; background: var(--lp-plate);
+  overflow: hidden; background: var(--pp-dark);
 }
 .pp-lp-hero__plate {
   position: absolute; inset: -6%;
@@ -751,23 +708,23 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-lp-hero__ticker { position: relative; flex: 0 0 auto; border-top: 1px solid rgba(232, 229, 221, 0.16); }
 .pp-lp-hero__ticker .pp-lp__inner {
   display: flex; flex-wrap: wrap; gap: 8px 34px; padding-block: 17px;
-  font-family: var(--lp-mono); font-size: 11.5px; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--lp-on-plate-2);
+  font-family: var(--pp-mono); font-size: 11.5px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--pp-on-dark-muted);
 }
 .pp-lp-hero__ticker b { font-weight: 400; color: #e8e5dd; }
-.pp-lp-hero__ticker .pos { color: var(--lp-pos-plate); }
+.pp-lp-hero__ticker .pos { color: var(--pp-pos-dark); }
 
 /* ------------------------------------------------------------------ ink CTA */
 /* Square, ruled, mono — the hero action reads as a stamp, not a pill. */
 .btn-lp {
-  display: inline-flex; align-items: center; gap: 11px; font-family: var(--lp-mono);
+  display: inline-flex; align-items: center; gap: 11px; font-family: var(--pp-mono);
   font-size: 13.5px; padding: 15px 26px; border: 0; border-radius: 0;
   background: var(--pp-brand-ink); color: #fff; text-decoration: none;
   transition: background var(--pp-ease);
 }
 .btn-lp:hover { background: #16409f; color: #fff; }
-.btn-lp--ghost { background: transparent; color: var(--lp-ink); border: 1.4px solid var(--lp-ink); }
-.btn-lp--ghost:hover { background: var(--lp-ink); color: var(--lp-paper); }
+.btn-lp--ghost { background: transparent; color: var(--pp-ink); border: 1.4px solid var(--pp-ink); }
+.btn-lp--ghost:hover { background: var(--pp-ink); color: var(--pp-bg-2); }
 .btn-lp--quiet {
   background: transparent; color: #e8e5dd; padding: 3px 0;
   border-bottom: 1px solid rgba(232, 229, 221, 0.42); font-size: 13px;
@@ -776,12 +733,12 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 /* ------------------------------------------------------------------ steps */
 .pp-lp-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.pp-lp-steps > div { padding: 34px 22px 38px; border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-steps > div { padding: 34px 22px 38px; border-inline-end: 1px solid var(--pp-line-2); }
 .pp-lp-steps > div:last-child { border-inline-end: 0; }
 .pp-lp-steps svg { width: 100%; height: 122px; margin: 16px 0 20px; }
 .pp-lp-steps h3 { margin: 0 0 9px; font-family: var(--pp-font); font-size: 17px; font-weight: 500; letter-spacing: -0.012em; }
-.pp-lp-steps p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--lp-ink-2); font-weight: 300; }
-.pp-lp-steps .n { font-family: var(--lp-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--pp-brand-ink); }
+.pp-lp-steps p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--pp-ink-2); font-weight: 300; }
+.pp-lp-steps .n { font-family: var(--pp-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--pp-brand-ink); }
 /* The roadmap strip reuses the step rhythm but carries four items, not five,
    and its cells bottom-align: titles run to different lengths, and a row of
    impact figures that does not line up is the whole point of the strip lost. */
@@ -796,68 +753,68 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
    would cut the rule in half and the row would stop reading as a ruled line.
    The breathing room is padding on the label instead. */
 .pp-lp-ledger { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 0; }
-.pp-lp-ledger > * { padding: 13px 0; border-bottom: 1px solid var(--lp-rule-2); }
-.pp-lp-ledger .k { font-size: 14px; color: var(--lp-ink); font-weight: 300; padding-inline-end: 18px; }
-.pp-lp-ledger .v { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; font-size: 15px; text-align: end; }
-.pp-lp-ledger .v small { color: var(--lp-muted); font-size: 12px; }
+.pp-lp-ledger > * { padding: 13px 0; border-bottom: 1px solid var(--pp-line-2); }
+.pp-lp-ledger .k { font-size: 14px; color: var(--pp-ink); font-weight: 300; padding-inline-end: 18px; }
+.pp-lp-ledger .v { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; font-size: 15px; text-align: end; }
+.pp-lp-ledger .v small { color: var(--pp-muted); font-size: 12px; }
 .pp-lp-ledger .total {
-  padding: 18px 18px 6px 0; border-bottom: 4px double var(--lp-ink);
-  font-family: var(--lp-mono); letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px;
+  padding: 18px 18px 6px 0; border-bottom: 4px double var(--pp-ink);
+  font-family: var(--pp-mono); letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px;
 }
 .pp-lp-ledger .total.v { font-size: 22px; letter-spacing: 0; text-transform: none; }
 .pp-lp-bar { display: flex; height: 7px; overflow: hidden; }
 
 /* -------------------------------------------------------------- the split */
 .pp-lp-split { display: grid; grid-template-columns: 1fr 1.15fr; align-items: stretch; }
-.pp-lp-split > :first-child { padding: 40px 56px 44px 0; border-inline-end: 1px solid var(--lp-rule); }
+.pp-lp-split > :first-child { padding: 40px 56px 44px 0; border-inline-end: 1px solid var(--pp-line); }
 .pp-lp-split > :last-child { padding: 40px 0 44px 56px; }
-.pp-lp-figure { font-family: var(--lp-serif); font-size: clamp(64px, 7.5vw, 108px); line-height: 0.92; letter-spacing: -0.03em; margin-top: 16px; }
-.pp-lp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--lp-rule); }
-.pp-lp-stats > div { padding: 20px 18px; border-bottom: 1px solid var(--lp-rule); border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-figure { font-family: var(--pp-serif); font-size: clamp(64px, 7.5vw, 108px); line-height: 0.92; letter-spacing: -0.03em; margin-top: 16px; }
+.pp-lp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--pp-line); }
+.pp-lp-stats > div { padding: 20px 18px; border-bottom: 1px solid var(--pp-line); border-inline-end: 1px solid var(--pp-line-2); }
 .pp-lp-stats > div:nth-child(3n) { border-inline-end: 0; padding-inline-end: 0; }
 .pp-lp-stats > div:nth-child(3n + 1) { padding-inline-start: 0; }
-.pp-lp-stats .v { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; font-size: 21px; margin-top: 9px; }
+.pp-lp-stats .v { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; font-size: 21px; margin-top: 9px; }
 .pp-lp-stats .v.pos { color: var(--pp-pos); }
 
 /* ------------------------------------------------------------ dark compare */
-.pp-lp-plate { background: var(--lp-plate); color: var(--lp-on-plate); margin-top: 86px; }
+.pp-lp-plate { background: var(--pp-dark); color: var(--pp-on-dark); margin-top: 86px; }
 .pp-lp-plate .pp-lp__inner { padding-block: 74px 78px; }
-.pp-lp-plate h2 { color: var(--lp-on-plate); }
-.pp-lp-plate .pp-lp-eyebrow, .pp-lp-plate .pp-lp-cap { color: var(--lp-on-plate-2); }
+.pp-lp-plate h2 { color: var(--pp-on-dark); }
+.pp-lp-plate .pp-lp-eyebrow, .pp-lp-plate .pp-lp-cap { color: var(--pp-on-dark-muted); }
 .pp-lp-plate .pp-lp-body { color: #b6bccb; }
 /* The comparison component is shared with the results and roadmap screens,
    where it sits on white. On the plate its muted ink and pale bar track would
    vanish, so the surface restates them rather than the component branching. */
 .pp-lp-plate .pp-compare__side .k,
 .pp-lp-plate .pp-compare__arrow,
-.pp-lp-plate .pp-compare__key { color: var(--lp-on-plate-2); }
-.pp-lp-plate .pp-compare .pp-kpi { color: var(--lp-on-plate); }
-.pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--lp-pos-plate); }
+.pp-lp-plate .pp-compare__key { color: var(--pp-on-dark-muted); }
+.pp-lp-plate .pp-compare .pp-kpi { color: var(--pp-on-dark); }
+.pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--pp-pos-dark); }
 .pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: 0; height: 9px; }
-.pp-lp-plate .pp-compare__bar .lift { background: var(--lp-pos-plate); opacity: 1; }
+.pp-lp-plate .pp-compare__bar .lift { background: var(--pp-pos-dark); opacity: 1; }
 .pp-lp-plate .pp-compare__lift {
-  background: rgba(111, 220, 160, 0.14); color: var(--lp-pos-plate); border-radius: 0;
+  background: rgba(111, 220, 160, 0.14); color: var(--pp-pos-dark); border-radius: 0;
 }
 .pp-lp-plate .pp-compare__key i { border-radius: 0; }
 
 /* ------------------------------------------------------------ the range */
-.pp-lp-range { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--lp-rule); }
-.pp-lp-range > div { padding: 32px 18px 26px; border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-range { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--pp-line); }
+.pp-lp-range > div { padding: 32px 18px 26px; border-inline-end: 1px solid var(--pp-line-2); }
 .pp-lp-range > div:nth-child(6n) { border-inline-end: 0; }
 .pp-lp-range svg { width: 46px; height: 46px; }
 .pp-lp-range .name { margin-top: 16px; font-size: 14px; font-weight: 500; }
 
 /* ---------------------------------------------------------------- pricing */
 .pp-lp-plans { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; align-items: center; }
-.pp-lp-plans > * { padding: 15px 0; border-bottom: 1px solid var(--lp-rule-2); }
-.pp-lp-plans .head { padding: 26px 0 20px; border-bottom: 1px solid var(--lp-rule); align-self: baseline; }
-.pp-lp-plans .feat { font-size: 14px; color: var(--lp-ink); font-weight: 300; }
+.pp-lp-plans > * { padding: 15px 0; border-bottom: 1px solid var(--pp-line-2); }
+.pp-lp-plans .head { padding: 26px 0 20px; border-bottom: 1px solid var(--pp-line); align-self: baseline; }
+.pp-lp-plans .feat { font-size: 14px; color: var(--pp-ink); font-weight: 300; }
 .pp-lp-plans .foot { padding: 30px 0 0; border-bottom: 0; }
 .pp-lp-tick { stroke: var(--pp-brand-ink); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .pp-lp-plans .none { color: #c3bdae; font-size: 15px; }
 
 /* ---------------------------------------------------------------- closing */
-.pp-lp-close { margin-top: 92px; border-top: 1.5px solid var(--lp-ink); }
+.pp-lp-close { margin-top: 92px; border-top: 1.5px solid var(--pp-ink); }
 .pp-lp-close .pp-lp__inner { padding-block: 86px 90px; display: flex; justify-content: space-between; align-items: flex-end; gap: 60px; }
 .pp-lp-close h2 { font-size: clamp(38px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.026em; max-width: 640px; }
 
@@ -869,7 +826,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   .pp-lp-range { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pp-lp-range > div:nth-child(3n) { border-inline-end: 0; }
   .pp-lp-split { grid-template-columns: 1fr; }
-  .pp-lp-split > :first-child { padding: 40px 0 36px; border-inline-end: 0; border-bottom: 1px solid var(--lp-rule); }
+  .pp-lp-split > :first-child { padding: 40px 0 36px; border-inline-end: 0; border-bottom: 1px solid var(--pp-line); }
   .pp-lp-split > :last-child { padding: 36px 0 44px; }
 }
 
@@ -879,14 +836,14 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   .pp-lp-steps, .pp-lp-steps--4 { grid-template-columns: 1fr; }
   .pp-lp-steps > div {
     display: grid; grid-template-columns: 76px 1fr; gap: 18px; align-items: start;
-    padding: 24px 0; border-inline-end: 0; border-bottom: 1px solid var(--lp-rule-2);
+    padding: 24px 0; border-inline-end: 0; border-bottom: 1px solid var(--pp-line-2);
   }
   .pp-lp-steps > div:last-child { border-bottom: 0; }
   .pp-lp-steps svg { height: 66px; margin: 0; grid-row: span 3; }
   .pp-lp-steps .n { grid-column: 2; }
   .pp-lp-steps h3, .pp-lp-steps p { grid-column: 2; }
   .pp-lp-range { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pp-lp-range > div:nth-child(3n) { border-inline-end: 1px solid var(--lp-rule-2); }
+  .pp-lp-range > div:nth-child(3n) { border-inline-end: 1px solid var(--pp-line-2); }
   .pp-lp-range > div:nth-child(2n) { border-inline-end: 0; }
   .pp-lp-section { padding-top: 48px; }
   .pp-lp-head { flex-direction: column; align-items: flex-start; gap: 14px; }
