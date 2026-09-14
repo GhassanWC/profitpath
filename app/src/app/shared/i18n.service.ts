@@ -29,13 +29,16 @@ export class I18nService {
   /** Translate a key, or the first of several that the catalogue carries. */
   readonly t = (key: string | readonly string[], params?: Params): string => this.translator().t(key, params);
 
+  /** True when the catalogue carries copy for a key — used to prefer it over engine English. */
+  readonly has = (key: string | readonly string[]): boolean => this.translator().has(key);
+
   /** Translate with the plural form the locale needs for `count`. */
   readonly tp = (key: string, count: number, params?: Params): string => this.translator().tp(key, count, params);
 
   /** Translate a message the engine emitted, falling back to its own English prose. */
   readonly msg = (m: Msg | undefined, fallback: string): string => {
     if (!m) return fallback;
-    return this.translator().has(m.key) || this.locale() === DEFAULT_LOCALE ? this.translator().t(m.key, m.params) : fallback;
+    return this.translator().has(m.key) ? this.translator().t(m.key, m.params) : fallback;
   };
 
   money(value: number, currency: string, decimals?: number): string {

@@ -154,6 +154,47 @@ a:hover { color: var(--pp-brand-2-ink); }
 pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .pp-i { vertical-align: -0.15em; }
 
+/* ------------------------------------------------------------ direction -- */
+/* The layout mirrors through CSS logical properties; only the icons that point
+   somewhere need flipping, and only those carry `pp-icon-flip`. A chevron means
+   "forward", and forward is leftward in Arabic. */
+[dir='rtl'] .pp-icon-flip svg,
+[dir='rtl'] svg.pp-i.pp-icon-flip { transform: scaleX(-1); }
+/* Figures stay left-to-right inside an RTL sentence: a price is not a word. */
+[dir='rtl'] .pp-num,
+[dir='rtl'] .pp-kpi,
+[dir='rtl'] .pp-stat .v,
+[dir='rtl'] .pp-rec__impact .v { direction: ltr; }
+[dir='rtl'] .pp-ledger > :nth-child(even) { direction: ltr; }
+
+/* --------------------------------------------------------- language pick -- */
+.pp-lang { position: relative; }
+.pp-lang__button {
+  display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 500; color: var(--pp-ink-2);
+  background: transparent; border-radius: var(--pp-radius-pill); padding: 7px 11px;
+  transition: background var(--pp-ease), color var(--pp-ease);
+}
+.pp-lang__button:hover { background: rgba(255, 255, 255, 0.55); color: var(--pp-ink); }
+.pp-lang__code { letter-spacing: 0.04em; }
+.pp-lang__menu {
+  position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 60;
+  margin: 0; padding: 6px; list-style: none; min-width: 190px;
+  background: #fff; border-radius: var(--pp-radius-md); box-shadow: var(--pp-shadow-panel-lg);
+  border: 1px solid var(--pp-line);
+}
+.pp-lang__item {
+  display: flex; align-items: center; gap: 10px; width: 100%; border: 0; cursor: pointer;
+  background: transparent; font-family: inherit; text-align: start;
+  padding: 9px 11px; border-radius: var(--pp-radius-sm); color: var(--pp-ink);
+  transition: background var(--pp-ease);
+}
+.pp-lang__item:hover { background: var(--pp-subtle); }
+.pp-lang__item.selected { background: var(--pp-brand-soft); color: var(--pp-brand-ink); }
+.pp-lang__item .name { font-size: 14px; font-weight: 500; }
+.pp-lang__item .sub { font-size: 11px; color: var(--pp-muted); margin-inline-start: auto; }
+.pp-lang__item.selected .sub { color: var(--pp-brand-ink); }
+
 /* Panels tile 12px apart, as the source composition does. */
 .row.g-3, .row.g-4 { --bs-gutter-x: var(--pp-grid-gap); --bs-gutter-y: var(--pp-grid-gap); --g: var(--pp-grid-gap); }
 
@@ -248,7 +289,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* A brand hairline along the top edge of the white card, nothing louder. */
 .pp-card--primary::after {
   content: ''; position: absolute; z-index: 0; pointer-events: none;
-  left: calc(var(--pp-panel-pad) + 26px); right: calc(var(--pp-panel-pad) + 26px);
+  inset-inline: calc(var(--pp-panel-pad) + 26px);
   top: var(--pp-panel-pad); height: 3px; border-radius: var(--pp-radius-pill);
   background: var(--pp-brand-gradient);
 }
@@ -353,7 +394,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 }
 
 .pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 9px; column-gap: 16px; font-size: 13px; }
-.pp-ledger > :nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.pp-ledger > :nth-child(even) { text-align: end; font-variant-numeric: tabular-nums; }
 .pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 11px; font-weight: 500; color: inherit; }
 
 /* --------------------------------------------------------- questionnaire -- */
@@ -391,27 +432,27 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   min-width: 0; font-family: inherit; color: var(--pp-ink); font-variant-numeric: tabular-nums;
 }
 .pp-input-group .affix { display: flex; align-items: center; padding: 0 14px; color: var(--pp-muted); font-size: 13px; white-space: nowrap; }
-.pp-input-group .affix.pre { padding-right: 0; font-weight: 500; color: var(--pp-ink-2); }
-.pp-input-group .affix:not(.pre) { padding-left: 0; }
+.pp-input-group .affix.pre { padding-inline-end: 0; font-weight: 500; color: var(--pp-ink-2); }
+.pp-input-group .affix:not(.pre) { padding-inline-start: 0; }
 .pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; background: #fff; }
 .pp-error { display: flex; align-items: center; gap: 6px; color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
 
 .pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .pp-option {
   background: var(--pp-subtle); border: 1px solid transparent; border-radius: var(--pp-radius-md);
-  padding: 13px 15px; text-align: left; cursor: pointer; font-family: inherit; font-size: 13px;
+  padding: 13px 15px; text-align: start; cursor: pointer; font-family: inherit; font-size: 13px;
   font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: center;
   transition: background var(--pp-ease), border-color var(--pp-ease);
 }
 .pp-option:hover { background: #e8ecf6; }
 .pp-option.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); }
-.pp-option .tick { margin-left: auto; color: var(--pp-brand-ink); display: none; }
+.pp-option .tick { margin-inline-start: auto; color: var(--pp-brand-ink); display: none; }
 .pp-option.selected .tick { display: inline-flex; }
 .pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
 
 .pp-type-card {
   background: #fff; border: 1px solid transparent; border-radius: var(--pp-radius-md); padding: 14px;
-  cursor: pointer; text-align: left; font-family: inherit; box-shadow: var(--pp-shadow-soft);
+  cursor: pointer; text-align: start; font-family: inherit; box-shadow: var(--pp-shadow-soft);
   display: flex; gap: 11px; align-items: flex-start;
   transition: box-shadow var(--pp-ease), transform var(--pp-ease), background var(--pp-ease), border-color var(--pp-ease);
 }
@@ -459,7 +500,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-compare__bar .now { background: var(--pp-brand); }
 .pp-compare__bar .lift { background: var(--pp-gradient-bar); opacity: 0.45; }
 .pp-compare__key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11px; color: var(--pp-muted); }
-.pp-compare__key i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+.pp-compare__key i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-inline-end: 7px; }
 
 /* Scenario cards stay a tier below the recommended price. */
 .pp-scenario { height: 100%; }
@@ -489,7 +530,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-bar { display: flex; gap: 3px; height: 10px; background: transparent; }
 .pp-bar span { display: block; height: 100%; border-radius: var(--pp-radius-pill); }
 .pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 7px 16px; font-size: 12px; }
-.pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-inline-end: 8px; }
 
 /* Tabs sit on a frosted bed; the active tab is the brand. */
 .pp-tabs {
@@ -528,7 +569,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-rec.done h4 { text-decoration: line-through; text-decoration-color: var(--pp-muted); }
 .pp-rec h4 { font-size: 16px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
 .pp-rec p { margin: 0; font-size: 13px; color: var(--pp-ink-2); }
-.pp-rec__impact { text-align: right; }
+.pp-rec__impact { text-align: end; }
 .pp-rec__impact .v { font-size: var(--pp-fig-lg); font-weight: 300; color: var(--pp-pos); letter-spacing: -0.03em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pp-rec__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 /* The next action is the point of the card, so it gets its own surface. */
@@ -539,7 +580,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-rec__action .k { font-size: 11px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 3px; }
 .pp-rec summary { display: flex; align-items: center; gap: 6px; color: var(--pp-muted); font-size: 12px; cursor: pointer; list-style: none; }
 .pp-rec summary::-webkit-details-marker { display: none; }
-.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-left: 18px; margin: 8px 0 0; }
+.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-inline-start: 18px; margin: 8px 0 0; }
 
 /* Round, brand when checked — a completed item reads as done, not as an alarm. */
 .pp-check {
@@ -572,7 +613,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   .pp-hero { padding: 36px 0 24px; }
   .pp-card, .pp-scenario, .pp-rec { padding: calc(var(--pp-panel-pad) + 15px); }
   .pp-card--primary { padding: calc(var(--pp-panel-pad) + 18px); }
-  .pp-card--primary::after { left: calc(var(--pp-panel-pad) + 16px); right: calc(var(--pp-panel-pad) + 16px); }
+  .pp-card--primary::after { inset-inline: calc(var(--pp-panel-pad) + 16px); }
   .pp-compare__row { gap: 12px; }
   .pp-nav a { padding: 6px 9px; }
 }

@@ -16,6 +16,7 @@ import {
 } from '../../core/engine';
 import { AnalysisStore } from '../../core/state/analysis.store';
 import { IconComponent } from '../../shared/icon.component';
+import { I18nService } from '../../shared/i18n.service';
 import { BUSINESS_TYPE_ICONS } from '../../shared/icons';
 
 /** Cycled over the question groups, whose count varies by business type. */
@@ -35,16 +36,16 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
             <pp-icon [name]="stepIcon()" [size]="14" />
             {{ stepTitle() }}
           </span>
-          <span>Step {{ stepIndex() + 1 }} of {{ totalSteps() }}</span>
+          <span>{{ t('analyze.step', { current: stepIndex() + 1, total: totalSteps() }) }}</span>
         </div>
         <div class="pp-steps mb-3">
           @for (s of stepMarks(); track $index) {
             <span class="seg" [class.done]="$index < stepIndex()" [class.current]="$index === stepIndex()"></span>
           }
         </div>
-        @if (stepIndex() > 0 && typeDef(); as t) {
+        @if (stepIndex() > 0 && typeDef(); as td) {
           <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="pp-chip"><pp-icon [name]="typeIcon(t.type)" [size]="13" /> {{ t.label }}</span>
+            <span class="pp-chip"><pp-icon [name]="typeIcon(td.type)" [size]="13" /> {{ t('businessType.' + td.type + '.label') }}</span>
             <span class="pp-chip">{{ store.offering() }}</span>
           </div>
         }
@@ -52,11 +53,11 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
         <!-- Step 0: what are you selling -->
         @if (stepIndex() === 0) {
           <div class="pp-card pp-card--primary pp-fade">
-            <h2 class="mb-1">What are you planning to sell?</h2>
-            <p class="pp-body mb-4">Describe it in your own words. We'll tailor the next questions to your kind of business — you will never be asked about costs that do not apply to you.</p>
+            <h2 class="mb-1">{{ t('analyze.q0.title') }}</h2>
+            <p class="pp-body mb-4">{{ t('analyze.q0.intro') }}</p>
             <div class="pp-input-group mb-3">
               <span class="affix pre"><pp-icon name="search" [size]="15" /></span>
-              <input type="text" [value]="offering()" (input)="onOffering($any($event.target).value)" placeholder="e.g. iPhone 17 Pro, wedding photography, soy candles, online course…" autofocus />
+              <input type="text" [value]="offering()" (input)="onOffering($any($event.target).value)" [attr.placeholder]="t('analyze.q0.placeholder')" autofocus />
             </div>
 
             @if (detection(); as d) {
@@ -64,28 +65,28 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
                 <div class="pp-detect mb-4 pp-fade">
                   <span class="pp-icon-badge"><pp-icon [name]="typeIcon(d.type)" [size]="17" /></span>
                   <div>
-                    <div class="title">Looks like: {{ businessTypeDef(d.type).label }}</div>
-                    <div class="sub">{{ confidenceText(d) }} · not right? Pick a type below.</div>
+                    <div class="title">{{ t('analyze.detect.title', { label: t('businessType.' + d.type + '.label') }) }}</div>
+                    <div class="sub">{{ t('analyze.detect.sub', { confidence: t(confidenceKey(d)) }) }}</div>
                   </div>
                 </div>
               }
             }
 
-            <div class="pp-subhead mb-2">Business type</div>
+            <div class="pp-subhead mb-2">{{ t('analyze.businessType') }}</div>
             <div class="pp-option-grid mb-4">
-              @for (t of types; track t.type) {
-                <button type="button" class="pp-type-card" [class.selected]="selectedType() === t.type" (click)="selectedType.set(t.type)">
-                  <span class="pp-icon-badge"><pp-icon [name]="typeIcon(t.type)" [size]="17" /></span>
+              @for (bt of types; track bt.type) {
+                <button type="button" class="pp-type-card" [class.selected]="selectedType() === bt.type" (click)="selectedType.set(bt.type)">
+                  <span class="pp-icon-badge"><pp-icon [name]="typeIcon(bt.type)" [size]="17" /></span>
                   <span>
-                    <span class="name">{{ t.label }}</span>
-                    <small>{{ t.description }}</small>
+                    <span class="name">{{ t('businessType.' + bt.type + '.label') }}</span>
+                    <small>{{ t('businessType.' + bt.type + '.description') }}</small>
                   </span>
                 </button>
               }
             </div>
             <div class="d-flex justify-content-end">
               <button class="btn btn-pp" [disabled]="!selectedType() || !offering().trim()" (click)="startQuestions()">
-                Continue <pp-icon name="arrow-right" [size]="14" />
+                {{ t('analyze.continue') }} <pp-icon name="arrow-right" class="pp-icon-flip" [size]="14" />
               </button>
             </div>
           </div>
@@ -94,20 +95,20 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
         <!-- Steps 1..N: question groups -->
         @if (currentGroup(); as group) {
           <form class="pp-card pp-card--primary pp-fade" [formGroup]="form" (ngSubmit)="next()">
-            <h2 class="mb-1">{{ group.title }}</h2>
-            <p class="pp-body mb-4">{{ group.intro }}</p>
+            <h2 class="mb-1">{{ groupTitle(group) }}</h2>
+            <p class="pp-body mb-4">{{ groupIntro(group) }}</p>
 
             @for (q of visible(); track q.key) {
               <div class="pp-q">
-                <label class="pp-q-label d-block" [for]="q.key">{{ q.label }}</label>
-                <div class="pp-q-help"><pp-icon name="lightbulb" [size]="13" /><span>{{ q.help }}</span></div>
+                <label class="pp-q-label d-block" [for]="q.key">{{ qText(q, 'label') }}</label>
+                <div class="pp-q-help"><pp-icon name="lightbulb" [size]="13" /><span>{{ qText(q, 'help') }}</span></div>
 
                 @switch (q.type) {
                   @case ('select') {
                     <div class="pp-option-grid">
                       @for (o of q.options ?? []; track o.value) {
                         <button type="button" class="pp-option" [class.selected]="form.value[q.key] === o.value" (click)="setValue(q.key, o.value)">
-                          <span>{{ o.label }} @if (o.hint) { <small>{{ o.hint }}</small> }</span>
+                          <span>{{ optText(q, o, 'label') }} @if (o.hint) { <small>{{ optText(q, o, 'hint') }}</small> }</span>
                           <pp-icon class="tick" name="check" [size]="14" />
                         </button>
                       }
@@ -117,7 +118,7 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
                     <div class="pp-option-grid">
                       @for (o of q.options ?? []; track o.value) {
                         <button type="button" class="pp-option" [class.selected]="isChecked(q.key, o.value)" (click)="toggleMulti(q.key, o.value)">
-                          <span>{{ o.label }}</span>
+                          <span>{{ optText(q, o, 'label') }}</span>
                           <pp-icon class="tick" name="check" [size]="14" />
                         </button>
                       }
@@ -127,14 +128,14 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
                     <div class="pp-input-group" [class.is-invalid]="errors()[q.key]">
                       <select [id]="q.key" [formControlName]="q.key">
                         @for (o of q.options ?? []; track o.value) {
-                          <option [value]="o.value">{{ o.label }}</option>
+                          <option [value]="o.value">{{ optText(q, o, 'label') }}</option>
                         }
                       </select>
                     </div>
                   }
                   @case ('text') {
                     <div class="pp-input-group" [class.is-invalid]="errors()[q.key]">
-                      <input [id]="q.key" type="text" [formControlName]="q.key" [placeholder]="q.placeholder ?? ''" />
+                      <input [id]="q.key" type="text" [formControlName]="q.key" [placeholder]="qText(q, 'placeholder')" />
                     </div>
                   }
                   @default {
@@ -142,9 +143,9 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
                       @if (q.money) {
                         <span class="affix pre">{{ currency() }}</span>
                       }
-                      <input [id]="q.key" type="number" inputmode="decimal" step="any" [attr.min]="q.min ?? null" [formControlName]="q.key" [placeholder]="q.placeholder ?? ''" />
+                      <input [id]="q.key" type="number" inputmode="decimal" step="any" [attr.min]="q.min ?? null" [formControlName]="q.key" [placeholder]="qText(q, 'placeholder')" />
                       @if (q.suffix) {
-                        <span class="affix">{{ q.suffix }}</span>
+                        <span class="affix">{{ qText(q, 'suffix') }}</span>
                       }
                     </div>
                   }
@@ -156,15 +157,15 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
             }
 
             <div class="d-flex justify-content-between align-items-center mt-4">
-              <button type="button" class="btn btn-pp-ghost" (click)="back()"><pp-icon name="arrow-left" [size]="14" /> Back</button>
+              <button type="button" class="btn btn-pp-ghost" (click)="back()"><pp-icon name="arrow-left" class="pp-icon-flip" [size]="14" /> {{ t('analyze.back') }}</button>
               <button type="submit" class="btn btn-pp" [class.btn-pp-hero]="isLast()">
-                {{ isLast() ? 'Calculate my price' : 'Continue' }}
-                <pp-icon [name]="isLast() ? 'sparkles' : 'arrow-right'" [size]="14" />
+                {{ isLast() ? t('analyze.finish') : t('analyze.continue') }}
+                <pp-icon [name]="isLast() ? 'sparkles' : 'arrow-right'" [class.pp-icon-flip]="!isLast()" [size]="14" />
               </button>
             </div>
           </form>
           <div class="mt-3 d-flex justify-content-center">
-            <span class="pp-notice"><pp-icon name="info" [size]="13" /> Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</span>
+            <span class="pp-notice"><pp-icon name="info" [size]="13" /> {{ t('analyze.notice') }}</span>
           </div>
         }
       </div>
@@ -173,6 +174,8 @@ const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'
 })
 export class AnalyzeComponent {
   readonly store = inject(AnalysisStore);
+  readonly i18n = inject(I18nService);
+  readonly t = this.i18n.t;
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -205,11 +208,55 @@ export class AnalyzeComponent {
 
   /** One segment per step, so progress reads as a conversation with a shape. */
   readonly stepMarks = computed(() => new Array(this.totalSteps()));
-  readonly stepTitle = computed(() => this.currentGroup()?.title ?? "What you're selling");
+  readonly stepTitle = computed(() => {
+    const g = this.currentGroup();
+    return g ? this.groupTitle(g) : this.t('analyze.step0.title');
+  });
   readonly stepIcon = computed(() => (this.stepIndex() === 0 ? 'square-pen' : STEP_ICONS[(this.stepIndex() - 1) % STEP_ICONS.length]));
 
   typeIcon(type: string): string {
     return BUSINESS_TYPE_ICONS[type as keyof typeof BUSINESS_TYPE_ICONS] ?? 'package';
+  }
+
+  confidenceKey(d: Detection): string {
+    return d.confidence >= 0.7 ? 'analyze.confidence.high' : d.confidence >= 0.4 ? 'analyze.confidence.fair' : 'analyze.confidence.guess';
+  }
+
+  /**
+   * Question and group copy is static in the engine, so the catalogue holds it
+   * directly. Where a string differs by business type the key carries the type;
+   * where it differs only by the unit noun, one template serves every type.
+   */
+  private scoped(prefix: string, key: string, field: string): string[] {
+    const type = this.store.businessType() ?? this.selectedType();
+    return type ? [`${prefix}.${type}.${key}.${field}`, `${prefix}.${key}.${field}`] : [`${prefix}.${key}.${field}`];
+  }
+
+  private unitParams(): Record<string, string> {
+    const type = this.store.businessType() ?? this.selectedType() ?? 'generic';
+    return { unit: `unit.${type}.one`, units: `unit.${type}.other` };
+  }
+
+  qText(q: Question, field: 'label' | 'help' | 'suffix' | 'placeholder'): string {
+    const fallback = (q[field] as string | undefined) ?? '';
+    const keys = this.scoped('question', q.key, field);
+    return this.i18n.has(keys) ? this.t(keys, this.unitParams()) : fallback;
+  }
+
+  optText(q: Question, o: { value: string; label: string; hint?: string }, field: 'label' | 'hint'): string {
+    const fallback = (field === 'label' ? o.label : o.hint) ?? '';
+    const keys = this.scoped('option', `${q.key}.${o.value}`, field);
+    return this.i18n.has(keys) ? this.t(keys, this.unitParams()) : fallback;
+  }
+
+  groupTitle(g: QuestionGroup): string {
+    const keys = this.scoped('group', g.id, 'title');
+    return this.i18n.has(keys) ? this.t(keys, this.unitParams()) : g.title;
+  }
+
+  groupIntro(g: QuestionGroup): string {
+    const keys = this.scoped('group', g.id, 'intro');
+    return this.i18n.has(keys) ? this.t(keys, this.unitParams()) : g.intro;
   }
 
   constructor() {

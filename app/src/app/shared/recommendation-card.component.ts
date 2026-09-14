@@ -1,5 +1,6 @@
-import { Component, input, output } from '@angular/core';
-import { Recommendation, priorityLabel } from '../core/engine';
+import { Component, inject, input, output } from '@angular/core';
+import { Recommendation } from '../core/engine';
+import { I18nService } from './i18n.service';
 import { IconComponent } from './icon.component';
 import { DIFFICULTY_ICONS } from './icons';
 import { MoneyPipe } from './pipes';
@@ -21,7 +22,7 @@ import { MoneyPipe } from './pipes';
           class="pp-check mt-1"
           [class.on]="rec().done"
           (click)="toggle.emit(rec().id)"
-          [attr.aria-label]="rec().done ? 'Mark as not done' : 'Mark as done'"
+          [attr.aria-label]="rec().done ? t('roadmap.markNotDone') : t('roadmap.markDone')"
         >
           <pp-icon [name]="rec().done ? 'check' : 'plus'" [size]="13" />
         </button>
@@ -29,42 +30,42 @@ import { MoneyPipe } from './pipes';
         <div class="flex-grow-1" style="min-width: 0">
           <!-- Recommended action + estimated profit impact -->
           <div class="d-flex justify-content-between align-items-start" style="gap: 16px">
-            <h4>{{ rec().title }}</h4>
+            <h4>{{ title }}</h4>
             <div class="pp-rec__impact">
               <div class="v">+{{ rec().estimatedMonthlyImpact | money: currency() : 0 }}</div>
-              <div class="pp-label">est. per month</div>
+              <div class="pp-label">{{ t('roadmap.estPerMonth') }}</div>
             </div>
           </div>
 
           <!-- Difficulty + priority, always in that order -->
           <div class="pp-rec__meta mt-2">
             <span class="pp-badge" [class]="'pp-badge ' + rec().priority">
-              <pp-icon name="chevrons-up" [size]="11" />{{ priorityText }} priority
+              <pp-icon name="chevrons-up" [size]="11" />{{ t('roadmap.priority', { priority: priorityText }) }}
             </span>
             <span class="pp-badge" [class]="'pp-badge ' + rec().difficulty">
-              <pp-icon [name]="difficultyIcon" [size]="11" />{{ rec().difficulty }} to do
+              <pp-icon [name]="difficultyIcon" [size]="11" />{{ t('roadmap.difficulty', { difficulty: t('difficulty.' + rec().difficulty) }) }}
             </span>
             @if (share() > 0) {
-              <span class="pp-label">{{ share() }}% of the total lift</span>
+              <span class="pp-label">{{ t('roadmap.shareOfLift', { share: share() }) }}</span>
             }
           </div>
 
-          <p class="pp-body mt-3">{{ rec().why }}</p>
+          <p class="pp-body mt-3">{{ why }}</p>
 
           <!-- The next action: the point of the card, on its own surface -->
           <div class="pp-rec__action mt-3">
-            <pp-icon name="arrow-up-right" [size]="15" style="color: var(--pp-brand-ink)" />
+            <pp-icon name="arrow-up-right" class="pp-icon-flip" [size]="15" style="color: var(--pp-brand-ink)" />
             <div>
-              <div class="k">Next action</div>
-              {{ rec().action }}
+              <div class="k">{{ t('roadmap.nextAction') }}</div>
+              {{ action }}
             </div>
           </div>
 
           @if (rec().assumptions.length) {
             <details class="mt-3">
-              <summary><pp-icon name="chevron-right" [size]="13" /> Assumptions behind this estimate</summary>
+              <summary><pp-icon name="chevron-right" class="pp-icon-flip" [size]="13" /> {{ t('roadmap.assumptions') }}</summary>
               <ul>
-                @for (a of rec().assumptions; track $index) {
+                @for (a of assumptions; track $index) {
                   <li>{{ a }}</li>
                 }
               </ul>
@@ -77,6 +78,8 @@ import { MoneyPipe } from './pipes';
   styles: [':host { display: block; }'],
 })
 export class RecommendationCardComponent {
+  private readonly i18n = inject(I18nService);
+  readonly t = this.i18n.t;
   rec = input.required<Recommendation>();
   currency = input.required<string>();
   /** Total of every recommendation's impact, for the "share of the lift" line. */
@@ -84,7 +87,22 @@ export class RecommendationCardComponent {
   toggle = output<string>();
 
   get priorityText(): string {
-    return priorityLabel(this.rec().priority);
+    return this.t(`priority.${this.rec().priority}`);
+  }
+
+  /** Each field prefers the translated twin and falls back to the engine's English. */
+  get title(): string {
+    return this.i18n.msg(this.rec().i18n?.title, this.rec().title);
+  }
+  get why(): string {
+    return this.i18n.msg(this.rec().i18n?.why, this.rec().why);
+  }
+  get action(): string {
+    return this.i18n.msg(this.rec().i18n?.action, this.rec().action);
+  }
+  get assumptions(): string[] {
+    const r = this.rec();
+    return r.assumptions.map((a, i) => this.i18n.msg(r.i18n?.assumptions[i], a));
   }
 
   get difficultyIcon(): string {

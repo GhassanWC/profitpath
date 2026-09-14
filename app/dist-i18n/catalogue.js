@@ -135,7 +135,7 @@ function createTranslator(locale, messages, defaultCurrency = 'USD') {
         def,
         t,
         tp,
-        has: (key) => table[key] !== undefined,
+        has: (key) => (typeof key === 'string' ? [key] : key).some((k) => lookup(k) !== undefined),
         money: (value, currency, decimals) => formatMoney(value, currency, def.intl, decimals ?? (Math.abs(value) < 100 ? 2 : 0)),
         pct: (fraction, decimals = 1) => formatPct(fraction, def.intl, decimals),
         num: (value, decimals) => formatNumber(value, def.intl, decimals),

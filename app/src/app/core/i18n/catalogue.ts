@@ -107,8 +107,8 @@ export interface Translator {
   t(key: string | readonly string[], params?: Params): string;
   /** Translate with a plural form chosen from `count`. */
   tp(key: string, count: number, params?: Params): string;
-  /** True when the catalogue actually carries this key. */
-  has(key: string): boolean;
+  /** True when any catalogue — the active locale or English — carries the key. */
+  has(key: string | readonly string[]): boolean;
   money(value: number, currency: string, decimals?: number): string;
   pct(fraction: number, decimals?: number): string;
   num(value: number, decimals?: number): string;
@@ -175,7 +175,7 @@ export function createTranslator(locale: string, messages: Record<string, Messag
     def,
     t,
     tp,
-    has: (key: string) => table[key] !== undefined,
+    has: (key) => (typeof key === 'string' ? [key] : key).some((k) => lookup(k) !== undefined),
     money: (value, currency, decimals) => formatMoney(value, currency, def.intl, decimals ?? (Math.abs(value) < 100 ? 2 : 0)),
     pct: (fraction, decimals = 1) => formatPct(fraction, def.intl, decimals),
     num: (value, decimals) => formatNumber(value, def.intl, decimals),

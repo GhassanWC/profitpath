@@ -124,5 +124,31 @@ for (const [code, table] of Object.entries(CATALOGUES)) {
 }
 if (!bad) console.log('  ✓ no unknown placeholders');
 
+// ------------------------------------------------------- 4. template coverage
+console.log('\nCoverage — every key the templates ask for exists');
+const { readdirSync, statSync } = await import('node:fs');
+const { join } = await import('node:path');
+const walk = (dir) => readdirSync(dir).flatMap((f) => {
+  const full = join(dir, f);
+  return statSync(full).isDirectory() ? walk(full) : full.endsWith('.ts') ? [full] : [];
+});
+const srcDir = new URL('../app/src/app', import.meta.url).pathname;
+const literalKeys = new Set();
+for (const file of walk(srcDir)) {
+  const text = readFileSync(file, 'utf8');
+  // t('some.key') / t(['some.key'])  — dynamic keys built by concatenation are
+  // covered by the runtime checks in verify.mjs instead.
+  // A complete literal only: `t('a.b')`, never the `t('a.' + x + '.b')` prefix.
+  for (const m of text.matchAll(/\bt\(\s*\[?\s*'([a-z][\w.]*)'\s*[),\]]/g)) literalKeys.add(m[1]);
+}
+const unknown = [...literalKeys].filter((k) => !(k in EN)).sort();
+if (unknown.length) unknown.forEach((k) => fail(`template asks for "${k}", which the catalogue does not have`));
+else console.log(`  ✓ ${literalKeys.size} literal keys, all present`);
+
+// Unused English entries are not an error — the engine-derived half covers every
+// business type — but a large jump usually means a rename went half-done.
+const unusedUi = Object.keys(EN).filter((k) => /^(landing|analyze|results|roadmap|compare|nav|footer|lang|chart)\./.test(k) && !literalKeys.has(k));
+console.log(`  ${unusedUi.length} interface key(s) reached only through a built key (business type, plan, step number) — expected`);
+
 console.log(failures ? `\nFAILED — ${failures} problem(s)` : '\nCatalogues are consistent with the engine and with each other.');
 process.exit(failures ? 1 : 0);
