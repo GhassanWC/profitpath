@@ -8,7 +8,12 @@ import { join } from 'node:path';
 const dir = process.argv[2];
 const out = process.argv[3];
 const globalName = process.argv[4] ?? 'ProfitPathEngine';
-const files = readdirSync(dir).filter((f) => f.endsWith('.js') && !f.endsWith('.spec.js'));
+// Sorted, not directory order: the bundle is committed, and CI rebuilds it to
+// check nobody edited a source without regenerating. readdirSync makes no
+// ordering promise across filesystems, so unsorted output would drift between
+// this machine and the runner for no reason. Definition order is irrelevant to
+// the module shim, which resolves everything lazily through req().
+const files = readdirSync(dir).filter((f) => f.endsWith('.js') && !f.endsWith('.spec.js')).sort();
 let src = `var ${globalName} = (function () {\n  var defs = {}, cache = {};\n  function req(name) {\n    var key = name.replace(/^\\.\\//, '').replace(/\\.js$/, '');\n    if (cache[key]) return cache[key].exports;\n    var module = { exports: {} };\n    cache[key] = module;\n    defs[key](module, module.exports, req);\n    return module.exports;\n  }\n`;
 for (const f of files) {
   const key = f.replace(/\.js$/, '');

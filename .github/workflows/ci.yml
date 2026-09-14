@@ -1,0 +1,100 @@
+name: CI
+
+# Everything this repo relies on is a script someone has to remember to run.
+# This runs all of them, on every push to the default branch and every pull
+# request, in the order the README documents.
+on:
+  push:
+    branches: [claude/cool-cori-6nz616]
+  pull_request:
+
+permissions:
+  contents: read
+
+# A second push to the same branch makes the first run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            app/package-lock.json
+            preview/package-lock.json
+
+      - name: Install app dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Install check dependencies
+        working-directory: preview
+        run: npm ci
+
+      # --- the engine, which owns every number in the product -----------------
+      - name: Engine tests
+        working-directory: app
+        run: npm run test:engine
+
+      # --- compile the two framework-free halves the checks read -------------
+      - name: Compile the catalogue
+        working-directory: app
+        run: npx tsc -p tsconfig.i18n.json
+
+      - name: Build the app
+        working-directory: app
+        run: npm run build
+
+      - name: Build the preview
+        working-directory: preview
+        run: |
+          node bundle-engine.mjs ../app/dist-engine engine.bundle.js ProfitPathEngine
+          node bundle-engine.mjs ../app/dist-i18n   i18n.bundle.js   ProfitPathI18n
+          node build.mjs
+
+      # The committed bundles are generated from the TypeScript sources. If a
+      # rebuild changes them, someone edited one half without the other.
+      - name: Bundles match their sources
+        run: git diff --exit-code --stat -- preview/engine.bundle.js preview/i18n.bundle.js
+
+      # --- checks that need no browser --------------------------------------
+      - name: Catalogues, coverage and the icon registry
+        working-directory: preview
+        run: node i18n-check.mjs
+
+      - name: Colour contrast
+        working-directory: preview
+        run: node contrast.mjs
+
+      # --- the cross-surface verification -----------------------------------
+      - name: Install Chromium
+        working-directory: preview
+        run: npx playwright install --with-deps chromium
+
+      - name: Every figure comes from the engine, in every language
+        working-directory: preview
+        run: |
+          node serve.mjs ../app/dist/profitpath/browser 4173 &
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:4173/ >/dev/null && break
+            sleep 1
+          done
+          node verify.mjs http://localhost:4173
+
+      # A reviewer can download this and open it — no install, no server.
+      - name: Upload the built preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: profitpath-preview
+          path: preview/dist/profitpath-preview.html
+          if-no-files-found: error
