@@ -1,0 +1,6 @@
+node_modules/
+app/dist/
+app/dist-engine/
+app/.angular/
+preview/shots/
+app/dist-i18n/

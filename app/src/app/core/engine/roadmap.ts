@@ -4,7 +4,7 @@
  * conservative assumption. Copy is templated; an LLM may later rephrase it but never
  * computes anything. See ExplanationProvider in core/ai.
  */
-import { CostModel, Difficulty, PricingResult, Priority, ProfitRoadmap, RecCategory, Recommendation } from './types';
+import { CostModel, Difficulty, PricingResult, Priority, ProfitRoadmap, RecCategory, Recommendation, RecommendationMessages } from './types';
 import { businessTypeDef } from './business-types';
 import { contributionAt, unitEconomics, UnitEconomics } from './pricing';
 import { formatMoney, formatPct, round2 } from './money';
@@ -51,6 +51,21 @@ interface Rule {
 const A = ROADMAP_ASSUMPTIONS;
 const money = (v: number, cur: string) => formatMoney(v, cur, { decimals: v < 100 ? 2 : 0 });
 
+/**
+ * Builds the translatable twin of a rule's copy. The keys live in the i18n
+ * catalogue under `rec.<id>.*`; `unit`/`units` are themselves keys so each locale
+ * can inflect the noun rather than receive an English one.
+ */
+function msgs(id: string, c: Ctx, params: Record<string, string | number>): RecommendationMessages {
+  const common = { cur: c.cur, unit: `unit.${c.m.meta.businessType}.one`, units: `unit.${c.m.meta.businessType}.other`, ...params };
+  return {
+    title: { key: `rec.${id}.title`, params: common },
+    why: { key: `rec.${id}.why`, params: common },
+    action: { key: `rec.${id}.action`, params: common },
+    assumptions: [0, 1, 2].map((i) => ({ key: `rec.${id}.a${i + 1}`, params: common })),
+  };
+}
+
 const RULES: Rule[] = [
   {
     id: 'supplier_cost',
@@ -67,6 +82,7 @@ const RULES: Rule[] = [
         action: 'Request quotes from 3–5 suppliers for your volume. Compare landed cost (price + shipping + duties), minimum order quantity, warranty and payment terms — not just the unit price.',
         estimatedMonthlyImpact: round2(saving * c.e.U),
         assumptions: [`A ${formatPct(A.supplierReductionPct, 0)} lower purchase price is achievable at your volume (conservative for most categories).`, `Volume stays at ${c.e.U} ${c.units}/month.`],
+        i18n: msgs('supplier_cost', c, { target, share, pct: A.supplierReductionPct, count: c.e.U }),
       };
     },
   },
@@ -83,6 +99,7 @@ const RULES: Rule[] = [
         action: 'Price your three most expensive ingredients or materials at wholesale quantities. Check whether a slightly cheaper grade would be noticed by customers.',
         estimatedMonthlyImpact: round2(saving * c.e.U),
         assumptions: [`Materials cost drops by ${formatPct(A.materialsReductionPct, 0)} at wholesale quantities.`, 'No change in quality or sales volume.'],
+        i18n: msgs('materials_cost', c, { pct: A.materialsReductionPct, share: c.m.direct.materials / c.p.trueCostPerUnit }),
       };
     },
   },
@@ -99,6 +116,7 @@ const RULES: Rule[] = [
         action: 'Get quotes from two freight forwarders or couriers for consolidated monthly shipments. Ask about volume-based rates once you reach a steady order count.',
         estimatedMonthlyImpact: round2(saving * c.e.U),
         assumptions: [`${formatPct(A.shippingReductionPct, 0)} lower shipping through consolidation or negotiated rates.`],
+        i18n: msgs('shipping_cost', c, { from: c.m.direct.shipping, to: c.m.direct.shipping - saving, share: c.m.direct.shipping / c.p.trueCostPerUnit, pct: A.shippingReductionPct }),
       };
     },
   },
@@ -118,6 +136,7 @@ const RULES: Rule[] = [
         action: 'Launch a referral offer for existing customers, post consistently on one organic channel, and retarget past visitors instead of cold audiences. Track cost per sale weekly.',
         estimatedMonthlyImpact: round2(saving * c.e.U),
         assumptions: [`Acquisition cost per ${c.unit} falls by ${formatPct(A.cacReductionPct, 0)} within 2–3 months.`, 'Sales volume is unchanged.'],
+        i18n: msgs('cac', c, { from: cur, to: cur - saving, share: cur / c.price, pct: A.cacReductionPct }),
       };
     },
   },
@@ -134,6 +153,7 @@ const RULES: Rule[] = [
         action: 'Add a "reorder directly" card or WhatsApp link in every delivery. Offer a small direct-order incentive that is still cheaper than the platform fee.',
         estimatedMonthlyImpact: round2(saving * c.e.U),
         assumptions: [`${formatPct(A.feeShiftShare, 0)} of volume moves to a channel with fees ${A.feeShiftSavingPts} points lower.`, 'Total volume is unchanged.'],
+        i18n: msgs('platform_fees', c, { share: A.feeShiftShare, feePct: c.m.variable.platformFeePct, feeAmount: c.price * (c.m.variable.platformFeePct / 100), points: A.feeShiftSavingPts }),
       };
     },
   },
@@ -157,6 +177,7 @@ const RULES: Rule[] = [
         action: 'Run the higher price for 2–4 weeks on new customers only. Keep the offer identical and watch conversion, not just complaints. Keep it if profit rises.',
         estimatedMonthlyImpact: round2(newProfit - c.monthlyProfit),
         assumptions: [`A ${formatPct(A.priceTestIncrease, 0)} price rise loses ${formatPct(A.priceTestVolumeLoss, 0)} of volume (a cautious elasticity assumption).`],
+        i18n: msgs('price_test', c, { pct: A.priceTestIncrease, newPrice, margin: c.p.recommended.marginPct, high: c.p.marginBand.high, typeKey: `businessType.${c.m.meta.businessType}.shortLabelLower`, loss: A.priceTestVolumeLoss }),
       };
     },
   },
@@ -182,6 +203,7 @@ const RULES: Rule[] = [
         action: `Design one add-on at roughly ${formatPct(A.upsellPriceShare, 0)} of your price and offer it at the moment of purchase. Measure the attach rate for a month.`,
         estimatedMonthlyImpact: round2(perUnit * c.e.U),
         assumptions: [`${formatPct(A.upsellAttachRate, 0)} of customers take the add-on.`, `The add-on carries a ${formatPct(A.upsellMargin, 0)} margin.`],
+        i18n: msgs('upsell', c, { addon, exampleKey: `rec.upsell.example.${t}`, share: A.upsellPriceShare, attach: A.upsellAttachRate, margin: A.upsellMargin }),
       };
     },
   },
@@ -200,6 +222,7 @@ const RULES: Rule[] = [
         action: 'Collect every customer’s contact at purchase, follow up 2–4 weeks later with a reorder reminder or a loyalty perk, and make reordering a one-tap action.',
         estimatedMonthlyImpact: round2(contribNoCac),
         assumptions: [`Repeat purchases add ${formatPct(A.repeatUplift, 0)} to monthly volume.`, 'Repeat orders carry no marketing cost.'],
+        i18n: msgs('repeat', c, { pct: A.repeatUplift, each: c.price * (1 - c.e.f) - c.e.D - c.m.variable.otherPerUnit }),
       };
     },
   },
@@ -216,6 +239,7 @@ const RULES: Rule[] = [
         action: 'Pick one channel you are not using yet and commit to it for 60 days. Set a weekly target of new enquiries, not sales, and track conversion.',
         estimatedMonthlyImpact: round2(contributionAt(c.e, c.price) * extra),
         assumptions: [`Volume grows ${formatPct(A.volumeIncrease, 0)} at the same price and acquisition cost.`, 'Fixed costs do not increase.'],
+        i18n: msgs('volume', c, { target: Math.round(c.e.U + extra), share: c.e.O / c.p.baseCostPerUnit, contribution: contributionAt(c.e, c.price), pct: A.volumeIncrease }),
       };
     },
   },
@@ -230,6 +254,7 @@ const RULES: Rule[] = [
       action: 'List every recurring charge and cancel or downgrade anything not used in the last 30 days. Renegotiate rent or move to shared space if you are below capacity.',
       estimatedMonthlyImpact: round2(c.e.F * A.overheadReduction),
       assumptions: [`${formatPct(A.overheadReduction, 0)} of fixed costs can be removed without affecting sales.`],
+      i18n: msgs('overhead', c, { pct: A.overheadReduction, saving: c.e.F * A.overheadReduction, fixed: c.e.F, perUnit: c.e.O }),
     }),
   },
   {
@@ -243,6 +268,7 @@ const RULES: Rule[] = [
       action: 'Time your next five jobs. Batch similar tasks, build templates or presets for repeated steps, and stop doing anything the customer does not notice.',
       estimatedMonthlyImpact: round2(c.m.direct.labor * A.laborEfficiency * c.e.U),
       assumptions: [`Time per ${c.unit} falls by ${formatPct(A.laborEfficiency, 0)}; the freed hours are used for more ${c.units} or other paid work.`],
+      i18n: msgs('labor_efficiency', c, { pct: A.laborEfficiency, share: c.m.direct.labor / c.p.trueCostPerUnit }),
     }),
   },
   {
@@ -259,6 +285,7 @@ const RULES: Rule[] = [
         action: 'Track what is thrown away for two weeks, then adjust batch sizes, pre-orders and storage to match real demand.',
         estimatedMonthlyImpact: round2(saving * c.e.U),
         assumptions: ['Waste is halved with no change in sales.'],
+        i18n: msgs('waste', c, { from: c.m.variable.wastagePct, to: c.m.variable.wastagePct / 2, amount: base * (c.m.variable.wastagePct / 100) }),
       };
     },
   },
@@ -275,6 +302,7 @@ const RULES: Rule[] = [
         action: 'Read every refund reason for a month. Fix the top two causes: usually mismatched expectations or shipping damage.',
         estimatedMonthlyImpact: round2(saving * c.e.U),
         assumptions: [`Return rate falls by ${formatPct(A.returnsReduction, 0)}.`],
+        i18n: msgs('returns', c, { ratePct: c.m.variable.returnsPct, amount: c.price * (c.m.variable.returnsPct / 100), pct: A.returnsReduction }),
       };
     },
   },
@@ -298,6 +326,7 @@ export function buildRoadmap(m: CostModel, p: PricingResult, opts: { completedId
     }
     if (!applies) continue;
     const built = rule.build(ctx);
+    if (built.i18n) built.i18n.assumptions = built.i18n.assumptions.slice(0, built.assumptions.length);
     if (!isFinite(built.estimatedMonthlyImpact) || built.estimatedMonthlyImpact <= 0) continue;
     recs.push({ id: rule.id, category: rule.category, difficulty: rule.difficulty, priority: 'low', ...built, done: opts.completedIds?.includes(rule.id) ?? false });
   }
@@ -333,6 +362,7 @@ export function buildRoadmap(m: CostModel, p: PricingResult, opts: { completedId
     optimisedMonthlyProfit: optimised,
     targetReached: m.goals.targetMonthlyProfit > 0 ? optimised >= m.goals.targetMonthlyProfit : true,
     disclaimer: 'These are estimates based on the numbers you provided and the assumptions listed under each item. They are not predictions or guarantees. Improvements interact, so the combined effect is usually smaller than the sum of the parts.',
+    disclaimerI18n: { key: 'roadmap.disclaimer' },
   };
 }
 
@@ -343,6 +373,7 @@ export const CATEGORY_META: Record<RecCategory, { label: string; icon: string; b
   increase_value: { label: 'Increase customer value', icon: '🔄', blurb: 'Earn more from the customers you already have.' },
 };
 
+/** Sentence case: nothing in the interface is set in capitals. */
 export function priorityLabel(p: Priority): string {
-  return p === 'high' ? 'HIGH' : p === 'medium' ? 'MEDIUM' : 'LOW';
+  return p === 'high' ? 'High' : p === 'medium' ? 'Medium' : 'Low';
 }

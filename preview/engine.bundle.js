@@ -572,6 +572,7 @@ function evaluatePrice(m, price, key = 'custom', label = 'Custom', opts = {}) {
         breakEvenUnits: breakEvenUnitsAt(e, price),
         status,
         note: opts.note ?? '',
+        noteI18n: opts.noteI18n,
     };
 }
 function computePricing(m) {
@@ -586,6 +587,10 @@ function computePricing(m) {
     const midTarget = desired ?? band.mid;
     if (desired !== undefined) {
         band.rationale = `You asked for a ${Math.round(desired * 100)}% margin. For reference, ${def.shortLabel.toLowerCase()} businesses typically run ${pct(def.marginBand.low)}–${pct(def.marginBand.high)}.`;
+        band.rationaleI18n = {
+            key: 'marginBand.requested',
+            params: { desired, low: def.marginBand.low, high: def.marginBand.high, typeKey: `businessType.${m.meta.businessType}.shortLabelLower` },
+        };
     }
     const lowTarget = Math.max(def.floorMargin, Math.min(band.low, midTarget - 0.05));
     const highTarget = Math.max(midTarget + 0.05, band.high);
@@ -600,14 +605,20 @@ function computePricing(m) {
     const minimum = evaluatePrice(m, minimumPrice, 'minimum', 'Minimum', {
         status: 'low',
         note: 'Covers every cost with a thin safety margin. Little room for surprises.',
+        noteI18n: { key: 'scenario.minimum.note' },
     });
     const recommended = evaluatePrice(m, recommendedPrice, 'recommended', 'Recommended', {
         status: 'recommended',
         note: `Targets a ${pct(midTarget)} net margin — ${desired !== undefined ? 'your requested margin' : `the midpoint for ${def.shortLabel.toLowerCase()} businesses`}.`,
+        noteI18n: {
+            key: desired !== undefined ? 'scenario.recommended.note.requested' : 'scenario.recommended.note.midpoint',
+            params: { margin: midTarget, typeKey: `businessType.${m.meta.businessType}.shortLabelLower` },
+        },
     });
     const premium = evaluatePrice(m, premiumPrice, 'premium', 'Premium', {
         status: 'premium',
         note: 'Higher margin per sale, but you will likely need stronger positioning or fewer, better customers.',
+        noteI18n: { key: 'scenario.premium.note' },
     });
     const trueCostPerUnit = e.B + recommended.price * e.f;
     // Target profit analysis at expected units
@@ -652,14 +663,24 @@ function computePricing(m) {
     lines.forEach((l) => (l.share = l.amount / total));
     lines.sort((a, b) => b.amount - a.amount);
     // Warnings (conservative, plain language)
-    if (e.O / e.B > 0.4)
+    const warningsI18n = [];
+    const unitKeys = { cur: m.meta.currency, unit: `unit.${m.meta.businessType}.one`, units: `unit.${m.meta.businessType}.other` };
+    if (e.O / e.B > 0.4) {
         warnings.push(`Fixed costs are ${pct(e.O / e.B)} of your cost per ${def.unitLabel}. Your price depends heavily on actually selling ${e.U} ${def.unitLabelPlural} a month.`);
-    if (e.f > 0.2)
+        warningsI18n.push({ key: 'warning.fixedShare', params: { ...unitKeys, share: e.O / e.B, count: e.U } });
+    }
+    if (e.f > 0.2) {
         warnings.push(`Percentage fees take ${pct(e.f)} of every sale before you see any profit.`);
-    if (!target.achievableAtRecommended && T > 0)
+        warningsI18n.push({ key: 'warning.fees', params: { ...unitKeys, share: e.f } });
+    }
+    if (!target.achievableAtRecommended && T > 0) {
         warnings.push(`At the recommended price and ${e.U} ${def.unitLabelPlural}/month you would be about ${Math.round(-gapAtRecommended)} ${m.meta.currency} short of your ${T} ${m.meta.currency} target. See the target panel and roadmap.`);
-    if (desired !== undefined && desired > def.marginBand.high + 0.1)
+        warningsI18n.push({ key: 'warning.shortOfTarget', params: { ...unitKeys, count: e.U, gap: Math.round(-gapAtRecommended), target: T } });
+    }
+    if (desired !== undefined && desired > def.marginBand.high + 0.1) {
         warnings.push(`A ${pct(desired)} margin is well above the typical ${pct(def.marginBand.low)}–${pct(def.marginBand.high)} for this business type; expect a harder sell.`);
+        warningsI18n.push({ key: 'warning.marginTooHigh', params: { ...unitKeys, desired, low: def.marginBand.low, high: def.marginBand.high } });
+    }
     return {
         currency: m.meta.currency,
         unitLabel: def.unitLabel,
@@ -673,12 +694,13 @@ function computePricing(m) {
         breakEvenPrice: (0, money_1.round2)(breakEvenPrice),
         variableBreakEvenPrice: (0, money_1.round2)(variableBreakEvenPrice),
         trueCostPerUnit: (0, money_1.round2)(trueCostPerUnit),
-        marginBand: { low: lowTarget, mid: midTarget, high: highTarget, rationale: band.rationale },
+        marginBand: { low: lowTarget, mid: midTarget, high: highTarget, rationale: band.rationale, rationaleI18n: band.rationaleI18n },
         scenarios: { minimum, recommended, premium },
         recommended,
         target,
         costBreakdown: lines,
         warnings,
+        warningsI18n,
     };
 }
 function applyWhatIf(m, o) {
@@ -1095,6 +1117,20 @@ exports.ROADMAP_ASSUMPTIONS = {
 };
 const A = exports.ROADMAP_ASSUMPTIONS;
 const money = (v, cur) => (0, money_1.formatMoney)(v, cur, { decimals: v < 100 ? 2 : 0 });
+/**
+ * Builds the translatable twin of a rule's copy. The keys live in the i18n
+ * catalogue under `rec.<id>.*`; `unit`/`units` are themselves keys so each locale
+ * can inflect the noun rather than receive an English one.
+ */
+function msgs(id, c, params) {
+    const common = { cur: c.cur, unit: `unit.${c.m.meta.businessType}.one`, units: `unit.${c.m.meta.businessType}.other`, ...params };
+    return {
+        title: { key: `rec.${id}.title`, params: common },
+        why: { key: `rec.${id}.why`, params: common },
+        action: { key: `rec.${id}.action`, params: common },
+        assumptions: [0, 1, 2].map((i) => ({ key: `rec.${id}.a${i + 1}`, params: common })),
+    };
+}
 const RULES = [
     {
         id: 'supplier_cost',
@@ -1111,6 +1147,7 @@ const RULES = [
                 action: 'Request quotes from 3–5 suppliers for your volume. Compare landed cost (price + shipping + duties), minimum order quantity, warranty and payment terms — not just the unit price.',
                 estimatedMonthlyImpact: (0, money_1.round2)(saving * c.e.U),
                 assumptions: [`A ${(0, money_1.formatPct)(A.supplierReductionPct, 0)} lower purchase price is achievable at your volume (conservative for most categories).`, `Volume stays at ${c.e.U} ${c.units}/month.`],
+                i18n: msgs('supplier_cost', c, { target, share, pct: A.supplierReductionPct, count: c.e.U }),
             };
         },
     },
@@ -1127,6 +1164,7 @@ const RULES = [
                 action: 'Price your three most expensive ingredients or materials at wholesale quantities. Check whether a slightly cheaper grade would be noticed by customers.',
                 estimatedMonthlyImpact: (0, money_1.round2)(saving * c.e.U),
                 assumptions: [`Materials cost drops by ${(0, money_1.formatPct)(A.materialsReductionPct, 0)} at wholesale quantities.`, 'No change in quality or sales volume.'],
+                i18n: msgs('materials_cost', c, { pct: A.materialsReductionPct, share: c.m.direct.materials / c.p.trueCostPerUnit }),
             };
         },
     },
@@ -1143,6 +1181,7 @@ const RULES = [
                 action: 'Get quotes from two freight forwarders or couriers for consolidated monthly shipments. Ask about volume-based rates once you reach a steady order count.',
                 estimatedMonthlyImpact: (0, money_1.round2)(saving * c.e.U),
                 assumptions: [`${(0, money_1.formatPct)(A.shippingReductionPct, 0)} lower shipping through consolidation or negotiated rates.`],
+                i18n: msgs('shipping_cost', c, { from: c.m.direct.shipping, to: c.m.direct.shipping - saving, share: c.m.direct.shipping / c.p.trueCostPerUnit, pct: A.shippingReductionPct }),
             };
         },
     },
@@ -1161,6 +1200,7 @@ const RULES = [
                 action: 'Launch a referral offer for existing customers, post consistently on one organic channel, and retarget past visitors instead of cold audiences. Track cost per sale weekly.',
                 estimatedMonthlyImpact: (0, money_1.round2)(saving * c.e.U),
                 assumptions: [`Acquisition cost per ${c.unit} falls by ${(0, money_1.formatPct)(A.cacReductionPct, 0)} within 2–3 months.`, 'Sales volume is unchanged.'],
+                i18n: msgs('cac', c, { from: cur, to: cur - saving, share: cur / c.price, pct: A.cacReductionPct }),
             };
         },
     },
@@ -1177,6 +1217,7 @@ const RULES = [
                 action: 'Add a "reorder directly" card or WhatsApp link in every delivery. Offer a small direct-order incentive that is still cheaper than the platform fee.',
                 estimatedMonthlyImpact: (0, money_1.round2)(saving * c.e.U),
                 assumptions: [`${(0, money_1.formatPct)(A.feeShiftShare, 0)} of volume moves to a channel with fees ${A.feeShiftSavingPts} points lower.`, 'Total volume is unchanged.'],
+                i18n: msgs('platform_fees', c, { share: A.feeShiftShare, feePct: c.m.variable.platformFeePct, feeAmount: c.price * (c.m.variable.platformFeePct / 100), points: A.feeShiftSavingPts }),
             };
         },
     },
@@ -1200,6 +1241,7 @@ const RULES = [
                 action: 'Run the higher price for 2–4 weeks on new customers only. Keep the offer identical and watch conversion, not just complaints. Keep it if profit rises.',
                 estimatedMonthlyImpact: (0, money_1.round2)(newProfit - c.monthlyProfit),
                 assumptions: [`A ${(0, money_1.formatPct)(A.priceTestIncrease, 0)} price rise loses ${(0, money_1.formatPct)(A.priceTestVolumeLoss, 0)} of volume (a cautious elasticity assumption).`],
+                i18n: msgs('price_test', c, { pct: A.priceTestIncrease, newPrice, margin: c.p.recommended.marginPct, high: c.p.marginBand.high, typeKey: `businessType.${c.m.meta.businessType}.shortLabelLower`, loss: A.priceTestVolumeLoss }),
             };
         },
     },
@@ -1224,6 +1266,7 @@ const RULES = [
                 action: `Design one add-on at roughly ${(0, money_1.formatPct)(A.upsellPriceShare, 0)} of your price and offer it at the moment of purchase. Measure the attach rate for a month.`,
                 estimatedMonthlyImpact: (0, money_1.round2)(perUnit * c.e.U),
                 assumptions: [`${(0, money_1.formatPct)(A.upsellAttachRate, 0)} of customers take the add-on.`, `The add-on carries a ${(0, money_1.formatPct)(A.upsellMargin, 0)} margin.`],
+                i18n: msgs('upsell', c, { addon, exampleKey: `rec.upsell.example.${t}`, share: A.upsellPriceShare, attach: A.upsellAttachRate, margin: A.upsellMargin }),
             };
         },
     },
@@ -1242,6 +1285,7 @@ const RULES = [
                 action: 'Collect every customer’s contact at purchase, follow up 2–4 weeks later with a reorder reminder or a loyalty perk, and make reordering a one-tap action.',
                 estimatedMonthlyImpact: (0, money_1.round2)(contribNoCac),
                 assumptions: [`Repeat purchases add ${(0, money_1.formatPct)(A.repeatUplift, 0)} to monthly volume.`, 'Repeat orders carry no marketing cost.'],
+                i18n: msgs('repeat', c, { pct: A.repeatUplift, each: c.price * (1 - c.e.f) - c.e.D - c.m.variable.otherPerUnit }),
             };
         },
     },
@@ -1258,6 +1302,7 @@ const RULES = [
                 action: 'Pick one channel you are not using yet and commit to it for 60 days. Set a weekly target of new enquiries, not sales, and track conversion.',
                 estimatedMonthlyImpact: (0, money_1.round2)((0, pricing_1.contributionAt)(c.e, c.price) * extra),
                 assumptions: [`Volume grows ${(0, money_1.formatPct)(A.volumeIncrease, 0)} at the same price and acquisition cost.`, 'Fixed costs do not increase.'],
+                i18n: msgs('volume', c, { target: Math.round(c.e.U + extra), share: c.e.O / c.p.baseCostPerUnit, contribution: (0, pricing_1.contributionAt)(c.e, c.price), pct: A.volumeIncrease }),
             };
         },
     },
@@ -1272,6 +1317,7 @@ const RULES = [
             action: 'List every recurring charge and cancel or downgrade anything not used in the last 30 days. Renegotiate rent or move to shared space if you are below capacity.',
             estimatedMonthlyImpact: (0, money_1.round2)(c.e.F * A.overheadReduction),
             assumptions: [`${(0, money_1.formatPct)(A.overheadReduction, 0)} of fixed costs can be removed without affecting sales.`],
+            i18n: msgs('overhead', c, { pct: A.overheadReduction, saving: c.e.F * A.overheadReduction, fixed: c.e.F, perUnit: c.e.O }),
         }),
     },
     {
@@ -1285,6 +1331,7 @@ const RULES = [
             action: 'Time your next five jobs. Batch similar tasks, build templates or presets for repeated steps, and stop doing anything the customer does not notice.',
             estimatedMonthlyImpact: (0, money_1.round2)(c.m.direct.labor * A.laborEfficiency * c.e.U),
             assumptions: [`Time per ${c.unit} falls by ${(0, money_1.formatPct)(A.laborEfficiency, 0)}; the freed hours are used for more ${c.units} or other paid work.`],
+            i18n: msgs('labor_efficiency', c, { pct: A.laborEfficiency, share: c.m.direct.labor / c.p.trueCostPerUnit }),
         }),
     },
     {
@@ -1301,6 +1348,7 @@ const RULES = [
                 action: 'Track what is thrown away for two weeks, then adjust batch sizes, pre-orders and storage to match real demand.',
                 estimatedMonthlyImpact: (0, money_1.round2)(saving * c.e.U),
                 assumptions: ['Waste is halved with no change in sales.'],
+                i18n: msgs('waste', c, { from: c.m.variable.wastagePct, to: c.m.variable.wastagePct / 2, amount: base * (c.m.variable.wastagePct / 100) }),
             };
         },
     },
@@ -1317,6 +1365,7 @@ const RULES = [
                 action: 'Read every refund reason for a month. Fix the top two causes: usually mismatched expectations or shipping damage.',
                 estimatedMonthlyImpact: (0, money_1.round2)(saving * c.e.U),
                 assumptions: [`Return rate falls by ${(0, money_1.formatPct)(A.returnsReduction, 0)}.`],
+                i18n: msgs('returns', c, { ratePct: c.m.variable.returnsPct, amount: c.price * (c.m.variable.returnsPct / 100), pct: A.returnsReduction }),
             };
         },
     },
@@ -1339,6 +1388,8 @@ function buildRoadmap(m, p, opts = {}) {
         if (!applies)
             continue;
         const built = rule.build(ctx);
+        if (built.i18n)
+            built.i18n.assumptions = built.i18n.assumptions.slice(0, built.assumptions.length);
         if (!isFinite(built.estimatedMonthlyImpact) || built.estimatedMonthlyImpact <= 0)
             continue;
         recs.push({ id: rule.id, category: rule.category, difficulty: rule.difficulty, priority: 'low', ...built, done: opts.completedIds?.includes(rule.id) ?? false });
@@ -1373,6 +1424,7 @@ function buildRoadmap(m, p, opts = {}) {
         optimisedMonthlyProfit: optimised,
         targetReached: m.goals.targetMonthlyProfit > 0 ? optimised >= m.goals.targetMonthlyProfit : true,
         disclaimer: 'These are estimates based on the numbers you provided and the assumptions listed under each item. They are not predictions or guarantees. Improvements interact, so the combined effect is usually smaller than the sum of the parts.',
+        disclaimerI18n: { key: 'roadmap.disclaimer' },
     };
 }
 exports.CATEGORY_META = {
@@ -1381,8 +1433,9 @@ exports.CATEGORY_META = {
     reduce_cac: { label: 'Reduce acquisition cost', icon: '📣', blurb: 'Pay less to win each customer.' },
     increase_value: { label: 'Increase customer value', icon: '🔄', blurb: 'Earn more from the customers you already have.' },
 };
+/** Sentence case: nothing in the interface is set in capitals. */
 function priorityLabel(p) {
-    return p === 'high' ? 'HIGH' : p === 'medium' ? 'MEDIUM' : 'LOW';
+    return p === 'high' ? 'High' : p === 'medium' ? 'Medium' : 'Low';
 }
 
   };

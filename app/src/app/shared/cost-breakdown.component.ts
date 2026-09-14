@@ -1,12 +1,14 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { CostLine } from '../core/engine';
+import { I18nService } from './i18n.service';
 import { MoneyPipe, PctPipe } from './pipes';
 
+/** The blue→violet cost-composition series, named from the tokens in styles.css. */
 const COLORS: Record<CostLine['group'], string[]> = {
-  direct: ['#0f766e', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1', '#0d9488'],
-  variable: ['#f59e0b', '#fbbf24'],
-  overhead: ['#6366f1'],
-  fees: ['#94a3b8', '#b6c2d1', '#cbd5e1', '#dde4ec'],
+  direct: ['var(--pp-series-1)', 'var(--pp-series-2)', 'var(--pp-series-3)', 'var(--pp-series-4)'],
+  variable: ['var(--pp-series-5)', 'var(--pp-series-6)'],
+  overhead: ['var(--pp-series-7)'],
+  fees: ['var(--pp-series-8)', 'var(--pp-series-9)'],
 };
 
 @Component({
@@ -14,15 +16,15 @@ const COLORS: Record<CostLine['group'], string[]> = {
   standalone: true,
   imports: [MoneyPipe, PctPipe],
   template: `
-    <div class="pp-bar" role="img" aria-label="Cost breakdown">
+    <div class="pp-bar" role="img" [attr.aria-label]="t('chart.costBreakdown')">
       @for (l of colored(); track l.line.key) {
-        <span [style.width.%]="l.line.share * 100" [style.background]="l.color" [title]="l.line.label"></span>
+        <span [style.width.%]="l.line.share * 100" [style.background]="l.color" [title]="label(l.line)"></span>
       }
     </div>
     <div class="pp-legend mt-3">
       @for (l of colored(); track l.line.key) {
         <div class="d-flex justify-content-between">
-          <span><i class="dot" [style.background]="l.color"></i>{{ l.line.label }}</span>
+          <span><i class="dot" [style.background]="l.color"></i>{{ label(l.line) }}</span>
           <span class="pp-num">{{ l.line.amount | money: currency() }} <span class="pp-muted">· {{ l.line.share | pct: 0 }}</span></span>
         </div>
       }
@@ -30,7 +32,13 @@ const COLORS: Record<CostLine['group'], string[]> = {
   `,
 })
 export class CostBreakdownComponent {
+  readonly t = inject(I18nService).t;
   lines = input.required<CostLine[]>();
+
+  /** Cost-line labels are static per key, so the catalogue holds them directly. */
+  label(line: CostLine): string {
+    return this.t([`costLine.${line.key}`], {}) || line.label;
+  }
   currency = input.required<string>();
 
   colored = computed(() => {

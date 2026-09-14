@@ -1,160 +1,867 @@
-/* ProfitPath design system — layered on top of Bootstrap 5 */
+/* ============================================================================
+   ProfitPath design system
+   Warm paper, one ink, and figures that are scannable before they are read.
+
+   An editorial register, not a dashboard one. The product prices things for
+   people who sell things, so it reads as financial print: a flat ground, rules
+   and tint instead of shadow and blur, square corners, a serif for headings
+   and the hero figure, a mono for every number, a sans for the copy you
+   actually read. Nothing floats and nothing is rounded.
+
+   This file is the whole system. `preview/build.mjs` compiles it in verbatim,
+   so retargeting a token here moves the Angular app and the dependency-free
+   preview together and neither can drift from the other.
+
+   Card hierarchy — four treatments, and one inverted. Do not invent a fifth.
+     .pp-card                 secondary — the default sheet
+     .pp-card--primary        the decision on the page: ruled in ink, roomier
+     .pp-card--insight        explanation and reasoning: faint brand wash
+     .pp-card--data           dense figures: the interior recedes
+     .pp-card--dark           inverted, at most one per screen
+     .pp-card-bare            a plain block nested inside one of the above
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- tokens -- */
 :root {
-  --pp-ink: #0f172a;
-  --pp-ink-2: #334155;
-  --pp-muted: #64748b;
-  --pp-line: #e6eaf0;
-  --pp-bg: #f6f8fa;
-  --pp-card: #ffffff;
-  --pp-primary: #0f766e;
-  --pp-primary-2: #0d9488;
-  --pp-primary-soft: #e6f4f1;
-  --pp-accent: #f59e0b;
-  --pp-accent-soft: #fff4dc;
-  --pp-indigo: #4f46e5;
-  --pp-indigo-soft: #eceafe;
-  --pp-danger: #dc2626;
-  --pp-danger-soft: #fde8e8;
-  --pp-success: #16a34a;
-  --pp-radius: 16px;
-  --pp-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
-  --pp-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Page — warm paper, flat. The ground is stock, not a wash: nothing behind
+     the content moves, and every surface above it is told apart by a rule. */
+  --pp-bg-2: #f7f4ee;
+  --pp-page: none;
+
+
+  /* Solid surfaces — raised paper, two recessed tints, and the rules between. */
+  --pp-card: #fffdf8;
+  --pp-subtle: #efeade;
+  --pp-subtle-2: #f3efe5;
+  --pp-line: #dcd5c6;
+  --pp-line-2: #ede8dc;
+
+  /* Ink — every value below clears AA on paper, on --pp-subtle and on
+     --pp-subtle-2, audited by preview/contrast.mjs. */
+  --pp-ink: #16181d;        /* 16.2:1 on paper */
+  --pp-ink-2: #3d4049;      /*  9.4:1 */
+  --pp-muted: #67635a;      /*  5.5:1 paper · 5.0:1 on tiles */
+
+  /* Brand — one ink blue, dark enough to carry white text at 6:1 and to read
+     as text on paper without a second, darker variant. */
+  --pp-brand: #1f57e0;
+  --pp-brand-hover: #16409f;
+  --pp-brand-ink: #1f57e0;
+  --pp-brand-2: #5b4bd6;
+  --pp-brand-2-ink: #5b4bd6;
+  --pp-brand-soft: #e3e9fb;
+  --pp-brand-2-soft: #e8e5fa;
+  --pp-brand-wash: #f4f5fd;   /* insight-card interior */
+  --pp-brand-gradient: linear-gradient(135deg, #1f57e0 0%, #5b4bd6 100%);
+
+  /* The dark plate — the inverted card, the recommended scenario, the hero. */
+  --pp-dark: #14151a;
+  --pp-dark-hover: #262932;
+  --pp-on-dark: #f2efe8;
+  --pp-on-dark-muted: #9aa1b3;
+  --pp-pos-dark: #6fdca0;     /* a positive figure ON the plate */
+
+  /* Semantic — the base is for TEXT, the -ink variant for text on its own tint. */
+  --pp-pos: #12784a;        /* 5.0:1 on paper */
+  --pp-pos-soft: #dfeee4;
+  --pp-pos-ink: #0e6b41;    /* on --pp-pos-soft: 5.5:1 */
+  --pp-neg: #b8322a;
+  --pp-neg-soft: #fbe6e2;
+  --pp-neg-ink: #b02f26;
+  --pp-warn-soft: #f7ecd6;
+  --pp-warn-ink: #7a5210;
+  --pp-neutral-soft: #eae5d9;
+
+  /* The preview's utility sheet resolves .text-danger through this alias. */
+  --pp-danger: var(--pp-neg);
+
+
+  /* Type — three faces, each with a job. The serif carries voice, the mono
+     carries every figure so columns of money line up, the sans carries
+     reading copy. Arabic faces sit at the end of each stack: font fallback is
+     per-glyph, so Latin text never reaches them. */
+  --pp-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
+  --pp-serif: 'Instrument Serif', Georgia, 'Times New Roman', 'Noto Naskh Arabic', serif;
+  --pp-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, 'Noto Sans Arabic', monospace;
+
+  /* Figure scale — the hierarchy that makes results scannable. */
+  --pp-fig-hero: clamp(46px, 7vw, 68px);
+  --pp-fig-xl: clamp(28px, 3.4vw, 36px);
+  --pp-fig-lg: 26px;
+  --pp-fig-md: 20px;
+  --pp-fig-sm: 15px;
+
+
+  /* Print has no rounded corners and no shadow: a surface is told apart by a
+     rule and a tint. The one exception is the language menu, which floats over
+     the page and needs to read as lifted off it. */
+  --pp-shadow-menu: 0 18px 40px -24px rgba(38, 34, 24, 0.45);
+  --pp-ring-brand: 0 0 0 3px rgba(31, 87, 224, 0.18);
+
+  /* Motion */
+  --pp-ease: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  --pp-ease-slow: 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  /* Layout — one measure for the whole product, masthead and footer included. */
+  --pp-container: 1200px;
+  --pp-gutter: 24px;
+  --pp-grid-gap: 12px;
+  --pp-card-pad: 22px;
+  --pp-card-pad-lg: 30px;
+
+  /* Cost-composition series — blue→violet, fees left neutral. */
+  --pp-series-1: #1f57e0; --pp-series-2: #4c7cea; --pp-series-3: #86a6f2; --pp-series-4: #b5c9f8;
+  --pp-series-5: #5b4bd6; --pp-series-6: #8577e4; --pp-series-7: #bdb4f0;
+  --pp-series-8: #8d8778; --pp-series-9: #bdb6a5;
+
 }
 
-html, body { background: var(--pp-bg); color: var(--pp-ink); font-family: var(--pp-font); -webkit-font-smoothing: antialiased; }
-body { font-size: 15px; line-height: 1.55; margin: 0; }
-h1, h2, h3, h4, .display-pp { letter-spacing: -0.02em; font-weight: 700; color: var(--pp-ink); }
-a { color: var(--pp-primary); text-decoration: none; }
-a:hover { color: var(--pp-primary-2); }
+/* ------------------------------------------------------------------ base -- */
+html, body {
+  background: var(--pp-bg-2);
+  color: var(--pp-ink);
+  font-family: var(--pp-font);
+  -webkit-font-smoothing: antialiased;
+}
+body { font-size: 14px; line-height: 1.5; margin: 0; }
+
+/* Headings are the serif — it is the one place the product has a voice. Copy,
+   labels and controls stay in the sans, which is what you actually read. */
+h1, h2, h3, h4, h5, .display-pp {
+  font-family: var(--pp-serif); font-weight: 400; letter-spacing: -0.02em; color: var(--pp-ink);
+}
+h1 { font-size: clamp(32px, 4.4vw, 46px); letter-spacing: -0.028em; line-height: 1.04; }
+h2 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.08; }
+h3 { font-size: 22px; }
+h4 { font-size: 19px; }
+h5 { font-size: 16px; }
+a { color: var(--pp-brand-ink); text-decoration: none; }
+a:hover { color: var(--pp-brand-hover); }
 .text-muted, .pp-muted { color: var(--pp-muted) !important; }
-.pp-container { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+.pp-container { max-width: var(--pp-container); margin: 0 auto; padding-inline: var(--pp-gutter); }
 .pp-narrow { max-width: 720px; margin: 0 auto; }
+/* Every figure in the product is mono and tabular, so columns of money line
+   up down a ledger and across a row of tiles. */
+.pp-num, .pp-kpi, .pp-stat .v, .pp-metric .pp-kpi, .pp-scenario .price,
+.pp-rec__impact .v, .pp-waterfall .item > :nth-child(2), .pp-delta, .pp-slider label span {
+  font-family: var(--pp-mono); font-variant-numeric: tabular-nums;
+}
 
-/* Buttons */
-.btn-pp { background: var(--pp-primary); color: #fff; border: 0; border-radius: 12px; padding: 0.8rem 1.4rem; font-weight: 600; transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 6px 18px -8px rgba(15, 118, 110, 0.6); }
-.btn-pp:hover, .btn-pp:focus { background: var(--pp-primary-2); color: #fff; transform: translateY(-1px); }
-.btn-pp:disabled { opacity: 0.5; transform: none; }
-.btn-pp-ghost { background: transparent; color: var(--pp-ink); border: 1px solid var(--pp-line); border-radius: 12px; padding: 0.8rem 1.4rem; font-weight: 600; }
-.btn-pp-ghost:hover { background: #fff; border-color: #cfd6df; color: var(--pp-ink); }
-.btn-pp-lg { padding: 1rem 1.8rem; font-size: 1.05rem; }
+/* Icons: `pp-icon` is the Angular host, `.pp-i` the preview's bare <svg>. */
+pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.pp-i { vertical-align: -0.15em; }
 
-/* Cards */
-.pp-card { background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-radius); box-shadow: var(--pp-shadow); padding: 1.5rem; }
-.pp-card-soft { background: var(--pp-primary-soft); border-color: transparent; box-shadow: none; }
-.pp-card-hero { background: linear-gradient(135deg, #0f766e 0%, #115e59 60%, #134e4a 100%); color: #fff; border: 0; }
-.pp-card-hero .pp-eyebrow, .pp-card-hero .pp-muted { color: rgba(255, 255, 255, 0.75) !important; }
-.pp-eyebrow { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--pp-muted); }
-.pp-kpi { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.pp-kpi-xl { font-size: clamp(2.6rem, 6vw, 4.2rem); }
-.pp-kpi-lg { font-size: clamp(2rem, 4vw, 3rem); }
-.pp-kpi-sm { font-size: 1.35rem; }
-.pp-num { font-variant-numeric: tabular-nums; }
+/* ------------------------------------------------------------ direction -- */
+/* The layout mirrors through CSS logical properties; only the icons that point
+   somewhere need flipping, and only those carry `pp-icon-flip`. A chevron means
+   "forward", and forward is leftward in Arabic. */
+[dir='rtl'] .pp-icon-flip svg,
+[dir='rtl'] svg.pp-i.pp-icon-flip { transform: scaleX(-1); }
+/* Figures stay left-to-right inside an RTL sentence: a price is not a word. */
+[dir='rtl'] .pp-num,
+[dir='rtl'] .pp-kpi,
+[dir='rtl'] .pp-stat .v,
+[dir='rtl'] .pp-rec__impact .v { direction: ltr; }
+[dir='rtl'] .pp-ledger > :nth-child(even) { direction: ltr; }
 
-/* Shell */
-.pp-header { position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(180%) blur(12px); background: rgba(246, 248, 250, 0.82); border-bottom: 1px solid var(--pp-line); }
-.pp-header .pp-container { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-.pp-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; color: var(--pp-ink); font-size: 1.1rem; letter-spacing: -0.02em; }
-.pp-logo svg { width: 28px; height: 28px; }
-.pp-nav a { color: var(--pp-ink-2); font-weight: 500; margin-left: 1.2rem; }
-.pp-nav a.active { color: var(--pp-primary); }
-.pp-footer { border-top: 1px solid var(--pp-line); padding: 2.5rem 0 3rem; color: var(--pp-muted); font-size: 0.9rem; }
-.pp-notice { font-size: 0.82rem; color: var(--pp-muted); background: #fff; border: 1px dashed var(--pp-line); border-radius: 10px; padding: 0.6rem 0.9rem; }
+/* --------------------------------------------------------- language pick -- */
+.pp-lang { position: relative; }
+.pp-lang__button {
+  display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 500; color: var(--pp-ink-2);
+  background: transparent; padding: 7px 11px;
+  transition: background var(--pp-ease), color var(--pp-ease);
+}
+.pp-lang__button { font-family: var(--pp-mono); }
+.pp-lang__button:hover { background: transparent; color: var(--pp-ink); }
+.pp-lang__code { letter-spacing: 0.04em; }
+.pp-lang__menu {
+  position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 60;
+  margin: 0; padding: 0; list-style: none; min-width: 200px;
+  background: var(--pp-card); border-radius: 0; box-shadow: var(--pp-shadow-menu);
+  border: 1px solid var(--pp-ink);
+}
+.pp-lang__item {
+  display: flex; align-items: center; gap: 10px; width: 100%; border: 0; cursor: pointer;
+  background: transparent; font-family: inherit; text-align: start;
+  padding: 9px 11px; color: var(--pp-ink);
+  transition: background var(--pp-ease);
+}
+.pp-lang__item:hover { background: var(--pp-subtle); }
+.pp-lang__item.selected { background: var(--pp-brand-soft); color: var(--pp-brand-ink); }
+.pp-lang__item .name { font-size: 14px; font-weight: 500; }
+.pp-lang__item .sub { font-size: 11px; color: var(--pp-muted); margin-inline-start: auto; }
+.pp-lang__item.selected .sub { color: var(--pp-brand-ink); }
 
-/* Landing */
-.pp-hero { padding: 5.5rem 0 3rem; text-align: center; }
-.pp-hero h1 { font-size: clamp(2.5rem, 6vw, 4.25rem); font-weight: 800; line-height: 1.05; }
-.pp-hero p.lead { font-size: 1.2rem; color: var(--pp-ink-2); max-width: 640px; margin: 1.25rem auto 2rem; }
-.pp-gradient-text { background: linear-gradient(90deg, var(--pp-primary) 0%, var(--pp-indigo) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.pp-section { padding: 4rem 0; }
-.pp-section h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); margin-bottom: 0.5rem; }
-.pp-chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--pp-line); border-radius: 999px; padding: 0.35rem 0.8rem; font-size: 0.85rem; font-weight: 500; color: var(--pp-ink-2); }
-.pp-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-.pp-step-num { width: 34px; height: 34px; border-radius: 10px; display: inline-grid; place-items: center; background: var(--pp-primary-soft); color: var(--pp-primary); font-weight: 700; margin-bottom: 0.75rem; }
-.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 0.45rem; column-gap: 1rem; }
-.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 0.5rem; font-weight: 700; }
-.pp-plus { color: var(--pp-success); font-weight: 700; }
+/* Panels tile 12px apart, as the source composition does. */
+.row.g-3, .row.g-4 { --bs-gutter-x: var(--pp-grid-gap); --bs-gutter-y: var(--pp-grid-gap); --g: var(--pp-grid-gap); }
 
-/* Questionnaire */
-.pp-progress { height: 6px; background: #e9eef3; border-radius: 999px; overflow: hidden; }
-.pp-progress > div { height: 100%; background: linear-gradient(90deg, var(--pp-primary), var(--pp-primary-2)); transition: width 0.3s ease; }
-.pp-q-label { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.35rem; }
-.pp-q-help { font-size: 0.86rem; color: var(--pp-muted); margin-bottom: 0.6rem; }
-.pp-input-group { display: flex; align-items: stretch; border: 1.5px solid var(--pp-line); border-radius: 12px; background: #fff; overflow: hidden; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-.pp-input-group:focus-within { border-color: var(--pp-primary); box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12); }
-.pp-input-group input, .pp-input-group select { flex: 1; border: 0; outline: 0; padding: 0.8rem 0.9rem; font-size: 1.05rem; background: transparent; min-width: 0; font-variant-numeric: tabular-nums; }
-.pp-input-group .affix { display: flex; align-items: center; padding: 0 0.9rem; color: var(--pp-muted); font-size: 0.9rem; background: #f8fafc; border-left: 1px solid var(--pp-line); white-space: nowrap; }
-.pp-input-group .affix.pre { border-left: 0; border-right: 1px solid var(--pp-line); font-weight: 600; color: var(--pp-ink-2); }
-.pp-input-group.is-invalid { border-color: var(--pp-danger); }
-.pp-error { color: var(--pp-danger); font-size: 0.84rem; margin-top: 0.35rem; }
-.pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.7rem; }
-.pp-option { border: 1.5px solid var(--pp-line); background: #fff; border-radius: 14px; padding: 0.9rem 1rem; text-align: left; cursor: pointer; transition: all 0.15s ease; font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: flex-start; }
-.pp-option:hover { border-color: #bfc8d4; }
-.pp-option.selected { border-color: var(--pp-primary); background: var(--pp-primary-soft); box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12); }
-.pp-option .icon { font-size: 1.35rem; line-height: 1; }
-.pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 0.82rem; margin-top: 2px; }
-.pp-type-card { border: 1.5px solid var(--pp-line); background: #fff; border-radius: 14px; padding: 1rem; cursor: pointer; transition: all 0.15s ease; }
-.pp-type-card:hover { border-color: #bfc8d4; transform: translateY(-1px); }
-.pp-type-card.selected { border-color: var(--pp-primary); background: var(--pp-primary-soft); }
-.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-primary-soft); border-radius: 14px; padding: 1rem 1.1rem; }
-.pp-detect .icon { font-size: 1.8rem; }
+/* ----------------------------------------------------------- type ladder -- */
+/* Labels above figures. Sentence case — nothing here is set in capitals. */
+.pp-eyebrow { font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--pp-ink); }
+.pp-subhead { font-size: 12px; color: var(--pp-muted); }
+.pp-label { font-size: 11px; color: var(--pp-muted); font-weight: 400; }
+.pp-body { font-size: 13px; color: var(--pp-ink-2); }
 
-/* Results */
-.pp-metric { background: #fff; border: 1px solid var(--pp-line); border-radius: 14px; padding: 1rem 1.15rem; height: 100%; }
-.pp-metric .pp-eyebrow { margin-bottom: 0.3rem; }
-.pp-metric .sub { font-size: 0.84rem; color: var(--pp-muted); margin-top: 0.2rem; }
-.pp-scenario { position: relative; border: 1.5px solid var(--pp-line); border-radius: 16px; padding: 1.4rem; background: #fff; height: 100%; }
-.pp-scenario.recommended { border-color: var(--pp-primary); box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.1), var(--pp-shadow); }
-.pp-scenario .price { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; }
-.pp-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; padding: 0.25rem 0.65rem; letter-spacing: 0.02em; }
-.pp-badge.low { background: var(--pp-accent-soft); color: #b45309; }
-.pp-badge.recommended { background: var(--pp-primary-soft); color: var(--pp-primary); }
-.pp-badge.premium { background: var(--pp-indigo-soft); color: var(--pp-indigo); }
-.pp-badge.loss { background: var(--pp-danger-soft); color: var(--pp-danger); }
-.pp-badge.high { background: var(--pp-danger-soft); color: var(--pp-danger); }
-.pp-badge.medium { background: var(--pp-accent-soft); color: #b45309; }
-.pp-badge.neutral { background: #eef2f6; color: var(--pp-ink-2); }
-.pp-badge.easy { background: #e7f7ec; color: var(--pp-success); }
-.pp-badge.hard { background: var(--pp-indigo-soft); color: var(--pp-indigo); }
-.pp-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: #eef2f6; }
-.pp-bar span { display: block; height: 100%; }
-.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.4rem 1.2rem; font-size: 0.88rem; }
-.pp-legend .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 8px; }
-.pp-tabs { display: inline-flex; background: #eef2f6; border-radius: 12px; padding: 4px; gap: 4px; }
-.pp-tabs button { border: 0; background: transparent; padding: 0.5rem 1rem; border-radius: 9px; font-weight: 600; color: var(--pp-ink-2); }
-.pp-tabs button.active { background: #fff; color: var(--pp-ink); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); }
-.pp-slider label { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.92rem; margin-bottom: 0.2rem; }
-.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-primary); }
-.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-primary); }
-.pp-slider small { color: var(--pp-muted); }
-.pp-delta { font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.pp-delta.up { color: var(--pp-success); }
-.pp-delta.down { color: var(--pp-danger); }
-.pp-warn { background: var(--pp-accent-soft); border: 1px solid #fde4b3; color: #7c4a03; border-radius: 12px; padding: 0.8rem 1rem; font-size: 0.92rem; }
-.pp-ok { background: #e7f7ec; border: 1px solid #c8eed3; color: #14532d; border-radius: 12px; padding: 0.8rem 1rem; font-size: 0.92rem; }
+/* Figures are always weight 300 and tabular. Nothing here bolds a number. */
+.pp-kpi {
+  font-size: var(--pp-fig-md); font-weight: 400; letter-spacing: -0.01em; line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: var(--pp-ink);
+}
+/* The hero figure is the one that carries the serif: it is a headline that
+   happens to be a number, and it sits at the top of the results page alone. */
+.pp-kpi--hero, .pp-kpi--xl { font-family: var(--pp-serif); letter-spacing: -0.03em; }
+.pp-kpi--hero { font-size: var(--pp-fig-hero); line-height: 1; letter-spacing: -0.04em; }
+.pp-kpi--xl { font-size: var(--pp-fig-xl); line-height: 1.05; }
+.pp-kpi--lg { font-size: var(--pp-fig-lg); line-height: 1.1; }
+.pp-kpi--sm { font-size: var(--pp-fig-sm); }
+.pp-kpi--pos { color: var(--pp-pos); }
+/* The currency mark rides high and quiet beside the figure, never level with it.
+   Inline-block rather than a flex item, so the mark and the digits stay one run
+   of text: `$1,149` copies, reads aloud and asserts as a single string. */
+.pp-kpi .cur {
+  display: inline-block; vertical-align: top;
+  font-size: 0.42em; color: var(--pp-muted); letter-spacing: 0;
+  margin: 0.3em 0.1em 0 0;
+}
 
-/* Roadmap */
-.pp-rec { border: 1px solid var(--pp-line); border-radius: 16px; background: #fff; padding: 1.25rem 1.4rem; transition: box-shadow 0.15s ease; }
-.pp-rec:hover { box-shadow: var(--pp-shadow); }
-.pp-rec.done { opacity: 0.6; }
-.pp-rec .impact { font-size: 1.5rem; font-weight: 800; color: var(--pp-success); letter-spacing: -0.02em; white-space: nowrap; }
-.pp-rec h4 { font-size: 1.08rem; margin: 0.3rem 0 0.4rem; }
-.pp-rec .label { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--pp-muted); font-weight: 700; margin-bottom: 0.15rem; }
-.pp-rec p { margin-bottom: 0.6rem; font-size: 0.94rem; }
-.pp-rec ul { font-size: 0.86rem; color: var(--pp-muted); padding-left: 1.1rem; margin: 0; }
-.pp-check { width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #cbd5e1; display: inline-grid; place-items: center; cursor: pointer; background: #fff; }
-.pp-check.on { background: var(--pp-success); border-color: var(--pp-success); color: #fff; }
-.pp-cat-head { display: flex; align-items: center; gap: 10px; margin: 2rem 0 0.9rem; }
-.pp-cat-head .icon { font-size: 1.4rem; }
-.pp-waterfall { display: grid; gap: 0.55rem; }
-.pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; font-size: 0.93rem; }
-.pp-waterfall .track { height: 8px; border-radius: 999px; background: #eef2f6; overflow: hidden; grid-column: 1 / -1; }
-.pp-waterfall .track span { display: block; height: 100%; background: var(--pp-success); }
+/* --------------------------------------------------------------- buttons -- */
+/* Every button is a full pill. Hover lifts 1px; there is no press state. */
+/* Square and ruled, set in the mono: an action reads as a stamp on the page.
+   No lift on hover — nothing in a printed system floats. */
+.btn-pp, .btn-pp-ghost, .btn-pp-white {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: 0; font-family: var(--pp-mono); font-weight: 400;
+  line-height: 1.2; padding: 12px 22px; font-size: 13px; white-space: nowrap; cursor: pointer;
+  transition: background var(--pp-ease), border-color var(--pp-ease), color var(--pp-ease);
+}
+/* Primary action — brand, so the CTA, the mark and the active state agree. */
+.btn-pp { background: var(--pp-brand); color: #fff; }
+.btn-pp:hover, .btn-pp:focus { background: var(--pp-brand-hover); color: #fff; }
+.btn-pp:disabled { opacity: 0.4; }
+/* There is no louder primary than the primary. The hero modifier now only
+   buys size, so a screen cannot end up with two competing first actions. */
+.btn-pp-hero { padding: 15px 28px; font-size: 14px; }
 
-.pp-fade { animation: ppfade 0.35s ease both; }
-@keyframes ppfade { from { transform: translateY(6px); } to { transform: none; } }
+.btn-pp-ghost, .btn-pp-white {
+  background: transparent; color: var(--pp-ink); border: 1.4px solid var(--pp-ink);
+}
+.btn-pp-ghost:hover, .btn-pp-ghost:focus,
+.btn-pp-white:hover, .btn-pp-white:focus { background: var(--pp-ink); color: var(--pp-bg-2); }
 
+.btn-pp-lg { padding: 16px 30px; font-size: 14px; gap: 10px; }
+.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm { padding: 9px 16px; font-size: 12px; gap: 7px; }
+
+/* --------------------------------------------------- surfaces: the model -- */
+/* One layer: a card IS the sheet, told apart from the
+   ground by a rule and a tint. */
+.pp-card, .pp-scenario, .pp-rec {
+  position: relative;
+  background: var(--pp-card);
+  border: 1px solid var(--pp-line);
+  padding: var(--pp-card-pad);
+}
+
+/* --- tier 1: primary. One per screen: the decision being presented. -------- */
+/* It is not raised — it is ruled heavier and given more room, which is how a
+   printed page says "this one". */
+.pp-card--primary {
+  padding: var(--pp-card-pad-lg);
+  border-color: var(--pp-ink);
+}
+/* A brand rule along the top edge, full bleed to the card. */
+.pp-card--primary::after {
+  content: ''; position: absolute; pointer-events: none;
+  inset-inline: -1px; top: -1px; height: 3px;
+  background: var(--pp-brand);
+}
+
+/* --- tier 2: secondary is the bare `.pp-card` above. ---------------------- */
+
+/* --- tier 3: insight. Reasoning, explanation, assumptions. ---------------- */
+.pp-card--insight { background: var(--pp-brand-wash); }
+
+/* --- tier 4: data. Dense figures; the interior recedes so numbers lead. --- */
+.pp-card--data { background: var(--pp-subtle-2); }
+
+/* --- inverted. At most one per screen. ----------------------------------- */
+.pp-card--dark { background: var(--pp-dark); border-color: var(--pp-dark); color: var(--pp-on-dark); }
+.pp-card--dark h1, .pp-card--dark h2, .pp-card--dark h3, .pp-card--dark h4,
+.pp-card--dark .pp-eyebrow, .pp-card--dark .pp-kpi { color: var(--pp-on-dark); }
+.pp-card--dark .pp-muted, .pp-card--dark .pp-subhead, .pp-card--dark ul { color: var(--pp-on-dark-muted) !important; }
+
+/* A plain block nested inside a card — never floated on the page ground. */
+.pp-card-bare {
+  background: var(--pp-bg-2); border: 1px solid var(--pp-line-2);
+  border-radius: 0; padding: var(--pp-card-pad);
+}
+.pp-card-bare--data { background: var(--pp-subtle-2); }
+
+/* ----------------------------------------------------------------- shell -- */
+/* A masthead: one rule across the page, and nothing floating above it. */
+.pp-header { position: sticky; top: 0; z-index: 50; background: var(--pp-bg-2); border-bottom: 1px solid var(--pp-line); }
+.pp-header .pp-container { padding-block: 0; }
+.pp-header-pill {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: transparent; border: 0; border-radius: 0; padding: 0; height: 74px;
+}
+.pp-logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--pp-serif); font-weight: 400; color: var(--pp-ink); font-size: 21px; letter-spacing: -0.01em; }
+.pp-logo svg { width: 26px; height: 26px; }
+/* No `display` here: the markup's `d-none d-sm-flex` owns that, and setting it
+   in this file would win on order and leave the nav visible on phones. */
+.pp-nav { align-items: center; gap: 4px; }
+.pp-nav a {
+  display: inline-flex; align-items: center; gap: 7px; color: var(--pp-ink-2);
+  font-family: var(--pp-mono); font-size: 12px; padding: 8px 12px;
+  border-bottom: 2px solid transparent;
+  transition: color var(--pp-ease), border-color var(--pp-ease);
+}
+.pp-nav a:hover { color: var(--pp-ink); }
+/* Active state is a rule under the word — a tab, not a filled pill. */
+.pp-nav a.active { color: var(--pp-ink); border-bottom-color: var(--pp-brand); }
+.pp-footer { border-top: 1px solid var(--pp-line); margin-top: 64px; padding: 26px 0 34px; color: var(--pp-muted); font-family: var(--pp-mono); font-size: 11px; }
+
+/* Notices are quiet pills; the frosted one is the only translucent inline UI. */
+.pp-notice, .pp-warn, .pp-ok {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; font-size: 12px; line-height: 1.45;
+}
+.pp-notice { background: var(--pp-subtle-2); border: 1px solid var(--pp-line); color: var(--pp-ink-2); }
+.pp-warn { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
+.pp-ok { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
+/* Notices that wrap relax from a pill to a rounded block. */
+.pp-notice-block, .pp-warn-block, .pp-ok-block {
+  display: flex; align-items: flex-start; padding: 12px 16px; line-height: 1.55;
+}
+.pp-notice-block pp-icon, .pp-warn-block pp-icon, .pp-ok-block pp-icon,
+.pp-notice-block .pp-i, .pp-warn-block .pp-i, .pp-ok-block .pp-i { margin-top: 1px; }
+
+/* An icon in a soft round chip — used for category heads and step markers. */
+.pp-icon-badge {
+  width: 34px; height: 34px; border-radius: 0; display: inline-grid; place-items: center;
+  border: 1px solid var(--pp-line); background: transparent; color: var(--pp-brand-ink); flex: 0 0 auto;
+}
+.pp-icon-badge--plain { color: var(--pp-ink-2); }
+.pp-icon-badge--sm { width: 26px; height: 26px; }
+
+/* A chip labels the run in progress: the business type, what is being priced. */
+.pp-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: transparent; border: 1px solid var(--pp-line);
+  padding: 7px 13px; font-family: var(--pp-mono); font-size: 11.5px; color: var(--pp-ink-2);
+}
+.pp-chip pp-icon, .pp-chip .pp-i { color: var(--pp-brand-ink); }
+
+/* ---------------------------------------------------------------- ledger -- */
+.pp-ledger { display: grid; grid-template-columns: 1fr auto; row-gap: 9px; column-gap: 16px; font-size: 13px; }
+.pp-ledger > :nth-child(even) { text-align: end; font-variant-numeric: tabular-nums; }
+.pp-ledger .total { border-top: 1px solid var(--pp-line); padding-top: 11px; font-weight: 500; color: inherit; }
+
+/* --------------------------------------------------------- questionnaire -- */
+/* A consultation, not a form: segments show how far the conversation has run. */
+.pp-steps { display: flex; gap: 5px; }
+.pp-steps .seg { flex: 1; height: 4px; border-radius: 0; background: var(--pp-line); transition: background var(--pp-ease-slow); }
+.pp-steps .seg.done { background: var(--pp-brand-2); }
+.pp-steps .seg.current { background: var(--pp-brand); }
+.pp-steps-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: var(--pp-ink-2); margin-bottom: 8px; }
+.pp-steps-meta .now { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--pp-ink); }
+
+/* Progress (roadmap completion) */
+.pp-progress { height: 6px; background: var(--pp-subtle); border-radius: 0; overflow: hidden; }
+.pp-progress > div { height: 100%; background: var(--pp-brand); border-radius: 0; transition: width var(--pp-ease-slow); }
+
+.pp-q { padding: 16px 0; border-top: 1px solid var(--pp-line); }
+.pp-q:first-of-type { border-top: 0; padding-top: 4px; }
+.pp-q-label { font-size: 15px; font-weight: 500; margin-bottom: 4px; color: var(--pp-ink); }
+.pp-q-help { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--pp-muted); margin-bottom: 10px; }
+.pp-q-help pp-icon { margin-top: 1px; color: var(--pp-brand-ink); }
+
+/* Fields show no border until focus, which draws a hairline plus a 4px ring. */
+/* A ruled field, like a line on a form: the rule is always there, and focus
+   darkens it and adds a ring rather than conjuring a border from nothing. */
+.pp-input-group {
+  display: flex; align-items: stretch; background: var(--pp-card);
+  border: 1px solid var(--pp-line); border-radius: 0; overflow: hidden;
+  transition: border-color var(--pp-ease), box-shadow var(--pp-ease);
+}
+.pp-input-group:hover { border-color: var(--pp-muted); }
+.pp-input-group:focus-within { border-color: var(--pp-brand); box-shadow: var(--pp-ring-brand); }
+.pp-input-group input, .pp-input-group select {
+  flex: 1; border: 0; outline: 0; padding: 13px 16px; font-size: 15px; background: transparent;
+  min-width: 0; font-family: inherit; color: var(--pp-ink); font-variant-numeric: tabular-nums;
+}
+.pp-input-group input[type='number'], .pp-input-group input[inputmode='decimal'] { font-family: var(--pp-mono); }
+.pp-input-group .affix { display: flex; align-items: center; padding: 0 14px; color: var(--pp-muted); font-family: var(--pp-mono); font-size: 12px; white-space: nowrap; }
+.pp-input-group .affix.pre { padding-inline-end: 0; font-weight: 500; color: var(--pp-ink-2); }
+.pp-input-group .affix:not(.pre) { padding-inline-start: 0; }
+.pp-input-group.is-invalid { border-color: var(--pp-neg); box-shadow: none; }
+.pp-error { display: flex; align-items: center; gap: 6px; color: var(--pp-neg); font-size: 12px; margin-top: 6px; }
+
+.pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.pp-option {
+  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 0;
+  padding: 14px 15px; text-align: start; cursor: pointer; font-family: inherit; font-size: 13px;
+  font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: center;
+  transition: background var(--pp-ease), border-color var(--pp-ease);
+}
+.pp-option:hover { border-color: var(--pp-muted); }
+.pp-option.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); }
+.pp-option .tick { margin-inline-start: auto; color: var(--pp-brand-ink); display: none; }
+.pp-option.selected .tick { display: inline-flex; }
+.pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
+
+.pp-type-card {
+  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 0; padding: 15px;
+  cursor: pointer; text-align: start; font-family: inherit;
+  display: flex; gap: 12px; align-items: flex-start;
+  transition: background var(--pp-ease), border-color var(--pp-ease);
+}
+.pp-type-card:hover { border-color: var(--pp-muted); }
+.pp-type-card.selected { background: var(--pp-brand-soft); border-color: var(--pp-brand); }
+.pp-type-card.selected .pp-icon-badge { border-color: var(--pp-brand); }
+.pp-type-card .name { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
+.pp-type-card small { color: var(--pp-muted); display: block; font-size: 12px; margin-top: 2px; }
+
+.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-brand-soft); border: 1px solid var(--pp-brand); border-radius: 0; padding: 14px 15px; }
+.pp-detect .title { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
+.pp-detect .sub { font-size: 12px; color: var(--pp-brand-ink); }
+
+/* --------------------------------------------------------------- results -- */
+/* The unit-economics strip under the recommended price: three supporting
+   figures, each clearly subordinate to the price above them. */
+.pp-stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.pp-stat { background: transparent; border-top: 1px solid var(--pp-line); border-radius: 0; padding: 16px 0 0; min-width: 0; }
+.pp-stat .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
+.pp-stat .v { font-size: var(--pp-fig-lg); font-weight: 400; letter-spacing: -0.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pp-stat--accent { border-top-color: var(--pp-brand); }
+.pp-stat--accent .k { color: var(--pp-brand-ink); }
+
+/* Metric tiles — pale blocks inside a card, never cards in their own right. */
+.pp-metric { background: var(--pp-card); border: 1px solid var(--pp-line-2); border-radius: 0; padding: 15px 16px; height: 100%; }
+.pp-card--data .pp-metric { background: var(--pp-card); }
+.pp-metric .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
+.pp-metric .sub { font-size: 11px; color: var(--pp-muted); margin-top: 4px; }
+
+/* Current vs optimised — the single clearest statement of what the roadmap is
+   worth. Figures come from the engine; the bar is their real proportion. */
+.pp-compare { display: grid; gap: 14px; }
+.pp-compare__row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px 28px; }
+.pp-compare__side { min-width: 0; }
+.pp-compare__side .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 4px; }
+.pp-compare__arrow { display: flex; align-items: center; color: var(--pp-muted); padding-bottom: 8px; }
+.pp-compare__lift {
+  display: inline-flex; align-items: center; gap: 7px; align-self: center;
+  background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: 0;
+  padding: 8px 14px; font-family: var(--pp-mono); font-size: 12.5px; font-variant-numeric: tabular-nums;
+}
+.pp-compare__bar { display: flex; height: 9px; border-radius: 0; overflow: hidden; background: var(--pp-subtle); }
+.pp-compare__bar .now { background: var(--pp-brand); }
+.pp-compare__bar .lift { background: var(--pp-brand-2); }
+.pp-compare__key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--pp-mono); font-size: 11px; color: var(--pp-muted); }
+.pp-compare__key i { width: 8px; height: 8px; border-radius: 0; display: inline-block; margin-inline-end: 7px; }
+
+/* Scenario cards stay a tier below the recommended price. */
+.pp-scenario { height: 100%; }
+.pp-scenario.recommended { background: var(--pp-dark); border-color: var(--pp-dark); color: var(--pp-on-dark); }
+.pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-subhead { color: var(--pp-on-dark-muted) !important; }
+.pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.22); }
+.pp-scenario .price { font-family: var(--pp-serif); font-size: var(--pp-fig-xl); letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+/* Badges are soft pills — the text carries the meaning, never colour alone. */
+/* Badges are tinted blocks; the word carries the meaning, never colour alone. */
+.pp-badge {
+  display: inline-flex; align-items: center; gap: 6px; border-radius: 0;
+  font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 5px 9px; background: var(--pp-neutral-soft); color: var(--pp-ink-2);
+}
+.pp-badge.low, .pp-badge.medium { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
+.pp-badge.recommended, .pp-badge.high { background: var(--pp-brand-soft); color: var(--pp-brand-ink); }
+.pp-badge.premium, .pp-badge.hard { background: var(--pp-brand-2-soft); color: var(--pp-brand-2-ink); }
+.pp-badge.loss { background: var(--pp-neg-soft); color: var(--pp-neg-ink); }
+.pp-badge.neutral { background: var(--pp-neutral-soft); color: var(--pp-ink-2); }
+.pp-badge.easy { background: var(--pp-pos-soft); color: var(--pp-pos-ink); }
+/* On the inverted card, badges invert too. */
+.pp-scenario.recommended .pp-badge, .pp-card--dark .pp-badge { background: rgba(242, 239, 232, 0.14); color: var(--pp-on-dark); }
+
+/* Cost bar — one continuous strip, the way a composition is printed. */
+.pp-bar { display: flex; height: 7px; background: transparent; }
+.pp-bar span { display: block; height: 100%; border-radius: 0; }
+.pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; font-size: 12px; }
+.pp-legend .dot { width: 8px; height: 8px; border-radius: 0; display: inline-block; margin-inline-end: 8px; }
+
+/* Tabs sit on a frosted bed; the active tab is the brand. */
+.pp-tabs {
+  display: inline-flex; gap: 26px; background: transparent;
+  border: 0; border-bottom: 1px solid var(--pp-line); border-radius: 0; padding: 0;
+}
+.pp-tabs button {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 0; border-bottom: 2px solid transparent; background: transparent;
+  padding: 10px 0; border-radius: 0; margin-bottom: -1px;
+  font-family: var(--pp-mono); font-size: 12.5px; color: var(--pp-muted); cursor: pointer;
+  transition: color var(--pp-ease), border-color var(--pp-ease);
+}
+.pp-tabs button:hover { color: var(--pp-ink); }
+.pp-tabs button.active { color: var(--pp-ink); border-bottom-color: var(--pp-brand); }
+
+.pp-slider { margin-bottom: 14px; }
+.pp-slider label { display: flex; justify-content: space-between; gap: 12px; font-weight: 500; font-size: 13px; margin-bottom: 5px; }
+.pp-slider label span { font-variant-numeric: tabular-nums; color: var(--pp-brand-ink); font-weight: 400; }
+.pp-slider input[type='range'] { width: 100%; accent-color: var(--pp-brand); }
+.pp-slider small { color: var(--pp-muted); font-size: 11px; }
+.pp-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.pp-delta.up { color: var(--pp-pos); }
+.pp-delta.down { color: var(--pp-neg); }
+
+/* --------------------------------------------------------------- roadmap -- */
+/* The single highest-impact move, pulled out of the list. */
+.pp-spot__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pp-spot__head { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 10px; }
+
+/* A recommendation states four things: impact, difficulty, priority, next step. */
+.pp-rec { transition: border-color var(--pp-ease), opacity var(--pp-ease); }
+.pp-rec:hover { border-color: var(--pp-muted); }
+.pp-rec.done { opacity: 0.55; }
+.pp-rec.done h4 { text-decoration: line-through; text-decoration-color: var(--pp-muted); }
+.pp-rec h4 { font-size: 16px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+.pp-rec p { margin: 0; font-size: 13px; color: var(--pp-ink-2); }
+.pp-rec__impact { text-align: end; }
+.pp-rec__impact .v { font-size: var(--pp-fig-lg); font-weight: 400; color: var(--pp-pos); letter-spacing: -0.01em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pp-rec__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+/* The next action is the point of the card, so it gets its own surface. */
+.pp-rec__action {
+  display: flex; gap: 10px; align-items: flex-start; background: var(--pp-brand-wash);
+  border-inline-start: 2px solid var(--pp-brand); border-radius: 0;
+  padding: 13px 15px; font-size: 13px; color: var(--pp-ink-2);
+}
+.pp-rec__action .k { font-size: 11px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 3px; }
+.pp-rec summary { display: flex; align-items: center; gap: 6px; color: var(--pp-muted); font-size: 12px; cursor: pointer; list-style: none; }
+.pp-rec summary::-webkit-details-marker { display: none; }
+.pp-rec ul { font-size: 12px; color: var(--pp-muted); padding-inline-start: 18px; margin: 8px 0 0; }
+
+/* Round, brand when checked — a completed item reads as done, not as an alarm. */
+.pp-check {
+  width: 24px; height: 24px; border-radius: 0; border: 1.4px solid var(--pp-line);
+  display: inline-grid; place-items: center; cursor: pointer; background: var(--pp-card); color: var(--pp-muted);
+  font-family: inherit; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
+}
+.pp-check:hover { border-color: var(--pp-brand); color: var(--pp-brand-ink); }
+.pp-check.on { background: var(--pp-pos); border-color: var(--pp-pos); color: #fff; }
+
+.pp-cat-head { display: flex; align-items: center; gap: 11px; margin: 30px 0 12px; }
+.pp-cat-head h3 { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+
+/* Ranked pill tracks. */
+.pp-waterfall { display: grid; gap: 11px; }
+.pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; font-size: 12px; }
+.pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--pp-ink); }
+.pp-waterfall .track { height: 5px; border-radius: 0; background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
+.pp-waterfall .track span { display: block; height: 100%; background: var(--pp-brand); border-radius: 0; }
+
+/* ------------------------------------------------------------- animation -- */
+/* Route entry is one keyframe. No bounces, no springs, no scroll reveals. */
+.pp-fade { animation: ppfade var(--pp-ease-slow) both; }
+@keyframes ppfade { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+
+@media (max-width: 768px) {
+  .pp-stat-strip { grid-template-columns: 1fr; }
+}
 @media (max-width: 576px) {
-  .pp-hero { padding: 3.5rem 0 2rem; }
-  .pp-kpi { font-size: 1.6rem; }
-  .pp-scenario .price { font-size: 1.8rem; }
+  .pp-hero { padding: 36px 0 24px; }
+  .pp-card, .pp-scenario, .pp-rec { padding: 15px; }
+  .pp-card--primary { padding: 18px; }
+  .pp-compare__row { gap: 12px; }
+  .pp-nav a { padding: 6px 9px; }
+  /* The header pill holds the mark, the switcher and the primary action on one
+     line at 390px. The language code is the part that can go: the globe and the
+     button's label still say what it is, and the chosen language is visible the
+     moment the menu opens. */
+  .pp-header-pill { gap: 8px; padding-inline-start: 12px; }
+  .pp-lang__button { padding: 7px 8px; }
+  .pp-lang__code { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-fade, .pp-progress > div, .pp-steps .seg,
+  .btn-pp, .btn-pp-ghost, .btn-pp-white { animation: none; transition: none; }
+}
+
+/* ==========================================================================
+   Landing page — "Ledger"
+   --------------------------------------------------------------------------
+   A deliberately different surface from the rest of the app: warm paper, one
+   ink, a high-contrast serif for voice and a mono for every figure. It is the
+   only place the product speaks to someone who has not used it yet, so it gets
+   an editorial register the working screens do not.
+
+   The whole product now shares this ground; what stays scoped under `.pp-lp`
+   is only what the landing alone needs — the video hero, the five-step strip,
+   the range grid and the plan table.
+   ========================================================================== */
+.pp-lp {
+  display: block;
+  background: var(--pp-bg-2);
+  color: var(--pp-ink);
+}
+.pp-lp__inner { max-width: 1200px; margin: 0 auto; padding-inline: var(--pp-gutter); }
+
+/* ------------------------------------------------------------ type ladder */
+.pp-lp-serif { font-family: var(--pp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp-mono { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; }
+.pp-lp-eyebrow {
+  font-family: var(--pp-mono); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--pp-muted);
+}
+.pp-lp-body { font-size: 14.5px; line-height: 1.72; color: var(--pp-ink-2); font-weight: 300; }
+.pp-lp-cap { font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pp-muted); }
+.pp-lp h1, .pp-lp h2, .pp-lp h3 { font-family: var(--pp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp h2 { font-size: clamp(32px, 3.4vw, 46px); line-height: 1.05; margin: 0; }
+.pp-lp-rule { border: 0; border-top: 1px solid var(--pp-line); margin: 0; }
+.pp-lp-rule--ink { border: 0; border-top: 1.5px solid var(--pp-ink); margin: 0; }
+.pp-lp-section { padding-top: 86px; }
+.pp-lp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; padding-bottom: 18px; }
+
+/* ------------------------------------------------------------- drawn line */
+/* Three weights and two accents. The drawings in illustrations.ts carry no
+   colour of their own, so they recolour with the page rather than fighting it. */
+.pp-lp .ink, .pp-lp .ink-thin, .pp-lp .hatch, .pp-lp .ink-accent, .pp-lp .ink-pos {
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.pp-lp .ink { stroke: var(--pp-ink); stroke-width: 1.6; }
+.pp-lp .ink-thin { stroke: var(--pp-ink); stroke-width: 1; }
+.pp-lp .hatch { stroke: var(--pp-ink); stroke-width: 0.9; opacity: 0.42; }
+.pp-lp .ink-accent { stroke: var(--pp-brand-ink); stroke-width: 2.2; }
+.pp-lp .ink-pos { stroke: var(--pp-pos); stroke-width: 2.2; }
+.pp-lp .ink-fill-paper { fill: var(--pp-bg-2); }
+.pp-lp .ink-fill-pos { fill: var(--pp-pos-soft); stroke: none; }
+
+/* ------------------------------------------------------------------- hero */
+/* min-height, and the ticker in flow rather than pinned: a headline that runs
+   long grows the hero instead of sliding underneath the figures. */
+.pp-lp-hero {
+  position: relative; min-height: 740px; display: flex; flex-direction: column;
+  overflow: hidden; background: var(--pp-dark);
+}
+.pp-lp-hero__plate {
+  position: absolute; inset: -6%;
+  background:
+    radial-gradient(58% 74% at 22% 18%, #2b3450 0%, rgba(43, 52, 80, 0) 62%),
+    radial-gradient(46% 62% at 82% 72%, #1d3b5c 0%, rgba(29, 59, 92, 0) 60%),
+    linear-gradient(146deg, #10121a 0%, #191c26 52%, #0e1016 100%);
+  animation: lpdrift 26s ease-in-out infinite;
+}
+/* The real clip goes here. Same box, same scrim — swap the poster and sources. */
+.pp-lp-hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+@keyframes lpdrift {
+  0% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+  50% { transform: scale(1.12) translate3d(1.5%, 1%, 0); }
+  100% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+}
+/* Grain breaks the banding a compressed clip leaves behind large flat type. */
+.pp-lp-hero__grain {
+  position: absolute; inset: 0; opacity: 0.5; mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+}
+/* The load-bearing layer: heavy where the copy sits, clear where the footage
+   should show. Logical direction, so it flips with the page in Arabic. */
+/* A gradient takes no logical keyword, so the flip is explicit: the heavy end
+   must stay under the copy, and in Arabic the copy starts on the right. */
+.pp-lp-hero__scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right,
+    rgba(11, 12, 16, 0.94) 0%, rgba(11, 12, 16, 0.82) 38%,
+    rgba(11, 12, 16, 0.32) 72%, rgba(11, 12, 16, 0.5) 100%);
+}
+[dir='rtl'] .pp-lp-hero__scrim {
+  background: linear-gradient(to left,
+    rgba(11, 12, 16, 0.94) 0%, rgba(11, 12, 16, 0.82) 38%,
+    rgba(11, 12, 16, 0.32) 72%, rgba(11, 12, 16, 0.5) 100%);
+}
+/* Figures stay left-to-right inside the paper page too — but only the elements
+   that actually hold a figure. The mono face is also used for Arabic prose
+   (eyebrows, captions, the hero's fine print), and forcing direction there lays
+   the sentence out backwards. */
+[dir='rtl'] .pp-lp-figure,
+[dir='rtl'] .pp-lp-ledger .v,
+[dir='rtl'] .pp-lp-stats .v,
+[dir='rtl'] .pp-lp-hero__ticker b,
+[dir='rtl'] .pp-lp-steps--4 .impact .pp-lp-mono { direction: ltr; }
+
+/* Arabic has no italic: a browser-synthesised oblique is a slant applied to
+   letterforms that were never drawn for it. The emphasis carries by position
+   and size instead. */
+[dir='rtl'] .pp-lp-hero h1 em { font-style: normal; }
+.pp-lp-hero__foot {
+  position: absolute; inset-inline: 0; bottom: 0; height: 190px;
+  background: linear-gradient(180deg, rgba(11, 12, 16, 0) 0%, rgba(11, 12, 16, 0.92) 100%);
+}
+.pp-lp-hero__copy { position: relative; flex: 1 1 auto; width: 100%; padding-block: 92px 64px; }
+.pp-lp-hero__copy > div { max-width: 660px; }
+.pp-lp-hero h1 {
+  margin: 26px 0 0; font-size: clamp(46px, 5.9vw, 84px); line-height: 0.98;
+  letter-spacing: -0.022em; color: #fbf9f4; text-wrap: pretty;
+}
+.pp-lp-hero h1 em { font-style: italic; }
+.pp-lp-hero__lede { margin: 28px 0 0; max-width: 520px; font-size: 18px; line-height: 1.65; font-weight: 300; color: #c8cddb; }
+.pp-lp-hero__ticker { position: relative; flex: 0 0 auto; border-top: 1px solid rgba(232, 229, 221, 0.16); }
+.pp-lp-hero__ticker .pp-lp__inner {
+  display: flex; flex-wrap: wrap; gap: 8px 34px; padding-block: 17px;
+  font-family: var(--pp-mono); font-size: 11.5px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--pp-on-dark-muted);
+}
+.pp-lp-hero__ticker b { font-weight: 400; color: #e8e5dd; }
+.pp-lp-hero__ticker .pos { color: var(--pp-pos-dark); }
+
+/* ------------------------------------------------------------------ ink CTA */
+/* Square, ruled, mono — the hero action reads as a stamp, not a pill. */
+.btn-lp {
+  display: inline-flex; align-items: center; gap: 11px; font-family: var(--pp-mono);
+  font-size: 13.5px; padding: 15px 26px; border: 0; border-radius: 0;
+  background: var(--pp-brand-ink); color: #fff; text-decoration: none;
+  transition: background var(--pp-ease);
+}
+.btn-lp:hover { background: #16409f; color: #fff; }
+.btn-lp--ghost { background: transparent; color: var(--pp-ink); border: 1.4px solid var(--pp-ink); }
+.btn-lp--ghost:hover { background: var(--pp-ink); color: var(--pp-bg-2); }
+.btn-lp--quiet {
+  background: transparent; color: #e8e5dd; padding: 3px 0;
+  border-bottom: 1px solid rgba(232, 229, 221, 0.42); font-size: 13px;
+}
+.btn-lp--quiet:hover { background: transparent; color: #fff; border-bottom-color: #fff; }
+
+/* ------------------------------------------------------------------ steps */
+.pp-lp-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pp-lp-steps > div { padding: 34px 22px 38px; border-inline-end: 1px solid var(--pp-line-2); }
+.pp-lp-steps > div:last-child { border-inline-end: 0; }
+.pp-lp-steps svg { width: 100%; height: 122px; margin: 16px 0 20px; }
+.pp-lp-steps h3 { margin: 0 0 9px; font-family: var(--pp-font); font-size: 17px; font-weight: 500; letter-spacing: -0.012em; }
+.pp-lp-steps p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--pp-ink-2); font-weight: 300; }
+.pp-lp-steps .n { font-family: var(--pp-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--pp-brand-ink); }
+/* The roadmap strip reuses the step rhythm but carries four items, not five,
+   and its cells bottom-align: titles run to different lengths, and a row of
+   impact figures that does not line up is the whole point of the strip lost. */
+.pp-lp-steps--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pp-lp-steps--4 > div { display: flex; flex-direction: column; }
+.pp-lp-steps--4 .impact { margin-top: auto; padding-top: 18px; }
+
+/* ----------------------------------------------------------------- ledger */
+/* Label, leader, figure. The leader is what makes a column of money read as a
+   printed account rather than a web layout. */
+/* No column gap: the two cells carry one border each, so any gap between them
+   would cut the rule in half and the row would stop reading as a ruled line.
+   The breathing room is padding on the label instead. */
+.pp-lp-ledger { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 0; }
+.pp-lp-ledger > * { padding: 13px 0; border-bottom: 1px solid var(--pp-line-2); }
+.pp-lp-ledger .k { font-size: 14px; color: var(--pp-ink); font-weight: 300; padding-inline-end: 18px; }
+.pp-lp-ledger .v { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; font-size: 15px; text-align: end; }
+.pp-lp-ledger .v small { color: var(--pp-muted); font-size: 12px; }
+.pp-lp-ledger .total {
+  padding: 18px 18px 6px 0; border-bottom: 4px double var(--pp-ink);
+  font-family: var(--pp-mono); letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px;
+}
+.pp-lp-ledger .total.v { font-size: 22px; letter-spacing: 0; text-transform: none; }
+.pp-lp-bar { display: flex; height: 7px; overflow: hidden; }
+
+/* -------------------------------------------------------------- the split */
+.pp-lp-split { display: grid; grid-template-columns: 1fr 1.15fr; align-items: stretch; }
+.pp-lp-split > :first-child { padding: 40px 56px 44px 0; border-inline-end: 1px solid var(--pp-line); }
+.pp-lp-split > :last-child { padding: 40px 0 44px 56px; }
+.pp-lp-figure { font-family: var(--pp-serif); font-size: clamp(64px, 7.5vw, 108px); line-height: 0.92; letter-spacing: -0.03em; margin-top: 16px; }
+.pp-lp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--pp-line); }
+.pp-lp-stats > div { padding: 20px 18px; border-bottom: 1px solid var(--pp-line); border-inline-end: 1px solid var(--pp-line-2); }
+.pp-lp-stats > div:nth-child(3n) { border-inline-end: 0; padding-inline-end: 0; }
+.pp-lp-stats > div:nth-child(3n + 1) { padding-inline-start: 0; }
+.pp-lp-stats .v { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; font-size: 21px; margin-top: 9px; }
+.pp-lp-stats .v.pos { color: var(--pp-pos); }
+
+/* ------------------------------------------------------------ dark compare */
+.pp-lp-plate { background: var(--pp-dark); color: var(--pp-on-dark); margin-top: 86px; }
+.pp-lp-plate .pp-lp__inner { padding-block: 74px 78px; }
+.pp-lp-plate h2 { color: var(--pp-on-dark); }
+.pp-lp-plate .pp-lp-eyebrow, .pp-lp-plate .pp-lp-cap { color: var(--pp-on-dark-muted); }
+.pp-lp-plate .pp-lp-body { color: #b6bccb; }
+/* The comparison component is shared with the results and roadmap screens,
+   where it sits on white. On the plate its muted ink and pale bar track would
+   vanish, so the surface restates them rather than the component branching. */
+.pp-lp-plate .pp-compare__side .k,
+.pp-lp-plate .pp-compare__arrow,
+.pp-lp-plate .pp-compare__key { color: var(--pp-on-dark-muted); }
+.pp-lp-plate .pp-compare .pp-kpi { color: var(--pp-on-dark); }
+.pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--pp-pos-dark); }
+.pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: 0; height: 9px; }
+.pp-lp-plate .pp-compare__bar .lift { background: var(--pp-pos-dark); opacity: 1; }
+.pp-lp-plate .pp-compare__lift {
+  background: rgba(111, 220, 160, 0.14); color: var(--pp-pos-dark); border-radius: 0;
+}
+.pp-lp-plate .pp-compare__key i { border-radius: 0; }
+
+/* ------------------------------------------------------------ the range */
+.pp-lp-range { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--pp-line); }
+.pp-lp-range > div { padding: 32px 18px 26px; border-inline-end: 1px solid var(--pp-line-2); }
+.pp-lp-range > div:nth-child(6n) { border-inline-end: 0; }
+.pp-lp-range svg { width: 46px; height: 46px; }
+.pp-lp-range .name { margin-top: 16px; font-size: 14px; font-weight: 500; }
+
+/* ---------------------------------------------------------------- pricing */
+.pp-lp-plans { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; align-items: center; }
+.pp-lp-plans > * { padding: 15px 0; border-bottom: 1px solid var(--pp-line-2); }
+.pp-lp-plans .head { padding: 26px 0 20px; border-bottom: 1px solid var(--pp-line); align-self: baseline; }
+.pp-lp-plans .feat { font-size: 14px; color: var(--pp-ink); font-weight: 300; }
+.pp-lp-plans .foot { padding: 30px 0 0; border-bottom: 0; }
+.pp-lp-tick { stroke: var(--pp-brand-ink); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pp-lp-plans .none { color: #c3bdae; font-size: 15px; }
+
+/* ---------------------------------------------------------------- closing */
+.pp-lp-close { margin-top: 92px; border-top: 1.5px solid var(--pp-ink); }
+.pp-lp-close .pp-lp__inner { padding-block: 86px 90px; display: flex; justify-content: space-between; align-items: flex-end; gap: 60px; }
+.pp-lp-close h2 { font-size: clamp(38px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.026em; max-width: 640px; }
+
+@media (prefers-reduced-motion: reduce) { .pp-lp-hero__plate { animation: none; } }
+
+@media (max-width: 991.98px) {
+  .pp-lp-steps, .pp-lp-steps--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pp-lp-steps > div:nth-child(2n) { border-inline-end: 0; }
+  .pp-lp-range { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pp-lp-range > div:nth-child(3n) { border-inline-end: 0; }
+  .pp-lp-split { grid-template-columns: 1fr; }
+  .pp-lp-split > :first-child { padding: 40px 0 36px; border-inline-end: 0; border-bottom: 1px solid var(--pp-line); }
+  .pp-lp-split > :last-child { padding: 36px 0 44px; }
+}
+
+@media (max-width: 767.98px) {
+  /* Five columns become five rows; the drawing moves beside the words so a step
+     stays one glance rather than a scroll. */
+  .pp-lp-steps, .pp-lp-steps--4 { grid-template-columns: 1fr; }
+  .pp-lp-steps > div {
+    display: grid; grid-template-columns: 76px 1fr; gap: 18px; align-items: start;
+    padding: 24px 0; border-inline-end: 0; border-bottom: 1px solid var(--pp-line-2);
+  }
+  .pp-lp-steps > div:last-child { border-bottom: 0; }
+  .pp-lp-steps svg { height: 66px; margin: 0; grid-row: span 3; }
+  .pp-lp-steps .n { grid-column: 2; }
+  .pp-lp-steps h3, .pp-lp-steps p { grid-column: 2; }
+  .pp-lp-range { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pp-lp-range > div:nth-child(3n) { border-inline-end: 1px solid var(--pp-line-2); }
+  .pp-lp-range > div:nth-child(2n) { border-inline-end: 0; }
+  .pp-lp-section { padding-top: 48px; }
+  .pp-lp-head { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .pp-lp-hero { min-height: 560px; }
+  .pp-lp-hero__copy { padding-block: 44px; }
+  /* Copy runs the full width here, so a left-to-right ramp would leave the last
+     words of a line sitting on bare footage. */
+  .pp-lp-hero__scrim {
+    background: linear-gradient(180deg, rgba(11, 12, 16, 0.9) 0%, rgba(11, 12, 16, 0.62) 40%, rgba(11, 12, 16, 0.88) 100%);
+  }
+  .pp-lp-hero__foot { display: none; }
+  .pp-lp-hero__ticker .pp-lp__inner { gap: 6px 18px; font-size: 10px; }
+  .btn-lp { width: 100%; justify-content: center; min-height: 52px; }
+  .pp-lp-plate { margin-top: 48px; }
+  .pp-lp-plate .pp-lp__inner { padding-block: 40px 44px; }
+  .pp-lp-close { margin-top: 48px; }
+  .pp-lp-close .pp-lp__inner { padding-block: 40px 44px; flex-direction: column; align-items: stretch; gap: 24px; }
+  /* Four columns of plan will not fit; each plan becomes a block. */
+  .pp-lp-plans { grid-template-columns: 1fr; }
+  .pp-lp-plans .feat, .pp-lp-plans .cell { display: none; }
 }

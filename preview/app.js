@@ -1,13 +1,46 @@
-/* ProfitPath live preview — vanilla JS port of the Angular pages, driven by the same compiled engine. */
+/* ProfitPath live preview — vanilla JS port of the Angular pages, driven by the
+   same compiled engine and the same compiled message catalogue. Every string a
+   reader sees comes from ProfitPathI18n, so a language that is complete here is
+   complete in the app. */
 (function () {
   const E = ProfitPathEngine;
+  const I = ProfitPathI18n;
   const root = document.getElementById('app');
-  const money = (v, cur, d) => (v === null || v === undefined ? '—' : E.formatMoney(v, cur, { decimals: d }));
-  const pct = (f, d = 1) => E.formatPct(f, d);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
+  // ---------- language ----------
+  const LOCALE_KEY = 'profitpath.locale.v1';
+  function restoreLocale() {
+    try {
+      const saved = localStorage.getItem(LOCALE_KEY);
+      if (saved && I.LOCALES.some((l) => l.code === saved)) return saved;
+    } catch {}
+    return I.matchLocale(navigator.languages || [navigator.language || I.DEFAULT_LOCALE]);
+  }
+  let TR = I.createTranslator(restoreLocale(), I.MESSAGES);
+  function setLocale(code) {
+    if (!I.LOCALES.some((l) => l.code === code)) return;
+    TR = I.createTranslator(code, I.MESSAGES);
+    try { localStorage.setItem(LOCALE_KEY, code); } catch {}
+    applyDir();
+    render();
+  }
+  /** Mirrors the choice onto <html> so CSS logical properties and screen readers follow. */
+  function applyDir() {
+    document.documentElement.setAttribute('lang', TR.def.code);
+    document.documentElement.setAttribute('dir', TR.def.dir);
+  }
+  applyDir();
+
+  const t = (k, p) => TR.t(k, p);
+  /** A sentence the engine emitted: prefer the catalogue, fall back to its English. */
+  const msg = (m, fallback) => (m && TR.has(m.key) ? TR.t(m.key, m.params) : fallback);
+  /* The decimal rule is the engine's, so figures round the way engine prose rounds. */
+  const money = (v, cur, d) => (v === null || v === undefined || !isFinite(v) ? '—' : TR.money(v, cur, d === undefined ? (Math.abs(v) >= 1000 ? 0 : 2) : d));
+  const pct = (f, d = 1) => (f === null || f === undefined || !isFinite(f) ? '—' : TR.pct(f, d));
+
   // ---------- state ----------
-  const S = { offering: '', type: null, answers: {}, completedIds: [], complete: false, step: 0, selectedType: null, detection: null, errors: {}, formValues: {}, tab: 'overview', wi: {}, target: { profit: 0, units: 1 } };
+  const S = { offering: '', type: null, answers: {}, completedIds: [], complete: false, step: 0, selectedType: null, detection: null, errors: {}, formValues: {}, tab: 'overview', wi: {}, target: { profit: 0, units: 1 }, langOpen: false };
   try { Object.assign(S, JSON.parse(sessionStorage.getItem('profitpath.preview.v1') || '{}')); } catch {}
   function persist() { try { sessionStorage.setItem('profitpath.preview.v1', JSON.stringify(S)); } catch {} }
 
@@ -15,21 +48,43 @@
   const pricing = () => { const m = model(); return m ? E.computePricing(m) : null; };
   const roadmap = () => { const m = model(); const p = pricing(); return m && p ? E.buildRoadmap(m, p, { completedIds: S.completedIds }) : null; };
 
+  /* Unit nouns are catalogue keys so each locale inflects its own; `{x|t}` in a
+     message translates the key it is handed. */
+  const unitKey = (type) => `unit.${type || S.type || 'generic'}.one`;
+  const unitsKey = (type) => `unit.${type || S.type || 'generic'}.other`;
+  const unitOf = (type) => t(unitKey(type));
+  const unitsOf = (type) => t(unitsKey(type));
+  const unitParams = (type) => ({ unit: unitKey(type), units: unitsKey(type) });
+
   // ---------- AI boundary (template provider; rephrases computed numbers only) ----------
+  /* Mirrors core/ai/explanation-provider.ts — same keys, same parameters. */
   function explainPrice(m, p) {
-    const cur = m.meta.currency; const top = p.costBreakdown[0];
+    const cur = m.meta.currency;
+    const u = unitParams(m.meta.businessType);
+    const top = p.costBreakdown[0];
     return [
-      `Based on the information you provided, one ${p.unitLabel} costs you about ${money(p.trueCostPerUnit, cur)} once every direct cost, selling cost and your share of monthly overhead is counted.`,
-      top ? `${top.label} is the largest component at ${Math.round(top.share * 100)}% of that.` : '',
-      p.marginBand.rationale,
-      `Pricing at ${money(p.recommended.price, cur, 0)} is estimated to leave ${money(p.recommended.profitPerUnit, cur)} per ${p.unitLabel} (${pct(p.recommended.marginPct)} margin), or roughly ${money(p.recommended.monthlyProfit, cur, 0)} a month at ${p.expectedUnits} ${p.unitLabel}s.`,
-      p.target.achievableAtRecommended ? `That is above your target of ${money(p.target.targetMonthlyProfit, cur, 0)}.` : `Your target of ${money(p.target.targetMonthlyProfit, cur, 0)} would need either ${money(p.target.requiredPrice, cur)} per ${p.unitLabel} at your current volume, or about ${p.target.requiredUnitsAtRecommended ?? '—'} ${p.unitLabel}s a month at the recommended price. The roadmap shows ways to close that gap without only raising the price.`,
+      t('explain.price.cost', { cur, unit: u.unit, cost: p.trueCostPerUnit }),
+      top ? t('explain.price.topLine', { label: t(['costLine.' + top.key], {}), share: top.share }) : '',
+      // Without a requested margin the rationale is the static one for the
+      // business type, which the catalogue already carries under its own key.
+      p.marginBand.rationaleI18n ? t(p.marginBand.rationaleI18n.key, p.marginBand.rationaleI18n.params) : t(['businessType.' + m.meta.businessType + '.rationale']),
+      t('explain.price.outcome', { cur, unit: u.unit, units: u.units, price: p.recommended.price, profit: p.recommended.profitPerUnit, margin: p.recommended.marginPct, monthly: p.recommended.monthlyProfit, count: p.expectedUnits }),
+      p.target.achievableAtRecommended
+        ? t('explain.price.targetMet', { cur, target: p.target.targetMonthlyProfit })
+        : t('explain.price.targetShort', { cur, unit: u.unit, units: u.units, target: p.target.targetMonthlyProfit, required: p.target.requiredPrice, requiredUnits: p.target.requiredUnitsAtRecommended ?? '—' }),
     ].filter(Boolean).join(' ');
   }
   function explainRoadmap(m, r) {
-    const cur = m.meta.currency; const first = r.recommendations[0];
-    if (!first) return 'We could not find cost or revenue levers large enough to recommend with your current inputs.';
-    return `Assuming the inputs you gave hold, the biggest single opportunity is "${first.title}", estimated at ${money(first.estimatedMonthlyImpact, cur, 0)} a month. Together, the ${r.recommendations.length} items listed could potentially lift monthly profit from ${money(r.current.monthlyProfit, cur, 0)} to around ${money(r.optimisedMonthlyProfit, cur, 0)} after allowing for overlap between them. Start with the high-priority items; each one lists the assumption its estimate depends on.`;
+    const first = r.recommendations[0];
+    if (!first) return t('explain.roadmap.none');
+    return t('explain.roadmap.summary', {
+      cur: m.meta.currency,
+      title: msg(first.i18n && first.i18n.title, first.title),
+      impact: first.estimatedMonthlyImpact,
+      count: r.recommendations.length,
+      current: r.current.monthlyProfit,
+      optimised: r.optimisedMonthlyProfit,
+    });
   }
 
   // ---------- router ----------
@@ -52,98 +107,318 @@
     if (routeChanged) window.scrollTo({ top: 0 });
   }
 
+  // ---------- icons ----------
+  /* ICONS and the semantic maps come from app/src/app/shared/icons.ts, injected
+     by build.mjs, so the app and this preview cannot drift. */
+  const icon = (n, size, cls) => `<svg class="pp-i ${cls || ''}" width="${size || 16}" height="${size || 16}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+  const typeIcon = (ty) => BUSINESS_TYPE_ICONS[ty] || 'package';
+  const iconBadge = (n, mod, size) => `<span class="pp-icon-badge ${mod || ''}">${icon(n, size || 17)}</span>`;
+
+  /* The hero figure sets its currency mark small and muted beside the digits.
+     Mirrors app/src/app/shared/format.ts — keep the two in step. A locale that
+     puts the currency after the number simply has no mark to demote. */
+  const splitMoney = (s) => { const m = /^([^\d-]*)(.*)$/.exec(s); return m ? [m[1].trim(), m[2]] : ['', s]; };
+  /* The landing figure sets its currency mark small and muted beside the digits. */
+  const heroMark = (v, cur) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<span style="font-size:0.42em;color:var(--pp-muted);vertical-align:top">${esc(c)}</span>${esc(d)}`; };
+  const heroFigure = (v, cur, cls) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<div class="pp-kpi ${cls}"><span class="cur">${esc(c)}</span>${esc(d)}</div>`; };
+
+  /* Current vs optimised — mirrors ProfitCompareComponent. Both figures come
+     from the engine; the bar is their real proportion. */
+  function compare(current, optimised, cur, count, compact) {
+    const lift = optimised - current;
+    const pct2 = current > 0 ? '+' + pct(lift / current, 0) : t('compare.moreProfit');
+    const share = optimised > 0 ? Math.max(2, Math.min(100, (current / optimised) * 100)) : 100;
+    const big = compact ? 'pp-kpi--lg' : 'pp-kpi--xl';
+    return `<div class="pp-compare">
+      <div class="pp-compare__row">
+        <div class="pp-compare__side"><div class="k">${icon('wallet', 12)} ${t('compare.today')}</div><div class="pp-kpi ${big} pp-num">${money(current, cur, 0)}</div></div>
+        <div class="pp-compare__arrow">${icon('arrow-right', compact ? 16 : 22, 'pp-icon-flip')}</div>
+        <div class="pp-compare__side"><div class="k">${icon('target', 12)} ${t('compare.following')}</div><div class="pp-kpi ${big} pp-kpi--pos pp-num">${money(optimised, cur, 0)}</div></div>
+        <div class="pp-compare__lift">${icon('trending-up', 15)} +${money(lift, cur, 0)}<span class="pp-muted">·</span>${pct2}</div>
+      </div>
+      <div>
+        <div class="pp-compare__bar" role="img" aria-label="${esc(t('compare.barLabel', { share: Math.round(share) }))}">
+          <span class="now" style="width:${share}%"></span><span class="lift" style="width:${100 - share}%"></span>
+        </div>
+        <div class="pp-compare__key mt-2">
+          <span><i style="background:var(--pp-brand)"></i>${t('compare.keyToday')}</span>
+          <span><i style="background:var(--pp-brand-2)"></i>${t('compare.keyAdded', { count })}</span>
+          <span>${t('compare.keyNote')}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /** Each language is listed in its own script: a reader who cannot read the
+      current interface must still find their own name for their own language. */
+  function languagePicker() {
+    const items = I.LOCALES.map((l) => `<li><button type="button" role="option" aria-selected="${l.code === TR.def.code}" class="pp-lang__item ${l.code === TR.def.code ? 'selected' : ''}" lang="${l.code}" dir="${l.dir}" data-lang="${l.code}">
+        <span class="name">${esc(l.label)}</span><span class="sub">${esc(l.englishLabel)}</span>${l.code === TR.def.code ? icon('check', 14) : ''}</button></li>`).join('');
+    return `<div class="pp-lang" id="langpicker">
+      <button type="button" class="pp-lang__button" id="langtoggle" aria-expanded="${S.langOpen}" aria-haspopup="listbox" aria-label="${esc(t('lang.change'))}">
+        ${icon('languages', 15)}<span class="pp-lang__code">${TR.def.code.toUpperCase()}</span></button>
+      ${S.langOpen ? `<ul class="pp-lang__menu" role="listbox" aria-label="${esc(t('lang.change'))}">${items}</ul>` : ''}
+    </div>`;
+  }
+
   function renderShell(inner) {
     const has = !!pricing();
     const r = route();
-    const nav = (p, l) => `<a href="#/${p}" class="${r === p ? 'active' : ''}">${l}</a>`;
-    return `<header class="pp-header"><div class="pp-container">
-      <a href="#/" class="pp-logo"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0f766e"/><path d="M14 44 L26 30 L36 38 L50 20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="20" r="5" fill="#a7f3d0"/></svg>ProfitPath</a>
-      <nav class="pp-nav d-none d-sm-block">${nav('analyze', 'Calculator')}${has ? nav('results', 'Results') + nav('roadmap', 'Roadmap') : ''}</nav>
-      <a href="#/analyze" class="btn btn-pp btn-sm">Calculate my price</a></div></header>
+    const nav = (p, l, ic) => `<a href="#/${p}" class="${r === p ? 'active' : ''}">${icon(ic, 15)} ${t(l)}</a>`;
+    return `<header class="pp-header"><div class="pp-container"><div class="pp-header-pill">
+      <a href="#/" class="pp-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="0.8" y="0.8" width="30.4" height="30.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 23l7-8 5 4 8-12" fill="none" stroke="var(--pp-brand)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="7" r="2.4" fill="var(--pp-brand)"/></svg>ProfitPath</a>
+      <nav class="pp-nav d-none d-sm-flex">${nav('analyze', 'nav.calculator', 'calculator')}${has ? nav('results', 'nav.results', 'chart-column') + nav('roadmap', 'nav.roadmap', 'map') : ''}</nav>
+      <div class="d-flex align-items-center gap-2">${languagePicker()}<a href="#/analyze" class="btn btn-pp btn-sm">${t('nav.cta')} ${icon('arrow-right', 14, 'pp-icon-flip')}</a></div></div></div></header>
       <main>${inner}</main>
-      <footer class="pp-footer"><div class="pp-container d-flex flex-wrap justify-content-between gap-3"><div>© ${new Date().getFullYear()} ProfitPath · Estimates based on your inputs, not financial advice or a guarantee of results.</div><div>Live preview of the Angular MVP · all calculations deterministic</div></div></footer>`;
+      <footer class="pp-footer"><div class="pp-container d-flex flex-wrap justify-content-between gap-3"><div>${t('footer.legal', { year: new Date().getFullYear() })}</div><div>${t('footer.deterministic')}</div></div></footer>`;
   }
+
+  /* Drawings come from app/src/app/shared/illustrations.ts, injected by
+     build.mjs, so the app and this preview cannot drift. */
+  const illo = (n) => `<svg viewBox="0 0 160 140" aria-hidden="true" focusable="false">${ILLUSTRATIONS[n] || ''}</svg>`;
+  const catArt = (t) => `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">${CATEGORY_ART[t] || ''}</svg>`;
+  const stepNo = (i) => String(i + 1).padStart(2, '0');
+  const seriesColor = (i) => `var(--pp-series-${(i % 9) + 1})`;
+  const lpTick = (label) => `<svg class="pp-lp-tick" width="15" height="15" viewBox="0 0 24 24" role="img" aria-label="${esc(label)}"><path d="M4 12.5l5 5L20 6.5"></path></svg>`;
+  const lpNone = '<span class="none" aria-hidden="true">—</span>';
+
+  /* Which plans carry which capability — one list, so the table and the stacked
+     mobile blocks can never disagree. Mirrors FEATURES in landing.component.ts. */
+  const LP_FEATURES = [
+    ['landing.plan.free.1', 1, 1, 1],
+    ['landing.plan.free.2', 1, 1, 1],
+    ['landing.plan.free.3', 1, 1, 1],
+    ['landing.plan.pro.2', 0, 1, 1],
+    ['landing.plan.pro.3', 0, 1, 1],
+    ['landing.plan.pro.5', 0, 1, 1],
+    ['landing.plan.business.2', 0, 0, 1],
+    ['landing.plan.business.3', 0, 0, 1],
+  ];
+  const LP_PLANS = [['free', '$0', false], ['pro', '$9', true], ['business', '$19', true]];
 
   // ---------- landing ----------
   function renderLanding() {
-    const s = E.SAMPLES[0]; const m = E.normalizeAnswers(s.type, s.answers, s.offering); const p = E.computePricing(m); const r = E.buildRoadmap(m, p);
-    const chips = E.BUSINESS_TYPE_LIST.map((t) => `<span class="pp-chip">${t.icon} ${t.shortLabel}</span>`).join('');
-    const recs = r.recommendations.slice(0, 3).map((x) => `<div class="d-flex justify-content-between gap-3 py-1"><span>${esc(x.title)}</span><span class="pp-num fw-bold" style="color:#a7f3d0;white-space:nowrap">+${money(x.estimatedMonthlyImpact, 'USD', 0)}/mo</span></div>`).join('');
-    return `
-    <section class="pp-hero pp-container pp-fade">
-      <span class="pp-chip mb-4">✨ Pricing intelligence + profit roadmap</span>
-      <h1>How much should <span class="pp-gradient-text">you charge?</span></h1>
-      <p class="lead">Tell us what you're selling, what it costs you, and what you want to earn. We'll calculate your ideal price and show you how to improve your profit.</p>
-      <div class="d-flex flex-wrap justify-content-center gap-2"><a href="#/analyze" class="btn btn-pp btn-pp-lg">Calculate My Price</a><button type="button" class="btn btn-pp-ghost btn-pp-lg" data-action="example">See an Example</button></div>
-      <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">${chips}</div>
-    </section>
-    <section class="pp-section pp-container"><div class="row g-4 align-items-stretch">
-      <div class="col-lg-5"><div class="pp-card h-100"><div class="pp-eyebrow mb-2">Example</div><h3 class="mb-3">"I'm selling iPhones."</h3>
-        <div class="pp-ledger"><span class="pp-muted">Purchase</span><span class="pp-num">${money(850, 'USD', 0)}</span><span class="pp-muted">Shipping</span><span class="pp-num">${money(45, 'USD', 0)}</span><span class="pp-muted">Marketing per unit</span><span class="pp-num">${money(35, 'USD', 0)}</span><span class="pp-muted">Overhead per unit</span><span class="pp-num">${money(p.allocatedOverhead, 'USD', 0)}</span><span class="total">True cost</span><span class="total pp-num">${money(p.trueCostPerUnit, 'USD', 0)}</span></div>
-        <p class="pp-muted mt-3 mb-0" style="font-size:.86rem">30 units a month · target profit $5,000</p></div></div>
-      <div class="col-lg-7"><div class="pp-card pp-card-hero h-100"><div class="pp-eyebrow mb-2">ProfitPath calculates</div>
-        <div class="row g-3"><div class="col-6 col-md-4"><div class="pp-eyebrow">Recommended price</div><div class="pp-kpi">${money(p.recommended.price, 'USD', 0)}</div></div><div class="col-6 col-md-4"><div class="pp-eyebrow">Profit / unit</div><div class="pp-kpi">${money(p.recommended.profitPerUnit, 'USD', 0)}</div></div><div class="col-6 col-md-4"><div class="pp-eyebrow">Margin</div><div class="pp-kpi">${pct(p.recommended.marginPct)}</div></div></div>
-        <hr style="border-color:rgba(255,255,255,.25)"><div class="pp-eyebrow mb-2">Here's how you could make even more</div>${recs}
-        <div class="d-flex justify-content-between gap-3 pt-2 mt-2" style="border-top:1px solid rgba(255,255,255,.25)"><span class="fw-semibold">Estimated monthly profit → optimised</span><span class="pp-num fw-bold">${money(p.recommended.monthlyProfit, 'USD', 0)} → ${money(r.optimisedMonthlyProfit, 'USD', 0)}</span></div>
-        <p class="pp-muted mt-3 mb-0" style="font-size:.8rem">Estimates, not guarantees. Every number above is computed from the inputs on the left.</p></div></div>
-    </div></section>
-    <section class="pp-section pp-container"><div class="text-center mb-4"><h2>How it works</h2><p class="pp-muted">A conversation, not a spreadsheet. Five minutes from idea to price.</p></div>
-      <div class="pp-flow">
-        <div class="pp-card"><div class="pp-step-num">1</div><h5>Tell us what you sell</h5><p class="pp-muted mb-0">Type it in plain words. We detect whether it's a product, service, food, digital or SaaS business and ask only the questions that matter for it.</p></div>
-        <div class="pp-card"><div class="pp-step-num">2</div><h5>Answer a few questions</h5><p class="pp-muted mb-0">Costs, fees, fixed expenses and your goals — a few at a time, each with a plain explanation of why we ask.</p></div>
-        <div class="pp-card"><div class="pp-step-num">3</div><h5>Get your price</h5><p class="pp-muted mb-0">True cost, break-even, three pricing scenarios and the price you need to hit your target profit — with the reasoning behind each number.</p></div>
-        <div class="pp-card"><div class="pp-step-num">4</div><h5>Follow your roadmap</h5><p class="pp-muted mb-0">Prioritised, quantified ways to make more profit at that price: cheaper sourcing, lower acquisition cost, upsells, better channels.</p></div>
-      </div></section>
-    <section class="pp-section pp-container"><div class="text-center mb-4"><h2>Simple pricing</h2><p class="pp-muted">Start free. Upgrade when the roadmap pays for itself.</p></div>
-      <div class="row g-3 justify-content-center">
-        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-eyebrow">Free</div><div class="pp-kpi my-2">$0</div><ul class="pp-muted ps-3 mb-0"><li>Pricing calculator</li><li>Recommended price &amp; three scenarios</li><li>Break-even analysis</li><li>One saved business</li></ul></div></div>
-        <div class="col-md-4"><div class="pp-card h-100" style="border-color:var(--pp-primary)"><div class="pp-eyebrow" style="color:var(--pp-primary)">Pro</div><div class="pp-kpi my-2">$9<span class="pp-muted" style="font-size:1rem;font-weight:500">/month</span></div><ul class="pp-muted ps-3 mb-0"><li>Everything in Free</li><li>Full Profit Roadmap</li><li>What-if simulator</li><li>Unlimited saved businesses</li><li>PDF reports</li></ul></div></div>
-        <div class="col-md-4"><div class="pp-card h-100"><div class="pp-eyebrow">Business</div><div class="pp-kpi my-2">$19<span class="pp-muted" style="font-size:1rem;font-weight:500">/month</span></div><ul class="pp-muted ps-3 mb-0"><li>Everything in Pro</li><li>Team members</li><li>Scenario comparison</li><li>Market research (coming)</li></ul></div></div>
-      </div></section>
-    <section class="pp-section pp-container text-center"><div class="pp-card pp-card-hero py-5"><h2 class="text-white">Ready to find out what to charge?</h2><p class="pp-muted mb-4">No sign-up needed for your first analysis.</p><a href="#/analyze" class="btn btn-pp-ghost btn-pp-lg" style="background:#fff;color:var(--pp-primary);border-color:#fff">Calculate My Price</a></div></section>`;
-  }
+    /* Every figure below is the sample run through the real engine — nothing on
+       this page is a hardcoded illustration. */
+    const s = E.SAMPLES[0];
+    const m = E.normalizeAnswers(s.type, s.answers, s.offering);
+    const p = E.computePricing(m);
+    const r = E.buildRoadmap(m, p);
+    const cur = p.currency;
+    const u = unitParams(m.meta.businessType);
+    const lift = r.optimisedMonthlyProfit - r.current.monthlyProfit;
+    const topShare = p.costBreakdown[0] ? p.costBreakdown[0].share : 0;
 
+    const steps = STEP_ILLUSTRATIONS.map((art, i) => `<div>
+        <div class="n">${stepNo(i)}</div>${illo(art)}
+        <h3>${t('landing.how.' + (i + 1) + '.title')}</h3>
+        <p>${t('landing.how.' + (i + 1) + '.body')}</p>
+      </div>`).join('');
+
+    const ledger = p.costBreakdown.map((l) => `<span class="k">${esc(t(['costLine.' + l.key], {}) || l.label)}</span><span class="v">${money(l.amount, cur)} <small>· ${pct(l.share, 0)}</small></span>`).join('');
+    const bar = p.costBreakdown.map((l, i) => `<span style="width:${l.share * 100}%;background:${seriesColor(i)}"></span>`).join('');
+
+    const recs = r.recommendations.slice(0, 4).map((x, i) => `<div style="border-inline-end-color:rgba(242,239,232,0.14);padding-block:28px 30px">
+        <div class="n" style="color:var(--pp-on-dark-muted)">${stepNo(i)}</div>
+        <h3 style="margin-top:14px;color:var(--pp-on-dark)">${esc(msg(x.i18n && x.i18n.title, x.title))}</h3>
+        <div class="impact">
+          <div class="pp-lp-mono" style="font-size:22px;color:var(--pp-pos-dark)">+${money(x.estimatedMonthlyImpact, cur, 0)}</div>
+          <div class="pp-lp-cap" style="margin-top:12px;color:var(--pp-on-dark-muted)">${t('roadmap.priority', { priority: t('priority.' + x.priority) })} · ${t('roadmap.difficulty', { difficulty: t('difficulty.' + x.difficulty) })}</div>
+        </div>
+      </div>`).join('');
+
+    const range = E.BUSINESS_TYPE_LIST.map((x) => `<div>${catArt(x.type)}
+        <div class="name">${t('businessType.' + x.type + '.label')}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:11px;color:var(--pp-muted)">${t('landing.range.band', { low: x.marginBand.low, high: x.marginBand.high })}</div>
+      </div>`).join('');
+
+    const planHeads = LP_PLANS.map(([id, price, per]) => `<div class="head">
+        <div class="pp-lp-serif" style="font-size:30px">${t('landing.plan.' + id + '.name')}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:13px;color:${id === 'pro' ? 'var(--pp-brand-ink)' : 'var(--pp-muted)'}">${price}${per ? t('landing.pricing.perMonth') : ''}</div>
+      </div>`).join('');
+    const planRows = LP_FEATURES.map(([key, f, pr, b]) => `<div class="feat">${t(key)}</div>
+      <div class="cell">${f ? lpTick(t('landing.plan.free.name')) : lpNone}</div>
+      <div class="cell">${pr ? lpTick(t('landing.plan.pro.name')) : lpNone}</div>
+      <div class="cell">${b ? lpTick(t('landing.plan.business.name')) : lpNone}</div>`).join('');
+    const planFeet = LP_PLANS.map(([id]) => `<div class="foot"><a href="#/analyze" class="btn-lp pp-lp-mono ${id === 'pro' ? '' : 'btn-lp--ghost'}" style="font-size:12.5px;padding:12px 20px">${t('landing.cta.primary')}</a></div>`).join('');
+
+    const arrow = (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pp-icon-flip" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>`;
+
+    return `<div class="pp-lp">
+    <section class="pp-lp-hero">
+      <div class="pp-lp-hero__plate"></div><div class="pp-lp-hero__grain"></div>
+      <div class="pp-lp-hero__scrim"></div><div class="pp-lp-hero__foot"></div>
+      <div class="pp-lp-hero__copy pp-lp__inner">
+        <div>
+          <div class="pp-lp-eyebrow d-flex align-items-center gap-3" style="color:#b9c2d6">
+            <span style="display:inline-block;width:30px;height:1px;background:var(--pp-brand-ink)"></span>${t('landing.chip')}
+          </div>
+          <h1>${t('landing.title.before')} <em>${t('landing.title.accent')}</em></h1>
+          <p class="pp-lp-hero__lede">${t('landing.lead')}</p>
+          <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+            <a href="#/analyze" class="btn-lp pp-lp-mono">${t('landing.cta.primary')} ${arrow(15)}</a>
+            <button type="button" class="btn-lp btn-lp--quiet pp-lp-mono" data-action="example">${t('landing.cta.example')}</button>
+          </div>
+          <div class="pp-lp-mono mt-4" style="font-size:11.5px;color:#8c93a6">${t('landing.final.sub')}</div>
+        </div>
+      </div>
+      <div class="pp-lp-hero__ticker"><div class="pp-lp__inner">
+        <span><b>${t('landing.example.eyebrow')}</b></span>
+        <span>${esc(s.offering)}</span>
+        <span>${t('results.trueCost')} <b>${money(p.trueCostPerUnit, cur)}</b></span>
+        <span>${t('results.badge')} <b>${money(p.recommended.price, cur, 0)}</b></span>
+        <span>${t('results.margin')} <b>${pct(p.recommended.marginPct)}</b></span>
+        <span>${t('nav.roadmap')} <b class="pos">+${money(lift, cur, 0)}</b></span>
+      </div></div>
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.how.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:380px;font-size:14px">${t('landing.how.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-steps">${steps}</div>
+      <hr class="pp-lp-rule">
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head">
+        <div><div class="pp-lp-eyebrow mb-3">${t('landing.example.eyebrow')}</div><h2>${esc(s.offering)}</h2></div>
+        <p class="pp-lp-mono mb-0" style="max-width:330px;font-size:11.5px;line-height:1.9;color:var(--pp-muted)">${t('landing.example.note')}</p>
+      </div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-split">
+        <div>
+          <div class="pp-lp-eyebrow">${t('landing.example.costs')}</div>
+          <div class="pp-lp-ledger mt-4">${ledger}
+            <span class="total">${t('landing.example.trueCost', u)}</span>
+            <span class="total v">${money(p.trueCostPerUnit, cur)}</span>
+          </div>
+          <div class="pp-lp-bar mt-4">${bar}</div>
+          <p class="pp-lp-body mt-4 mb-0" style="font-size:13.5px">${t('landing.example.lead', { share: topShare })}</p>
+        </div>
+        <div>
+          <div class="pp-lp-eyebrow">${t('landing.calc.eyebrow')}</div>
+          <div class="pp-lp-figure">${heroMark(p.recommended.price, cur)}</div>
+          <div class="pp-lp-mono mt-3" style="font-size:12px;color:var(--pp-muted)">${t('landing.calc.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
+          <div class="pp-lp-stats mt-4">
+            <div><div class="pp-lp-cap">${t('results.trueCost')}</div><div class="v">${money(p.trueCostPerUnit, cur)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.profitPerUnit', u)}</div><div class="v">${money(p.recommended.profitPerUnit, cur)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.margin')}</div><div class="v">${pct(p.recommended.marginPct)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.revenue')}</div><div class="v">${money(p.recommended.monthlyRevenue, cur, 0)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.profit')}</div><div class="v pos">${money(p.recommended.monthlyProfit, cur, 0)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.breakEvenSales')}</div><div class="v">${p.recommended.breakEvenUnits ?? '—'} <span style="font-size:13px;color:var(--pp-muted)">${t('results.breakEvenSales.sub', { count: p.expectedUnits })}</span></div></div>
+          </div>
+          <p class="pp-lp-body mt-4 mb-0" style="font-size:13.5px;max-width:470px">${t('landing.example.goals', { cur, count: m.goals.expectedUnits, units: u.units, target: m.goals.targetMonthlyProfit })}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pp-lp-plate"><div class="pp-lp__inner">
+      <div class="pp-lp-head" style="padding-bottom:20px;border-bottom:1.5px solid rgba(242,239,232,0.28)">
+        <h2>${t('results.roadmapWorth')}</h2>
+        <p class="pp-lp-mono mb-0" style="font-size:11.5px;line-height:1.9;color:var(--pp-on-dark-muted);max-width:340px">${t('roadmap.intro')}</p>
+      </div>
+      <div class="mt-5">${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>
+      <div class="pp-lp-steps pp-lp-steps--4 mt-5" style="border-top:1px solid rgba(242,239,232,0.22)">${recs}</div>
+    </div></section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.range.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:400px;font-size:14px">${t('landing.range.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-range">${range}</div>
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.pricing.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:330px;font-size:14px">${t('landing.pricing.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-plans"><div class="head"></div>${planHeads}${planRows}<div class="foot"></div>${planFeet}</div>
+    </section>
+
+    <section class="pp-lp-close"><div class="pp-lp__inner">
+      <div>
+        <h2>${t('landing.final.title')}</h2>
+        <p class="pp-lp-body mt-3 mb-0" style="font-size:15px;max-width:460px">${t('landing.how.sub')} ${t('landing.final.sub')}</p>
+      </div>
+      <a href="#/analyze" class="btn-lp pp-lp-mono" style="font-size:14px;padding:18px 32px;white-space:nowrap">${t('landing.cta.primary')} ${arrow(16)}</a>
+    </div></section>
+    </div>`;
+  }
   // ---------- analyze ----------
   const groups = () => (S.type ? E.questionGroupsFor(S.type) : []);
   const merged = () => ({ ...S.answers, ...S.formValues });
   function currentGroup() { return groups()[S.step - 1] || null; }
+  const STEP_ICONS = ['users', 'receipt', 'megaphone', 'wallet', 'clock', 'target'];
+
+  /* Question and group copy is static in the engine, so the catalogue holds it
+     directly. Where a string differs by business type the key carries the type;
+     where it differs only by the unit noun, one template serves every type. */
+  function scoped(prefix, key, field) {
+    const ty = S.type || S.selectedType;
+    return ty ? [`${prefix}.${ty}.${key}.${field}`, `${prefix}.${key}.${field}`] : [`${prefix}.${key}.${field}`];
+  }
+  function qText(q, field) {
+    const keys = scoped('question', q.key, field);
+    return TR.has(keys) ? t(keys, unitParams()) : q[field] || '';
+  }
+  function optText(q, o, field) {
+    const keys = scoped('option', `${q.key}.${o.value}`, field);
+    return TR.has(keys) ? t(keys, unitParams()) : o[field] || '';
+  }
+  function groupText(g, field) {
+    const keys = scoped('group', g.id, field);
+    return TR.has(keys) ? t(keys, unitParams()) : g[field];
+  }
+
+  function detectBanner(d) {
+    if (!d || d.confidence <= 0) return '';
+    const conf = d.confidence >= 0.7 ? 'analyze.confidence.high' : d.confidence >= 0.4 ? 'analyze.confidence.fair' : 'analyze.confidence.guess';
+    return `<div class="pp-detect mb-4 pp-fade">${iconBadge(typeIcon(d.type))}<div><div class="title">${t('analyze.detect.title', { label: t('businessType.' + d.type + '.label') })}</div><div class="sub">${t('analyze.detect.sub', { confidence: t(conf) })}</div></div></div>`;
+  }
 
   function renderAnalyze() {
     const total = groups().length + 1;
-    const def = S.type ? E.businessTypeDef(S.type) : null;
+    const g = currentGroup();
+    const stepTitle = g ? groupText(g, 'title') : t('analyze.step0.title');
+    const stepIcon = S.step === 0 ? 'square-pen' : STEP_ICONS[(S.step - 1) % STEP_ICONS.length];
     let body;
     if (S.step === 0) {
-      const d = S.detection;
-      const detect = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="fw-semibold">Looks like: ${E.businessTypeDef(d.type).label}</div><div class="pp-muted" style="font-size:.85rem">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
-      const cards = E.BUSINESS_TYPE_LIST.map((t) => `<button type="button" class="pp-type-card ${S.selectedType === t.type ? 'selected' : ''}" data-type="${t.type}"><div style="font-size:1.4rem">${t.icon}</div><div class="fw-semibold mt-1">${t.label}</div><small class="pp-muted">${t.description}</small></button>`).join('');
-      body = `<div class="pp-card pp-fade"><h2 class="mb-1">What are you planning to sell?</h2><p class="pp-muted mb-4">Describe it in your own words. We'll tailor the next questions to your kind of business.</p>
-        <div class="pp-input-group mb-3"><input id="offering" type="text" value="${esc(S.offering)}" placeholder="e.g. iPhone 17 Pro, wedding photography, soy candles, online course…" autofocus></div>
-        <div id="detect">${detect}</div><div class="pp-eyebrow mb-2">Business type</div><div class="pp-option-grid mb-4" id="typegrid">${cards}</div>
-        <div class="d-flex justify-content-end"><button class="btn btn-pp" id="start" ${!S.selectedType || !S.offering.trim() ? 'disabled' : ''}>Continue →</button></div></div>`;
+      const cards = E.BUSINESS_TYPE_LIST.map((x) => `<button type="button" class="pp-type-card ${S.selectedType === x.type ? 'selected' : ''}" data-type="${x.type}">${iconBadge(typeIcon(x.type))}<span><span class="name">${t('businessType.' + x.type + '.label')}</span><small>${t('businessType.' + x.type + '.description')}</small></span></button>`).join('');
+      body = `<div class="pp-card pp-card--primary pp-fade"><h2 class="mb-1">${t('analyze.q0.title')}</h2><p class="pp-body mb-4">${t('analyze.q0.intro')}</p>
+        <div class="pp-input-group mb-3"><span class="affix pre">${icon('search', 15)}</span><input id="offering" type="text" value="${esc(S.offering)}" placeholder="${esc(t('analyze.q0.placeholder'))}" autofocus></div>
+        <div id="detect">${detectBanner(S.detection)}</div><div class="pp-subhead mb-2">${t('analyze.businessType')}</div><div class="pp-option-grid mb-4" id="typegrid">${cards}</div>
+        <div class="d-flex justify-content-end"><button class="btn btn-pp" id="start" ${!S.selectedType || !S.offering.trim() ? 'disabled' : ''}>${t('analyze.continue')} ${icon('arrow-right', 14, 'pp-icon-flip')}</button></div></div>`;
     } else {
-      const g = currentGroup();
       const cur = merged().currency || 'USD';
       const qs = E.visibleQuestions(g, merged()).map((q) => renderQuestion(q, cur)).join('');
       const last = S.step === groups().length;
-      body = `<form class="pp-card pp-fade" id="qform"><h2 class="mb-1">${g.title}</h2><p class="pp-muted mb-4">${g.intro}</p>${qs}
-        <div class="d-flex justify-content-between align-items-center mt-2"><button type="button" class="btn btn-pp-ghost" id="back">← Back</button><button type="submit" class="btn btn-pp">${last ? 'Calculate my price ✨' : 'Continue →'}</button></div></form>
-        <p class="pp-notice mt-3 text-center">Leave a cost at 0 if it doesn't apply. You can change every number later in the what-if simulator.</p>`;
+      body = `<form class="pp-card pp-card--primary pp-fade" id="qform"><h2 class="mb-1">${groupText(g, 'title')}</h2><p class="pp-body mb-4">${groupText(g, 'intro')}</p>${qs}
+        <div class="d-flex justify-content-between align-items-center mt-4"><button type="button" class="btn btn-pp-ghost" id="back">${icon('arrow-left', 14, 'pp-icon-flip')} ${t('analyze.back')}</button><button type="submit" class="btn btn-pp ${last ? 'btn-pp-hero' : ''}">${last ? t('analyze.finish') : t('analyze.continue')} ${icon(last ? 'sparkles' : 'arrow-right', 14, last ? '' : 'pp-icon-flip')}</button></div></form>
+        <div class="mt-3 d-flex justify-content-center"><span class="pp-notice">${icon('info', 13)} ${t('analyze.notice')}</span></div>`;
     }
+    const segs = Array.from({ length: total }, (_, i) => `<span class="seg ${i < S.step ? 'done' : ''} ${i === S.step ? 'current' : ''}"></span>`).join('');
+    const context = S.step > 0 && S.type ? `<div class="d-flex flex-wrap gap-2 mb-3"><span class="pp-chip">${icon(typeIcon(S.type), 13)} ${t('businessType.' + S.type + '.label')}</span><span class="pp-chip">${esc(S.offering)}</span></div>` : '';
     return `<div class="pp-container py-5"><div class="pp-narrow">
-      <div class="d-flex justify-content-between align-items-center mb-2"><span class="pp-eyebrow">Step ${S.step + 1} of ${total}</span>${S.step > 0 ? `<span class="pp-muted" style="font-size:.85rem">${def.icon} ${def.label} · ${esc(S.offering)}</span>` : ''}</div>
-      <div class="pp-progress mb-4"><div style="width:${((S.step + 1) / total) * 100}%"></div></div>${body}</div></div>`;
+      <div class="pp-steps-meta"><span class="now">${icon(stepIcon, 14)} ${stepTitle}</span><span>${t('analyze.step', { current: S.step + 1, total })}</span></div>
+      <div class="pp-steps mb-3">${segs}</div>${context}${body}</div></div>`;
   }
 
   function renderQuestion(q, cur) {
     const v = S.formValues[q.key];
     const err = S.errors[q.key];
+    const tick = `<span class="tick">${icon('check', 14)}</span>`;
+    const label = qText(q, 'label');
+    const help = qText(q, 'help');
+    const suffix = qText(q, 'suffix');
+    const placeholder = qText(q, 'placeholder');
     let field;
-    if (q.type === 'select') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${v === o.value ? 'selected' : ''}" data-select="${q.key}" data-value="${o.value}"><span>${o.label}${o.hint ? `<small>${o.hint}</small>` : ''}</span></button>`).join('')}</div>`;
-    else if (q.type === 'multiselect') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${Array.isArray(v) && v.includes(o.value) ? 'selected' : ''}" data-multi="${q.key}" data-value="${o.value}"><span>${o.label}</span></button>`).join('')}</div>`;
-    else if (q.type === 'currency') field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}"><select id="${q.key}" data-field="${q.key}">${q.options.map((o) => `<option value="${o.value}" ${(v || q.defaultValue) === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}</select></div>`;
-    else if (q.type === 'text') field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}"><input id="${q.key}" type="text" data-field="${q.key}" value="${esc(v ?? '')}" placeholder="${esc(q.placeholder || '')}"></div>`;
-    else field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}">${q.money ? `<span class="affix pre">${cur}</span>` : ''}<input id="${q.key}" type="number" inputmode="decimal" step="any" ${q.min !== undefined ? `min="${q.min}"` : ''} data-field="${q.key}" value="${v ?? ''}" placeholder="${esc(q.placeholder || '')}">${q.suffix ? `<span class="affix">${q.suffix}</span>` : ''}</div>`;
-    return `<div class="mb-4"><label class="pp-q-label d-block" for="${q.key}">${q.label}</label><div class="pp-q-help">${q.help}</div>${field}${err ? `<div class="pp-error">${err}</div>` : ''}</div>`;
+    if (q.type === 'select') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${v === o.value ? 'selected' : ''}" data-select="${q.key}" data-value="${o.value}"><span>${optText(q, o, 'label')}${o.hint ? `<small>${optText(q, o, 'hint')}</small>` : ''}</span>${tick}</button>`).join('')}</div>`;
+    else if (q.type === 'multiselect') field = `<div class="pp-option-grid">${q.options.map((o) => `<button type="button" class="pp-option ${Array.isArray(v) && v.includes(o.value) ? 'selected' : ''}" data-multi="${q.key}" data-value="${o.value}"><span>${optText(q, o, 'label')}</span>${tick}</button>`).join('')}</div>`;
+    else if (q.type === 'currency') field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}"><select id="${q.key}" data-field="${q.key}">${q.options.map((o) => `<option value="${o.value}" ${(v || q.defaultValue) === o.value ? 'selected' : ''}>${esc(optText(q, o, 'label'))}</option>`).join('')}</select></div>`;
+    else if (q.type === 'text') field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}"><input id="${q.key}" type="text" data-field="${q.key}" value="${esc(v ?? '')}" placeholder="${esc(placeholder)}"></div>`;
+    else field = `<div class="pp-input-group ${err ? 'is-invalid' : ''}">${q.money ? `<span class="affix pre">${cur}</span>` : ''}<input id="${q.key}" type="number" inputmode="decimal" step="any" ${q.min !== undefined ? `min="${q.min}"` : ''} data-field="${q.key}" value="${v ?? ''}" placeholder="${esc(placeholder)}">${suffix ? `<span class="affix">${esc(suffix)}</span>` : ''}</div>`;
+    return `<div class="pp-q"><label class="pp-q-label d-block" for="${q.key}">${label}</label><div class="pp-q-help">${icon('lightbulb', 13)}<span>${help}</span></div>${field}${err ? `<div class="pp-error">${icon('triangle-alert', 13)}${err}</div>` : ''}</div>`;
   }
 
   function initForm() {
@@ -170,22 +445,35 @@
   }
 
   // ---------- results ----------
-  function tile(label, value, sub, color, small) { return `<div class="pp-metric"><div class="pp-eyebrow">${label}</div><div class="pp-kpi ${small ? 'pp-kpi-sm' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`; }
-  function scenarioCard(sc, cur, unit) {
-    const st = sc.status === 'low' ? '⚠️ Thin margin' : sc.status === 'recommended' ? '🟢 Recommended' : sc.status === 'premium' ? '🔵 Higher margin' : '🔴 Loss';
-    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center mb-2"><span class="pp-eyebrow">${sc.label}</span><span class="pp-badge ${sc.status}">${st}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
-      <div class="pp-ledger mt-3"><span class="pp-muted">Profit / ${unit}</span><span class="pp-num fw-semibold ${sc.profitPerUnit < 0 ? 'text-danger' : ''}">${money(sc.profitPerUnit, cur)}</span><span class="pp-muted">Margin</span><span class="pp-num fw-semibold">${pct(sc.marginPct)}</span><span class="pp-muted">Monthly profit</span><span class="pp-num fw-semibold">${money(sc.monthlyProfit, cur, 0)}</span>${sc.breakEvenUnits !== null ? `<span class="pp-muted">Break-even</span><span class="pp-num fw-semibold">${sc.breakEvenUnits} ${unit}s</span>` : ''}</div>
-      <p class="pp-muted mt-3 mb-0" style="font-size:.86rem">${sc.note}</p></div>`;
+  function tile(ic, label, value, sub, color, small) {
+    return `<div class="pp-metric"><div class="k">${icon(ic, 12)} ${label}</div><div class="pp-kpi ${small ? 'pp-kpi--sm' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
   }
-  const PALETTE = { direct: ['#0f766e', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1', '#0d9488'], variable: ['#f59e0b', '#fbbf24'], overhead: ['#6366f1'], fees: ['#94a3b8', '#b6c2d1', '#cbd5e1', '#dde4ec'] };
+  function scenarioCard(sc, cur) {
+    const u = unitParams();
+    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="pp-subhead">${t('scenario.' + sc.key + '.label')}</span><span class="pp-badge ${sc.status}">${icon(SCENARIO_ICONS[sc.status] || 'info', 11)}${t('scenario.status.' + sc.status)}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
+      <div class="pp-ledger mt-3"><span class="pp-muted">${t('results.whatif.profitPerUnit', u)}</span><span class="pp-num" style="${sc.profitPerUnit < 0 ? 'color:var(--pp-neg)' : ''}">${money(sc.profitPerUnit, cur)}</span><span class="pp-muted">${t('results.margin')}</span><span class="pp-num">${pct(sc.marginPct)}</span><span class="pp-muted">${t('results.whatif.monthlyProfit')}</span><span class="pp-num">${money(sc.monthlyProfit, cur, 0)}</span>${sc.breakEvenUnits !== null ? `<span class="pp-muted">${t('results.breakEven')}</span><span class="pp-num">${sc.breakEvenUnits} ${unitsOf()}</span>` : ''}</div>
+      <p class="pp-muted mt-3 mb-0" style="font-size:12px">${esc(msg(sc.noteI18n, sc.note))}</p></div>`;
+  }
+  /** The blue→violet cost-composition series, named from the tokens in styles.css. */
+  const PALETTE = {
+    direct: ['var(--pp-series-1)', 'var(--pp-series-2)', 'var(--pp-series-3)', 'var(--pp-series-4)'],
+    variable: ['var(--pp-series-5)', 'var(--pp-series-6)'],
+    overhead: ['var(--pp-series-7)'],
+    fees: ['var(--pp-series-8)', 'var(--pp-series-9)'],
+  };
   function breakdown(lines, cur) {
-    const c = {}; const colored = lines.map((l) => { const i = c[l.group] || 0; c[l.group] = i + 1; return { l, color: PALETTE[l.group][i % PALETTE[l.group].length] }; });
-    return `<div class="pp-bar" role="img" aria-label="Cost breakdown">${colored.map((x) => `<span style="width:${x.l.share * 100}%;background:${x.color}" title="${x.l.label}"></span>`).join('')}</div>
-      <div class="pp-legend mt-3">${colored.map((x) => `<div class="d-flex justify-content-between"><span><i class="dot" style="background:${x.color}"></i>${x.l.label}</span><span class="pp-num">${money(x.l.amount, cur)} <span class="pp-muted">· ${pct(x.l.share, 0)}</span></span></div>`).join('')}</div>`;
+    const c = {}; const colored = lines.map((l) => { const i = c[l.group] || 0; c[l.group] = i + 1; return { l, color: PALETTE[l.group][i % PALETTE[l.group].length], label: t(['costLine.' + l.key], {}) || l.label }; });
+    return `<div class="pp-bar" role="img" aria-label="${esc(t('chart.costBreakdown'))}">${colored.map((x) => `<span style="width:${x.l.share * 100}%;background:${x.color}" title="${esc(x.label)}"></span>`).join('')}</div>
+      <div class="pp-legend mt-3">${colored.map((x) => `<div class="d-flex justify-content-between"><span><i class="dot" style="background:${x.color}"></i>${esc(x.label)}</span><span class="pp-num">${money(x.l.amount, cur)} <span class="pp-muted">· ${pct(x.l.share, 0)}</span></span></div>`).join('')}</div>`;
   }
-  function delta(now, was, cur, lowerIsBetter) { const d = now - was; if (Math.abs(d) < 0.005) return 'unchanged'; const good = lowerIsBetter ? d < 0 : d > 0; return `${d > 0 ? '+' : '−'}${money(Math.abs(d), cur, Math.abs(d) < 100 ? 2 : 0)} ${good ? '▲' : '▼'}`; }
-  function deltaPts(now, was) { const d = (now - was) * 100; return Math.abs(d) < 0.05 ? 'unchanged' : `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} pts`; }
+  function delta(now, was, cur, lowerIsBetter) { const d = now - was; if (Math.abs(d) < 0.005) return t('results.unchanged'); const good = lowerIsBetter ? d < 0 : d > 0; return `${d > 0 ? '+' : '−'}${money(Math.abs(d), cur, Math.abs(d) < 100 ? 2 : 0)} ${good ? '▲' : '▼'}`; }
+  function deltaPts(now, was) { const d = (now - was) * 100; return Math.abs(d) < 0.05 ? t('results.unchanged') : t('results.pts', { value: `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}` }); }
 
+  /** Slider labels are UI copy, keyed by the economics field they drive. */
+  function sliderLabel(s) {
+    const key = 'results.slider.' + s.key;
+    return TR.has(key) ? t(key, unitParams()) : s.label;
+  }
   function sliders(m, p) {
     const e = E.unitEconomics(m);
     const mk = (key, label, base, isMoney, unit = '') => ({ key, label, base, money: isMoney, unit, min: 0, max: Math.max(10, Math.ceil(base * 2.5)), step: base < 20 ? 0.1 : base < 200 ? 1 : base < 2000 ? 5 : 50 });
@@ -199,108 +487,175 @@
     list.push(mk('fixedMonthlyTotal', 'Monthly fixed costs', e.F, true));
     return list;
   }
+
   function whatIfMetrics(m, p) {
-    const v = S.wi; const cur = p.currency;
-    const model = E.applyWhatIf(m, { units: v.units, purchase: v.purchase, materials: v.materials, labor: v.labor, shipping: v.shipping, marketingPerUnit: v.marketingPerUnit, fixedMonthlyTotal: v.fixedMonthlyTotal });
+    const v = S.wi; const cur = p.currency; const u = unitParams();
+    const wiModel = E.applyWhatIf(m, { units: v.units, purchase: v.purchase, materials: v.materials, labor: v.labor, shipping: v.shipping, marketingPerUnit: v.marketingPerUnit, fixedMonthlyTotal: v.fixedMonthlyTotal });
     const price = v.price ?? p.recommended.price;
-    const pr = E.computePricing(model); const e = E.unitEconomics(model);
-    const contrib = price * (1 - e.f) - e.D - e.V; const req = contrib > 0 ? Math.ceil((model.goals.targetMonthlyProfit + e.F) / contrib) : null;
-    const sc = E.evaluatePrice(model, price, 'custom', 'What if');
+    const pr = E.computePricing(wiModel); const e = E.unitEconomics(wiModel);
+    const contrib = price * (1 - e.f) - e.D - e.V; const req = contrib > 0 ? Math.ceil((wiModel.goals.targetMonthlyProfit + e.F) / contrib) : null;
+    const sc = E.evaluatePrice(wiModel, price, 'custom', 'What if');
     const better = sc.monthlyProfit >= p.recommended.monthlyProfit;
-    return `<div class="row g-3">
-      <div class="col-6 col-md-4">${tile('Monthly profit', money(sc.monthlyProfit, cur, 0), delta(sc.monthlyProfit, p.recommended.monthlyProfit, cur), 'var(--pp-primary)')}</div>
-      <div class="col-6 col-md-4">${tile('Monthly revenue', money(sc.monthlyRevenue, cur, 0), delta(sc.monthlyRevenue, p.recommended.monthlyRevenue, cur))}</div>
-      <div class="col-6 col-md-4">${tile('Profit / ' + p.unitLabel, money(sc.profitPerUnit, cur), delta(sc.profitPerUnit, p.recommended.profitPerUnit, cur))}</div>
-      <div class="col-6 col-md-4">${tile('Margin', pct(sc.marginPct), deltaPts(sc.marginPct, p.recommended.marginPct))}</div>
-      <div class="col-6 col-md-4">${tile('Break-even price', money(pr.breakEvenPrice, cur), delta(pr.breakEvenPrice, p.breakEvenPrice, cur, true))}</div>
-      <div class="col-6 col-md-4">${tile('Break-even units', sc.breakEvenUnits ?? '—', 'was ' + (p.recommended.breakEvenUnits ?? '—'))}</div>
-      <div class="col-12">${tile('Units needed for your target', `${req ?? '—'} ${p.unitLabel}s`, `to reach ${money(p.target.targetMonthlyProfit, cur, 0)} at ${money(price, cur, 0)} — was ${p.target.requiredUnitsAtRecommended ?? '—'}`, '', true)}</div></div>
-      <div class="pp-card mt-3 ${better ? 'pp-card-soft' : ''}"><strong>${better ? 'This scenario looks stronger.' : 'This scenario looks weaker.'}</strong><span class="pp-muted"> Compared with your recommended setup, estimated monthly profit changes by <span class="pp-delta ${better ? 'up' : 'down'}">${E.signed(sc.monthlyProfit - p.recommended.monthlyProfit, cur)}</span>. Volume assumptions are yours; we don't predict demand.</span></div>`;
+    return `<div class="pp-card pp-card--data"><div class="row g-3">
+      <div class="col-6 col-md-4">${tile('trending-up', t('results.whatif.monthlyProfit'), money(sc.monthlyProfit, cur, 0), delta(sc.monthlyProfit, p.recommended.monthlyProfit, cur), better ? 'var(--pp-pos)' : 'var(--pp-neg)')}</div>
+      <div class="col-6 col-md-4">${tile('banknote', t('results.whatif.monthlyRevenue'), money(sc.monthlyRevenue, cur, 0), delta(sc.monthlyRevenue, p.recommended.monthlyRevenue, cur))}</div>
+      <div class="col-6 col-md-4">${tile('coins', t('results.whatif.profitPerUnit', u), money(sc.profitPerUnit, cur), delta(sc.profitPerUnit, p.recommended.profitPerUnit, cur))}</div>
+      <div class="col-6 col-md-4">${tile('scale', t('results.whatif.margin'), pct(sc.marginPct), deltaPts(sc.marginPct, p.recommended.marginPct))}</div>
+      <div class="col-6 col-md-4">${tile('wallet', t('results.whatif.breakEvenPrice'), money(pr.breakEvenPrice, cur), delta(pr.breakEvenPrice, p.breakEvenPrice, cur, true))}</div>
+      <div class="col-6 col-md-4">${tile('zap', t('results.whatif.breakEvenUnits'), sc.breakEvenUnits ?? '—', t('results.whatif.was', { value: p.recommended.breakEvenUnits ?? '—' }))}</div>
+      <div class="col-12">${tile('target', t('results.whatif.unitsForTarget'), `${req ?? '—'} ${unitsOf()}`, t('results.whatif.unitsForTarget.sub', { cur, target: p.target.targetMonthlyProfit, price, was: p.target.requiredUnitsAtRecommended ?? '—' }), '', true)}</div></div>
+      <div class="mt-3 pp-body"><strong style="font-weight:500;color:var(--pp-ink)">${better ? t('results.whatif.stronger') : t('results.whatif.weaker')}</strong> ${t('results.whatif.compared')} <span class="pp-delta ${better ? 'up' : 'down'}">${signedMoney(sc.monthlyProfit - p.recommended.monthlyProfit, cur)}</span>. ${t('results.whatif.volumeNote')}</div></div>`;
   }
+  const signedMoney = (v, cur) => (v >= 0 ? '+' : '−') + money(Math.abs(v), cur, 0);
+
   function targetMetrics(m, p) {
-    const cur = p.currency; const model = E.applyWhatIf(m, { units: S.target.units }); model.goals.targetMonthlyProfit = S.target.profit; const tp = E.computePricing(model);
+    const cur = p.currency; const u = unitParams();
+    const tModel = E.applyWhatIf(m, { units: S.target.units }); tModel.goals.targetMonthlyProfit = S.target.profit; const tp = E.computePricing(tModel);
     const high = tp.target.requiredMarginPct > p.marginBand.high;
-    return `<div class="row g-3">
-      <div class="col-6 col-md-4">${tile('Required profit / ' + p.unitLabel, money(tp.target.requiredProfitPerUnit, cur))}</div>
-      <div class="col-6 col-md-4">${tile('Required price', money(tp.target.requiredPrice, cur), `at ${S.target.units} ${p.unitLabel}s`, 'var(--pp-primary)')}</div>
-      <div class="col-6 col-md-4">${tile('Required margin', pct(tp.target.requiredMarginPct))}</div>
-      <div class="col-6 col-md-4">${tile('True cost at that volume', money(tp.baseCostPerUnit, cur), 'excl. % fees')}</div>
-      <div class="col-6 col-md-8">${tile(`Or keep ${money(p.recommended.price, cur, 0)} and sell`, `${tp.target.requiredUnitsAtRecommended ?? '—'} ${p.unitLabel}s / month`)}</div></div>
-      <div class="mt-3 ${high ? 'pp-warn' : 'pp-ok'}">At ${money(tp.target.requiredPrice, cur, 0)}, your estimated margin would be ${pct(tp.target.requiredMarginPct)}. ${high ? `That is above the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business — the roadmap focuses on reaching the target by lowering costs and raising volume instead.` : `That sits within the typical ${pct(p.marginBand.low, 0)}–${pct(p.marginBand.high, 0)} range for this kind of business.`}</div>`;
+    return `<div class="pp-card pp-card--data"><div class="row g-3">
+      <div class="col-6 col-md-4">${tile('coins', t('results.target.requiredProfit', u), money(tp.target.requiredProfitPerUnit, cur))}</div>
+      <div class="col-6 col-md-4">${tile('target', t('results.target.requiredPrice'), money(tp.target.requiredPrice, cur), t('results.target.requiredPrice.sub', { count: S.target.units, units: u.units }))}</div>
+      <div class="col-6 col-md-4">${tile('scale', t('results.target.requiredMargin'), pct(tp.target.requiredMarginPct))}</div>
+      <div class="col-6 col-md-4">${tile('wallet', t('results.target.trueCostAtVolume'), money(tp.baseCostPerUnit, cur), t('results.target.exclFees'))}</div>
+      <div class="col-6 col-md-8">${tile('chart-column', t('results.target.orKeep', { cur, price: p.recommended.price }), t('results.target.perMonth', { count: tp.target.requiredUnitsAtRecommended ?? '—', units: u.units }), '', '', true)}</div></div>
+      <div class="mt-3 ${high ? 'pp-warn pp-warn-block' : 'pp-ok pp-ok-block'}">${icon(high ? 'triangle-alert' : 'circle-check', 14)}<span>${t('results.target.verdict', { cur, price: tp.target.requiredPrice, margin: tp.target.requiredMarginPct })} ${high ? t('results.target.above', { low: p.marginBand.low, high: p.marginBand.high }) : t('results.target.within', { low: p.marginBand.low, high: p.marginBand.high })}</span></div></div>`;
   }
 
   function renderResults() {
-    const m = model(); const p = pricing(); const cur = p.currency; const u = p.unitLabel;
+    const m = model(); const p = pricing(); const r = roadmap(); const cur = p.currency; const u = unitParams();
     if (!S.target) S.target = { profit: m.goals.targetMonthlyProfit, units: m.goals.expectedUnits };
     const sl = sliders(m, p); if (!Object.keys(S.wi).length) sl.forEach((s) => (S.wi[s.key] = s.base));
-    const tabs = ['overview', 'whatif', 'target'].map((t) => `<button class="${S.tab === t ? 'active' : ''}" data-tab="${t}">${t === 'overview' ? 'Pricing' : t === 'whatif' ? 'What if?' : 'Target profit'}</button>`).join('');
+    const tabs = [['overview', 'results.tab.pricing', 'receipt'], ['whatif', 'results.tab.whatif', 'zap'], ['target', 'results.tab.target', 'target']]
+      .map(([tab, l, ic]) => `<button class="${S.tab === tab ? 'active' : ''}" data-tab="${tab}">${icon(ic, 14)} ${t(l)}</button>`).join('');
     let panel;
     if (S.tab === 'overview') {
-      panel = `<h3 class="mb-3">Three ways to price it</h3><div class="row g-3"><div class="col-md-4">${scenarioCard(p.scenarios.minimum, cur, u)}</div><div class="col-md-4">${scenarioCard(p.scenarios.recommended, cur, u)}</div><div class="col-md-4">${scenarioCard(p.scenarios.premium, cur, u)}</div></div>
-        <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card h-100"><h4 class="mb-1">Why ${money(p.recommended.price, cur, 0)}?</h4><p class="pp-muted">${explainPrice(m, p)}</p><div class="pp-eyebrow mt-4 mb-2">Where each ${cur} of cost goes</div>${breakdown(p.costBreakdown, cur)}</div></div>
-        <div class="col-lg-5"><div class="pp-card h-100"><h4 class="mb-3">Break-even</h4><div class="pp-ledger">
-          <span class="pp-muted">Break-even price</span><span class="pp-num fw-semibold">${money(p.breakEvenPrice, cur)}</span><span class="pp-muted" style="font-size:.85rem;grid-column:1/-1">The lowest price that covers every cost — including your share of fixed costs — if you sell ${p.expectedUnits} ${u}s a month.</span>
-          <span class="pp-muted mt-2">Variable break-even</span><span class="pp-num fw-semibold mt-2">${money(p.variableBreakEvenPrice, cur)}</span><span class="pp-muted" style="font-size:.85rem;grid-column:1/-1">Below this you lose money on every single sale, regardless of volume.</span>
-          <span class="pp-muted mt-2">Monthly fixed costs</span><span class="pp-num fw-semibold mt-2">${money(p.fixedMonthly, cur, 0)}</span><span class="pp-muted">Break-even sales at ${money(p.recommended.price, cur, 0)}</span><span class="pp-num fw-semibold">${p.recommended.breakEvenUnits ?? '—'} ${u}s / month</span></div>
-          ${p.recommended.breakEvenUnits !== null ? `<div class="pp-ok mt-3" style="font-size:.88rem">Sell ${p.recommended.breakEvenUnits} of your expected ${p.expectedUnits} ${u}s and the rest is profit.</div>` : ''}</div></div></div>`;
+      panel = `<h3 class="mb-3">${t('results.threeWays')}</h3><div class="row g-3"><div class="col-md-4">${scenarioCard(p.scenarios.minimum, cur)}</div><div class="col-md-4">${scenarioCard(p.scenarios.recommended, cur)}</div><div class="col-md-4">${scenarioCard(p.scenarios.premium, cur)}</div></div>
+        <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card pp-card--insight h-100">
+          <div class="d-flex align-items-center gap-2 mb-1">${iconBadge('lightbulb', 'pp-icon-badge--sm', 14)}<h4 class="mb-0">${t('results.why', { cur, price: p.recommended.price })}</h4></div>
+          <p class="pp-body" style="margin:12px 0 20px">${explainPrice(m, p)}</p><div class="pp-subhead mb-2">${t('results.costGoes', { cur })}</div>${breakdown(p.costBreakdown, cur)}</div></div>
+        <div class="col-lg-5"><div class="pp-card h-100"><div class="d-flex align-items-center gap-2 mb-3">${icon('scale', 15)}<h4 class="mb-0">${t('results.breakEven')}</h4></div><div class="pp-ledger">
+          <span class="pp-muted">${t('results.breakEvenPrice')}</span><span class="pp-num">${money(p.breakEvenPrice, cur)}</span>
+          <span class="pp-muted">${t('results.variableBreakEven')}</span><span class="pp-num">${money(p.variableBreakEvenPrice, cur)}</span>
+          <span class="pp-muted">${t('results.fixedMonthly')}</span><span class="pp-num">${money(p.fixedMonthly, cur, 0)}</span>
+          <span class="total">${t('results.breakEvenAt', { cur, price: p.recommended.price })}</span><span class="total pp-num">${t('results.unitsPerMonth', { count: p.recommended.breakEvenUnits ?? '—', units: u.units })}</span></div>
+          <p class="pp-muted" style="font-size:12px;margin-top:14px">${t('results.breakEvenExplain', { count: p.expectedUnits, units: u.units })}</p>
+          ${p.recommended.breakEvenUnits !== null ? `<div class="pp-ok">${icon('circle-check', 13)}${t('results.breakEvenOk', { breakEven: p.recommended.breakEvenUnits, count: p.expectedUnits, units: u.units })}</div>` : ''}</div></div></div>`;
     } else if (S.tab === 'whatif') {
-      const fmtv = (s, v) => (s.money ? money(v, cur, s.step < 1 ? 2 : 0) : v + (s.unit ? ' ' + s.unit : ''));
-      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">Experiment</h4><button class="btn btn-pp-ghost btn-sm" id="wi-reset">Reset</button></div>
-        ${sl.map((s) => `<div class="pp-slider mb-3"><label>${s.label} <span id="wi-val-${s.key}">${fmtv(s, S.wi[s.key])}</span></label><input type="range" id="wi-${s.key}" data-wi="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${S.wi[s.key]}"><small>Original: ${fmtv(s, s.base)}</small></div>`).join('')}</div></div>
+      const fmtv = (s, v) => (s.money ? money(v, cur, s.step < 1 ? 2 : 0) : TR.num(v) + (s.unit ? ' ' + s.unit : ''));
+      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><div class="d-flex justify-content-between align-items-center mb-3"><h4 class="mb-0">${t('results.experiment')}</h4><button class="btn btn-pp-ghost btn-sm" id="wi-reset">${icon('rotate-ccw', 13)} ${t('results.reset')}</button></div>
+        ${sl.map((s) => `<div class="pp-slider"><label>${sliderLabel(s)} <span id="wi-val-${s.key}">${fmtv(s, S.wi[s.key])}</span></label><input type="range" id="wi-${s.key}" data-wi="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${S.wi[s.key]}"><small>${t('results.original', { value: fmtv(s, s.base) })}</small></div>`).join('')}</div></div>
         <div class="col-lg-7" id="wi-metrics">${whatIfMetrics(m, p)}</div></div>`;
     } else {
-      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><h4 class="mb-1">How much do you want to make per month?</h4><p class="pp-muted">Change the target and volume to see what they demand from your price.</p>
-        <label class="pp-q-label" for="tgt">Target monthly profit</label><div class="pp-input-group mb-3"><span class="affix pre">${cur}</span><input id="tgt" type="number" min="0" step="any" value="${S.target.profit}"></div>
-        <label class="pp-q-label" for="tu">Expected ${u}s per month</label><div class="pp-input-group"><input id="tu" type="number" min="1" step="1" value="${S.target.units}"></div></div></div>
+      panel = `<div class="row g-4"><div class="col-lg-5"><div class="pp-card"><h4 class="mb-1">${t('results.target.title')}</h4><p class="pp-body" style="margin:6px 0 18px">${t('results.target.intro')}</p>
+        <label class="pp-q-label" for="tgt">${t('results.target.profit')}</label><div class="pp-input-group mb-3"><span class="affix pre">${cur}</span><input id="tgt" type="number" min="0" step="any" value="${S.target.profit}"></div>
+        <label class="pp-q-label" for="tu">${t('results.target.units', u)}</label><div class="pp-input-group"><input id="tu" type="number" min="1" step="1" value="${S.target.units}"></div></div></div>
         <div class="col-lg-7" id="tgt-metrics">${targetMetrics(m, p)}</div></div>`;
     }
+    const roadmapTeaser = r && r.recommendations.length ? `<div class="pp-card mt-3">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap"><span class="pp-eyebrow">${icon('map', 14)} ${t('results.roadmapWorth')}</span><a href="#/roadmap" class="btn btn-pp-ghost btn-sm">${t('results.openRoadmap')} ${icon('arrow-right', 13, 'pp-icon-flip')}</a></div>
+      ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>` : '';
     return `<div class="pp-container py-5 pp-fade">
-      <div class="row g-4 align-items-stretch"><div class="col-lg-5"><div class="pp-card pp-card-hero h-100 d-flex flex-column justify-content-between"><div><div class="pp-eyebrow">Your recommended price · ${esc(S.offering)}</div><div class="pp-kpi pp-kpi-xl my-2">${money(p.recommended.price, cur, 0)}</div><div class="pp-muted">per ${u} · ${pct(p.marginBand.mid, 0)} target margin</div></div>
-        <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp-ghost" style="background:#fff;color:var(--pp-primary);border-color:#fff">See my Profit Roadmap →</a><a href="#/analyze" class="btn btn-pp-ghost text-white" style="border-color:rgba(255,255,255,.4)" id="edit-answers">Edit answers</a></div></div></div>
-        <div class="col-lg-7"><div class="row g-3 h-100">
-          <div class="col-6 col-md-4">${tile('True cost', money(p.trueCostPerUnit, cur), `per ${u} incl. overhead &amp; fees`)}</div>
-          <div class="col-6 col-md-4">${tile('Profit per ' + u, money(p.recommended.profitPerUnit, cur), '', 'var(--pp-primary)')}</div>
-          <div class="col-6 col-md-4">${tile('Profit margin', pct(p.recommended.marginPct))}</div>
-          <div class="col-6 col-md-4">${tile('Expected monthly sales', p.expectedUnits, u + 's per month')}</div>
-          <div class="col-6 col-md-4">${tile('Est. monthly revenue', money(p.recommended.monthlyRevenue, cur, 0))}</div>
-          <div class="col-6 col-md-4">${tile('Est. monthly profit', money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-primary)')}</div></div></div></div>
-      ${p.warnings.map((w) => `<div class="pp-warn mt-3">⚠️ ${w}</div>`).join('')}
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-5 mb-3"><div class="pp-tabs">${tabs}</div><span class="pp-notice">Estimates from your inputs · not a guarantee</span></div>
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-7"><div class="pp-card pp-card--primary">
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><span class="pp-eyebrow">${t('results.eyebrow', { offering: esc(S.offering) })}</span><span class="pp-badge recommended">${icon('badge-check', 12)} ${t('results.badge')}</span></div>
+          ${heroFigure(p.recommended.price, cur, 'pp-kpi--hero')}
+          <div class="pp-subhead" style="margin:4px 0 22px">${t('results.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
+          <div class="pp-stat-strip">
+            <div class="pp-stat"><div class="k">${icon('wallet', 12)} ${t('results.trueCost')}</div><div class="v pp-num">${money(p.trueCostPerUnit, cur)}</div></div>
+            <div class="pp-stat"><div class="k">${icon('coins', 12)} ${t('results.profitPerUnit', u)}</div><div class="v pp-num">${money(p.recommended.profitPerUnit, cur)}</div></div>
+            <div class="pp-stat"><div class="k">${icon('scale', 12)} ${t('results.margin')}</div><div class="v pp-num">${pct(p.recommended.marginPct)}</div></div>
+          </div>
+          <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp btn-pp-hero">${t('results.seeRoadmap')} ${icon('arrow-right', 15, 'pp-icon-flip')}</a><a href="#/analyze" class="btn btn-pp-white" id="edit-answers">${icon('square-pen', 14)} ${t('results.editAnswers')}</a></div>
+        </div></div>
+        <div class="col-lg-5"><div class="pp-card pp-card--data h-100">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><span class="pp-eyebrow">${icon('chart-column', 14)} ${t('results.outlook')}</span><span class="pp-subhead">${t('results.outlook.at', { count: p.expectedUnits, units: u.units })}</span></div>
+          <div class="d-grid" style="gap:10px">
+            ${tile('banknote', t('results.revenue'), money(p.recommended.monthlyRevenue, cur, 0))}
+            ${tile('trending-up', t('results.profit'), money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-pos)')}
+            ${tile('zap', t('results.breakEvenSales'), `${p.recommended.breakEvenUnits ?? '—'} ${unitsOf()}`, t('results.breakEvenSales.sub', { count: p.expectedUnits }))}
+          </div>
+          <div class="pp-subhead mt-3">${t('results.estimatesNote')}</div>
+        </div></div>
+      </div>
+      ${p.warnings.map((w, i) => `<div class="mt-3"><span class="pp-warn">${icon('triangle-alert', 13)}${esc(msg(p.warningsI18n && p.warningsI18n[i], w))}</span></div>`).join('')}
+      ${roadmapTeaser}
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-5 mb-3"><div class="pp-tabs">${tabs}</div></div>
       <div class="pp-fade">${panel}</div></div>`;
   }
 
   // ---------- roadmap ----------
   function renderRoadmap() {
-    const m = model(); const p = pricing(); const r = roadmap(); const cur = p.currency; const u = p.unitLabel;
+    const m = model(); const p = pricing(); const r = roadmap(); const cur = p.currency;
     const max = Math.max(1, ...r.recommendations.map((x) => x.estimatedMonthlyImpact));
     const done = r.recommendations.filter((x) => x.done).length;
     const order = ['reduce_costs', 'reduce_cac', 'increase_revenue', 'increase_value'];
-    const cats = order.map((k) => ({ k, meta: E.CATEGORY_META[k], items: r.recommendations.filter((x) => x.category === k) })).filter((c) => c.items.length);
-    const card = (rec) => `<article class="pp-rec ${rec.done ? 'done' : ''}"><div class="d-flex gap-3 align-items-start"><button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${rec.done ? 'Mark as not done' : 'Mark as done'}">${rec.done ? '✓' : ''}</button><div class="flex-grow-1">
-      <div class="d-flex flex-wrap gap-2 align-items-center"><span class="pp-badge ${rec.priority}">${E.priorityLabel(rec.priority)} PRIORITY</span><span class="pp-badge ${rec.difficulty}">${rec.difficulty}</span></div>
-      <div class="d-flex justify-content-between gap-3 align-items-start"><h4>${esc(rec.title)}</h4><div class="text-end"><div class="impact">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-muted" style="font-size:.74rem">est. per month</div></div></div>
-      <div class="label">Why</div><p>${esc(rec.why)}</p><div class="label">Suggested action</div><p>${esc(rec.action)}</p>
-      <details><summary class="pp-muted" style="font-size:.85rem;cursor:pointer">Assumptions behind this estimate</summary><ul class="mt-2">${rec.assumptions.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></details></div></div></article>`;
+    const cats = order.map((k) => ({ k, items: r.recommendations.filter((x) => x.category === k) }))
+      .filter((c) => c.items.length)
+      .map((c) => ({ ...c, total: c.items.reduce((s, x) => s + x.estimatedMonthlyImpact, 0) }));
+    const top = r.recommendations.find((x) => !x.done) || r.recommendations[0] || null;
+    const topShare = top && r.sumOfImpacts > 0 ? Math.round((top.estimatedMonthlyImpact / r.sumOfImpacts) * 100) : 0;
+    const badges = (rec) => `<span class="pp-badge ${rec.priority}">${icon('chevrons-up', 11)}${t('roadmap.priority', { priority: t('priority.' + rec.priority) })}</span><span class="pp-badge ${rec.difficulty}">${icon(DIFFICULTY_ICONS[rec.difficulty] || 'signal-medium', 11)}${t('roadmap.difficulty', { difficulty: t('difficulty.' + rec.difficulty) })}</span>`;
+
+    const card = (rec) => {
+      const share = r.sumOfImpacts > 0 ? Math.round((rec.estimatedMonthlyImpact / r.sumOfImpacts) * 100) : 0;
+      const i18n = rec.i18n;
+      return `<article class="pp-rec ${rec.done ? 'done' : ''}"><div class="d-flex align-items-start" style="gap:14px">
+      <button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${esc(t(rec.done ? 'roadmap.markNotDone' : 'roadmap.markDone'))}">${icon(rec.done ? 'check' : 'plus', 13)}</button>
+      <div class="flex-grow-1" style="min-width:0">
+        <div class="d-flex justify-content-between align-items-start" style="gap:16px"><h4>${esc(msg(i18n && i18n.title, rec.title))}</h4><div class="pp-rec__impact"><div class="v">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-label">${t('roadmap.estPerMonth')}</div></div></div>
+        <div class="pp-rec__meta mt-2">${badges(rec)}${share > 0 ? `<span class="pp-label">${t('roadmap.shareOfLift', { share })}</span>` : ''}</div>
+        <p class="pp-body mt-3">${esc(msg(i18n && i18n.why, rec.why))}</p>
+        <div class="pp-rec__action mt-3">${icon('arrow-up-right', 15, 'pp-icon-flip')}<div><div class="k">${t('roadmap.nextAction')}</div>${esc(msg(i18n && i18n.action, rec.action))}</div></div>
+        ${rec.assumptions.length ? `<details class="mt-3"><summary>${icon('chevron-right', 13, 'pp-icon-flip')} ${t('roadmap.assumptions')}</summary><ul>${rec.assumptions.map((a, i) => `<li>${esc(msg(i18n && i18n.assumptions[i], a))}</li>`).join('')}</ul></details>` : ''}
+      </div></div></article>`;
+    };
+
     return `<div class="pp-container py-5 pp-fade">
-      <div class="pp-narrow text-center mb-4"><span class="pp-chip mb-3">🗺️ Profit Roadmap · ${esc(S.offering)}</span><h1>How to make more profit at ${money(r.current.price, cur, 0)}</h1><p class="pp-muted" style="font-size:1.05rem">There are more ways to grow profit than raising your price. These are the levers that matter most for your numbers, ranked by estimated impact and effort.</p></div>
-      <div class="row g-4 align-items-stretch"><div class="col-lg-4"><div class="pp-card h-100"><div class="pp-eyebrow mb-2">Current situation</div><div class="pp-ledger">
-        <span class="pp-muted">Selling price</span><span class="pp-num fw-semibold">${money(r.current.price, cur, 0)}</span><span class="pp-muted">True cost</span><span class="pp-num fw-semibold">${money(r.current.trueCostPerUnit, cur)}</span><span class="pp-muted">Profit / ${u}</span><span class="pp-num fw-semibold">${money(r.current.profitPerUnit, cur)}</span><span class="pp-muted">${u}s / month</span><span class="pp-num fw-semibold">${r.current.units}</span><span class="pp-muted">Margin</span><span class="pp-num fw-semibold">${pct(r.current.marginPct)}</span><span class="total">Monthly profit</span><span class="total pp-num">${money(r.current.monthlyProfit, cur, 0)}</span></div></div></div>
-        <div class="col-lg-8"><div class="pp-card pp-card-hero h-100"><div class="row g-3 align-items-center"><div class="col-md-5"><div class="pp-eyebrow">Optimised estimated monthly profit</div><div class="pp-kpi pp-kpi-lg my-1">${money(r.optimisedMonthlyProfit, cur, 0)}</div><div class="pp-muted">from ${money(r.current.monthlyProfit, cur, 0)} today · <strong class="text-white">+${money(r.optimisedMonthlyProfit - r.current.monthlyProfit, cur, 0)}</strong></div>${p.target.targetMonthlyProfit > 0 ? `<div class="mt-2" style="font-size:.9rem">${r.targetReached ? '✅ Reaches' : '⚠️ Still short of'} your ${money(p.target.targetMonthlyProfit, cur, 0)} target</div>` : ''}</div>
-          <div class="col-md-7"><div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span style="font-size:.86rem">${esc(x.title)}</span><span class="pp-num fw-semibold" style="font-size:.86rem">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%;background:#a7f3d0"></span></div></div>`).join('')}</div><div class="pp-muted mt-2" style="font-size:.78rem">Sum of items ${money(r.sumOfImpacts, cur, 0)}, reduced by ${pct(r.interactionDiscountPct, 0)} because improvements overlap.</div></div></div></div></div></div>
-      <div class="pp-card pp-card-soft mt-4"><div class="d-flex justify-content-between flex-wrap gap-2 align-items-center"><div><strong>Roadmap progress:</strong> ${done}/${r.recommendations.length} completed</div><div class="pp-progress" style="width:min(320px,100%)"><div style="width:${(done / r.recommendations.length) * 100}%"></div></div></div><p class="mb-0 mt-2 pp-muted" style="font-size:.92rem">${explainRoadmap(m, r)}</p></div>
-      ${cats.map((c) => `<div class="pp-cat-head"><span class="icon">${c.meta.icon}</span><div><h3 class="mb-0">${c.meta.label}</h3><div class="pp-muted" style="font-size:.88rem">${c.meta.blurb}</div></div></div><div class="d-grid gap-3">${c.items.map(card).join('')}</div>`).join('')}
-      <div class="pp-notice mt-5">${r.disclaimer}</div>
-      <div class="d-flex flex-wrap gap-2 mt-4"><a href="#/results" class="btn btn-pp-ghost">← Back to pricing</a><a href="#/analyze" class="btn btn-pp-ghost" id="new-analysis">Analyse another business</a></div></div>`;
+      <div class="pp-narrow text-center mb-4"><span class="pp-chip mb-3">${icon('map', 13)} ${t('roadmap.chip', { offering: esc(S.offering) })}</span><h1>${t('roadmap.title', { cur, price: r.current.price })}</h1><p class="pp-muted" style="font-size:14px;margin:10px 0 0">${t('roadmap.intro')}</p></div>
+
+      <div class="pp-card pp-card--primary">
+        ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}
+        <div class="row g-3 mt-1">
+          <div class="col-md-7"><div class="pp-card-bare pp-card-bare--data h-100">
+            <div class="d-flex align-items-center gap-2 mb-3">${icon('chart-column', 14)}<span class="pp-eyebrow">${t('roadmap.liftFrom')}</span></div>
+            <div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span>${esc(msg(x.i18n && x.i18n.title, x.title))}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}</div>
+            <div class="pp-label mt-3">${t('roadmap.sumNote', { cur, sum: r.sumOfImpacts, discount: r.interactionDiscountPct })}</div>
+          </div></div>
+          <div class="col-md-5"><div class="pp-card-bare pp-card-bare--data h-100 d-flex flex-column">
+            <div class="d-flex align-items-center gap-2 mb-3">${icon('list-checks', 14)}<span class="pp-eyebrow">${t('roadmap.progress')}</span></div>
+            <div class="pp-kpi pp-kpi--lg pp-num">${done}<span class="pp-subhead">${t('roadmap.doneOf', { total: r.recommendations.length })}</span></div>
+            <div class="pp-progress mt-2 mb-3"><div style="width:${r.recommendations.length ? (done / r.recommendations.length) * 100 : 0}%"></div></div>
+            ${p.target.targetMonthlyProfit > 0 ? `<div class="mt-auto ${r.targetReached ? 'pp-ok pp-ok-block' : 'pp-warn pp-warn-block'}">${icon(r.targetReached ? 'circle-check' : 'triangle-alert', 14)}<span>${t(r.targetReached ? 'roadmap.targetReached' : 'roadmap.targetShort', { cur, target: p.target.targetMonthlyProfit })}</span></div>` : ''}
+          </div></div>
+        </div>
+      </div>
+
+      ${top ? `<div class="pp-card pp-card--insight mt-3">
+        <div class="pp-spot__head">${iconBadge('sparkles', 'pp-icon-badge--sm', 14)} ${t('roadmap.startHere')}</div>
+        <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap:16px">
+          <div style="min-width:0;flex:1 1 320px"><h3 class="mb-2">${esc(msg(top.i18n && top.i18n.title, top.title))}</h3><p class="pp-body mb-3">${esc(msg(top.i18n && top.i18n.action, top.action))}</p>
+            <div class="pp-spot__meta">${badges(top)}</div></div>
+          <div class="pp-stat pp-stat--accent" style="flex:0 0 auto;min-width:190px"><div class="k">${icon('trending-up', 12)} ${t('roadmap.estimatedImpact')}</div><div class="v pp-num">+${money(top.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-label mt-1">${t('roadmap.impactShare', { share: topShare })}</div></div>
+        </div></div>` : ''}
+
+      <div class="pp-card pp-card--insight mt-3"><div class="d-flex align-items-start gap-2">${iconBadge('lightbulb', 'pp-icon-badge--sm', 14)}<p class="pp-body mb-0">${explainRoadmap(m, r)}</p></div></div>
+
+      ${cats.map((c) => `<div class="pp-cat-head">${iconBadge(CATEGORY_ICONS[c.k] || 'trending-up')}<div><h3 class="mb-0">${t('category.' + c.k + '.label')}</h3><div class="pp-muted" style="font-size:12px">${t('category.' + c.k + '.blurb')}</div></div><span class="pp-badge ms-auto">+${t('roadmap.perMonth', { amount: c.total, cur })}</span></div><div class="d-grid" style="gap:var(--pp-grid-gap)">${c.items.map(card).join('')}</div>`).join('')}
+
+      <div class="pp-notice pp-notice-block mt-5">${icon('info', 14)}<span>${esc(msg(r.disclaimerI18n, r.disclaimer))}</span></div>
+      <div class="d-flex flex-wrap gap-2 mt-4"><a href="#/results" class="btn btn-pp-white">${icon('arrow-left', 14, 'pp-icon-flip')} ${t('roadmap.backToPricing')}</a><a href="#/analyze" class="btn btn-pp-ghost" id="new-analysis">${icon('rotate-ccw', 14)} ${t('roadmap.analyseAnother')}</a></div></div>`;
   }
 
   // ---------- events ----------
   function bind() {
-    root.querySelector('[data-action="example"]')?.addEventListener('click', () => { const s = E.SAMPLES[0]; Object.assign(S, { offering: s.offering, type: s.type, selectedType: s.type, answers: { ...s.answers }, completedIds: [], complete: true, step: 0, wi: {}, target: null, tab: 'overview' }); go('results'); });
+    root.querySelector('#langtoggle')?.addEventListener('click', (ev) => { ev.stopPropagation(); S.langOpen = !S.langOpen; render(); });
+    root.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => { S.langOpen = false; setLocale(b.dataset.lang); }));
+    root.querySelectorAll('[data-action="example"]').forEach((el) => el.addEventListener('click', () => { const s = E.SAMPLES[0]; Object.assign(S, { offering: s.offering, type: s.type, selectedType: s.type, answers: { ...s.answers }, completedIds: [], complete: true, step: 0, wi: {}, target: null, tab: 'overview' }); go('results'); }));
     const off = root.querySelector('#offering');
     if (off) off.addEventListener('input', (ev) => {
       S.offering = ev.target.value; const d = S.offering.trim().length >= 3 ? E.detectBusinessType(S.offering) : null; S.detection = d;
       if (d && d.confidence > 0) S.selectedType = d.type;
-      const det = root.querySelector('#detect'); det.innerHTML = d && d.confidence > 0 ? `<div class="pp-detect mb-4 pp-fade"><span class="icon">${E.businessTypeDef(d.type).icon}</span><div><div class="fw-semibold">Looks like: ${E.businessTypeDef(d.type).label}</div><div class="pp-muted" style="font-size:.85rem">${d.confidence >= 0.7 ? 'High confidence' : d.confidence >= 0.4 ? 'Fairly confident' : 'Best guess'} · Not right? Pick a type below.</div></div></div>` : '';
+      root.querySelector('#detect').innerHTML = detectBanner(d);
       root.querySelectorAll('[data-type]').forEach((b) => b.classList.toggle('selected', b.dataset.type === S.selectedType));
       root.querySelector('#start').disabled = !S.selectedType || !S.offering.trim();
     });
@@ -317,7 +672,7 @@
     const m = model(); const p = pricing();
     root.querySelectorAll('[data-wi]').forEach((el) => el.addEventListener('input', () => {
       S.wi[el.dataset.wi] = el.valueAsNumber; const s = sliders(m, p).find((x) => x.key === el.dataset.wi);
-      root.querySelector('#wi-val-' + s.key).textContent = s.money ? money(el.valueAsNumber, p.currency, s.step < 1 ? 2 : 0) : el.valueAsNumber + (s.unit ? ' ' + s.unit : '');
+      root.querySelector('#wi-val-' + s.key).textContent = s.money ? money(el.valueAsNumber, p.currency, s.step < 1 ? 2 : 0) : TR.num(el.valueAsNumber) + (s.unit ? ' ' + s.unit : '');
       root.querySelector('#wi-metrics').innerHTML = whatIfMetrics(m, p); persist();
     }));
     root.querySelector('#wi-reset')?.addEventListener('click', () => { S.wi = {}; render(); });
@@ -325,6 +680,9 @@
     root.querySelector('#tgt')?.addEventListener('input', onTarget); root.querySelector('#tu')?.addEventListener('input', onTarget);
     root.querySelectorAll('[data-toggle]').forEach((b) => b.addEventListener('click', () => { const id = b.dataset.toggle; S.completedIds = S.completedIds.includes(id) ? S.completedIds.filter((x) => x !== id) : [...S.completedIds, id]; render(); }));
   }
+
+  document.addEventListener('click', (ev) => { if (S.langOpen && !ev.target.closest('#langpicker')) { S.langOpen = false; render(); } });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && S.langOpen) { S.langOpen = false; render(); } });
 
   if (S.step > 0 && S.type && !Object.keys(S.formValues).length) initForm();
   render();
