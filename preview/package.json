@@ -1,0 +1,17 @@
+{
+  "name": "profitpath-preview",
+  "private": true,
+  "type": "module",
+  "description": "Dependency-free live preview, plus the scripts that verify both surfaces against the engine. The preview itself ships as one self-contained HTML file and needs none of this; Playwright is only for the checks.",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node i18n-check.mjs && node contrast.mjs && node verify.mjs",
+    "verify": "node verify.mjs",
+    "i18n-check": "node i18n-check.mjs",
+    "contrast": "node contrast.mjs",
+    "shots": "node e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

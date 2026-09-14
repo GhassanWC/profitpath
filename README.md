@@ -103,14 +103,17 @@ that the catalogue lacks.
 
 ```bash
 cd app && npx tsc -p tsconfig.engine.json && npx tsc -p tsconfig.i18n.json && npx ng build
-cd ../preview && node build.mjs
+cd ../preview && npm install                      # Playwright, for the browser checks only
+node build.mjs
 node i18n-check.mjs                               # catalogues: fidelity, parity, coverage
 node verify.mjs                                   # the dependency-free preview
 node verify.mjs http://localhost:4173             # a served Angular build too
 node contrast.mjs                                 # colour audit
 ```
 
-Set `PP_CHROMIUM` to point the Playwright scripts at an existing browser when the sandbox's
+`i18n-check.mjs` and `contrast.mjs` are plain Node; only `verify.mjs` and `e2e.mjs` drive a
+browser. The preview itself is one self-contained HTML file and needs no install at all.
+Set `PP_CHROMIUM` to point the Playwright scripts at an existing browser when the machine's
 build differs from the pinned one.
 
 ## Run the Angular app
