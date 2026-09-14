@@ -15,7 +15,7 @@ app/                               Angular 18 application (standalone components
   src/app/pages/                   landing · analyze (questionnaire) · results · roadmap
   src/app/shared/                  metric tile, scenario card, cost breakdown, recommendation card, pipes
 preview/                           Dependency-free live preview built from the same compiled engine
-tools/                             hero-clip.mjs — cuts footage to the landing hero's spec
+tools/                             ledger-clip.mjs draws the hero clip; hero-clip.mjs cuts it to spec
 ```
 
 ## Design system
@@ -75,31 +75,43 @@ makes the headline legible over footage nobody has seen yet; the plate is what t
 back to when a clip 404s, stalls, or is refused autoplay — so the failure mode is a finished
 page, not a black band.
 
-**No clip ships.** `HERO_CLIP` in `app/src/app/shared/hero-clip.ts` is `null`, so no `<video>`
-renders and nothing is requested. The plate is a real design, not a placeholder.
+**The clip that ships** is drawn, not licensed — the same principle as the illustrations.
+`tools/ledger-clip.mjs` renders raking light moving across a ruled ledger sheet: the plate's
+own diagonal ground, a ledger's rules and money columns, and two cool light pools, each
+drifting at a different rate. The rules are *multiplied* by the lights, so they exist only
+where the light falls and surface as the pools drift — which is the thing CSS cannot do, and
+the only reason a video earns its download here.
 
-To install footage:
+Both tools are in the repo, so the three files in `app/public/` can be regenerated:
 
 ```bash
-node tools/hero-clip.mjs your-clip.mov --loop-blend=1   # needs ffmpeg; nothing else does
+node tools/ledger-clip.mjs master.mp4      # draw it       (needs ffmpeg; nothing else does)
+node tools/hero-clip.mjs master.mp4        # cut to spec
 ```
 
-That writes `hero.mp4`, `hero.webm` and `hero-poster.jpg` into `app/public/` at the hero's
-spec — 1600×900, 24fps, twelve seconds, no audio track at all (a muted autoplaying video that
-still carries audio is blocked by some autoplay policies). `--loop-blend` cross-dissolves the
-tail over the head, because arbitrary footage does not loop and the hard cut back to frame one
-is the thing that reads as cheap. Then fill in `HERO_CLIP` as that file documents, and
-`cd preview && node build.mjs` so both surfaces agree.
+The delivery spec is 1600×900, 24fps, twelve seconds, **no audio track at all** — a muted
+autoplaying video that still carries audio is blocked by some autoplay policies. It lands at
+**410 kB of H.264 and 84 kB of VP9**, which most browsers take. Every drift completes exactly
+one cycle over the duration, so the loop closes without a cut.
 
-A reader who has asked for reduced motion gets the poster and **no download**: `preload="none"`,
-no autoplay, and the plate stops drifting.
+To swap in your own footage, cut it to the same filenames and leave the manifest alone.
+`--loop-blend=1` cross-dissolves the tail over the head, because arbitrary footage does not
+loop and the hard cut back to frame one is what reads as cheap:
 
-There is deliberately no "generate a clip for me" mode. A synthesised gradient is what the
-plate already draws in eight lines of CSS for no bytes, and the one thing a real clip adds —
-grain and movement — is the one thing that does not compress: a 12s 720p loop with film grain
-lands at 4.5 MB. Either the footage earns that, or the CSS is the better trade.
+```bash
+node tools/hero-clip.mjs your-clip.mov --loop-blend=1
+cd preview && node build.mjs               # so both surfaces agree
+```
 
-`preview/hero-video.mjs` checks both halves of this, including the half that has no clip in it
+Setting `HERO_CLIP` back to `null` is a supported state, not a broken one: no `<video>` renders
+and nothing is requested. A reader who has asked for reduced motion gets the poster and **no
+download** — `preload="none"`, no autoplay, and the plate stops drifting.
+
+Film grain is the tempting addition and the one to refuse: it is incompressible, and adding it
+took the same twelve seconds from 410 kB to 4.5 MB. The grain in this hero is a CSS layer above
+the clip, which costs nothing.
+
+`preview/hero-video.mjs` checks all of this, including the state that is not currently shipped
 — see below.
 
 Type is loaded from Google Fonts in `app/src/index.html` and `preview/build.mjs`. Arabic
@@ -162,13 +174,24 @@ node contrast.mjs                                 # colour audit
 node hero-video.mjs http://localhost:4173         # the hero's background, clip or no clip
 ```
 
-`hero-video.mjs` is the odd one out: it checks behaviour that *does not ship*. With no clip
-installed it asserts both surfaces render no `<video>`, request no media, and keep the five
-hero layers in order. Then it takes the real built preview, rewrites the one `HERO_CLIP`
-constant to point at a 4 kB committed fixture, and drives that — so the day someone drops
-footage in, the wiring underneath it has already been exercised: the element mounts under the
-grain and scrim, autoplays muted, advances, fades in only on `canplay`, and under
-`prefers-reduced-motion` sits paused on its poster having fetched nothing.
+`hero-video.mjs` drives the hero's clip on both surfaces: the element mounts under the grain
+and scrim, autoplays muted, advances, fades in only on `canplay`, and under
+`prefers-reduced-motion` sits paused on its poster having fetched nothing. It adapts to the
+manifest — with `HERO_CLIP` set to `null` it instead asserts that no `<video>` renders, no
+media is requested, and the hero's layers stay in order, so neither state can rot. It carries a
+4 kB fixture clip so the *installed* path can be exercised without rebuilding the app.
+
+Its last assertion is the one nothing else can make. `contrast.mjs` audits the stylesheet's own
+tokens, and the token behind the hero copy is the dark plate — which the clip covers, so
+legibility now depends on footage that is not in the stylesheet at all. `hero-video.mjs`
+composites the clip and the scrim in a canvas with the hero's exact geometry, sweeps eight
+timestamps across the loop, and measures the headline and lede against the *brightest* frame
+under them. The shipped clip holds **13.1:1** and **8.7:1**; AA wants 4.5.
+
+That sweep is why `serve.mjs` answers range requests. Without them Chromium refuses to seek a
+`<video>` and silently leaves `currentTime` at zero — the check went on reporting a pass while
+measuring one frame eight times. It now verifies each seek landed and fails if they did not,
+because a check that quietly narrows its own coverage is worse than no check.
 
 `i18n-check.mjs` and `contrast.mjs` are plain Node; `verify.mjs`, `hero-video.mjs` and
 `e2e.mjs` drive a browser. The preview itself is one self-contained HTML file and needs no install at all.

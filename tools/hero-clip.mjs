@@ -21,12 +21,14 @@
  * autoplay policies). A bitrate that would be indefensible for footage anyone
  * looks at directly is right here.
  *
- * There is deliberately no "generate me one" mode. A synthesised gradient is
- * what `.pp-lp-hero__plate` already draws in eight lines of CSS, for no bytes;
- * encoding the same picture as video only adds a download. The one thing a clip
- * adds — grain and real movement — is also the one thing that does not compress:
- * a 12s 720p loop with film grain lands at 4.5 MB. Either the footage is worth
- * that, or the CSS is better. Both are honest; a fake clip is not.
+ * This cuts footage; it does not invent any. `tools/ledger-clip.mjs` renders the
+ * clip that currently ships, and its output comes through here like anything
+ * else. The line between them is worth keeping: a synthesised *gradient* would
+ * be pointless — `.pp-lp-hero__plate` draws one in eight lines of CSS for no
+ * bytes — so what that script draws is the thing CSS cannot, light moving across
+ * a ruled sheet. Film grain is the other tempting addition and the one to
+ * refuse: it is incompressible, and adding it took the same 12 seconds from
+ * 410 kB to 4.5 MB. The grain in this hero is a CSS layer above the clip.
  *
  * ffmpeg comes from $FFMPEG, then PATH, then `ffmpeg-static` if it happens to be
  * installed. It is not a dependency of the app or of the checks — the outputs

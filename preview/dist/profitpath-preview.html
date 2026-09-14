@@ -1122,27 +1122,22 @@ const CATEGORY_ART = {
 <script>/**
  * The landing hero's background clip.
  *
- * `null` means there is no footage: the hero paints `.pp-lp-hero__plate` — the
- * animated CSS gradient — and makes no network request. That is the shipped
- * state, and it is a real design, not a placeholder.
- *
- * To ship footage:
- *
- *   node tools/hero-clip.mjs your-clip.mov --loop-blend=1
- *
- * which writes `hero.mp4`, `hero.webm` and `hero-poster.jpg` into `app/public/`,
- * then replace the `null` below with:
- *
- *   export const HERO_CLIP = {
- *     poster: 'hero-poster.jpg',
- *     sources: [
- *       { src: 'hero.webm', type: 'video/webm' },
- *       { src: 'hero.mp4', type: 'video/mp4' },
- *     ],
- *   };
+ * What ships is the ledger clip — raking light moving across a ruled sheet,
+ * rendered by `tools/ledger-clip.mjs` and cut to spec by `tools/hero-clip.mjs`.
+ * Both are in the repo, so the three files in `app/public/` can be regenerated
+ * rather than being binaries nobody can reproduce.
  *
  * WebM first: the browser takes the first type it can play, and VP9 is about a
  * third smaller than the H.264 that everything else falls back to.
+ *
+ * To swap in different footage, cut it to the same filenames and leave this
+ * alone:
+ *
+ *   node tools/hero-clip.mjs your-clip.mov --loop-blend=1
+ *
+ * Setting this back to `null` is also a supported state, not a broken one: the
+ * hero then paints `.pp-lp-hero__plate` — the animated CSS gradient — and makes
+ * no network request at all. `preview/hero-video.mjs` checks both states.
  *
  * The plate stays underneath whatever happens — a clip that 404s, stalls, or is
  * refused autoplay leaves the hero looking finished rather than black.
@@ -1156,7 +1151,13 @@ const CATEGORY_ART = {
 /**
  * @type {null | { poster: string, sources: { src: string, type: string }[] }}
  */
-const HERO_CLIP = null;
+const HERO_CLIP = {
+  poster: 'hero-poster.jpg',
+  sources: [
+    { src: 'hero.webm', type: 'video/webm' },
+    { src: 'hero.mp4', type: 'video/mp4' },
+  ],
+};
 </script>
 <script>var ProfitPathEngine = (function () {
   var defs = {}, cache = {};

@@ -48,11 +48,37 @@ const server = createServer(async (req, res) => {
       path = join(path, 'index.html');
       info = await stat(path);
     }
-    res.writeHead(200, {
+    const headers = {
       'Content-Type': TYPES[extname(path)] ?? 'application/octet-stream',
-      'Content-Length': info.size,
       'Cache-Control': 'no-store',
-    });
+      // Range support is not a nicety once media is served: without it Chromium
+      // refuses to seek a <video> at all — `currentTime` silently stays at 0 —
+      // and a check that samples across a clip samples one frame instead, while
+      // reporting that it sampled the clip. That is how this got noticed.
+      'Accept-Ranges': 'bytes',
+    };
+
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
+    if (range && (range[1] || range[2])) {
+      // A suffix range (`bytes=-500`) counts back from the end; an absent end
+      // means "to the last byte".
+      const [start, end] = range[1]
+        ? [Number(range[1]), range[2] ? Math.min(Number(range[2]), info.size - 1) : info.size - 1]
+        : [Math.max(0, info.size - Number(range[2])), info.size - 1];
+      if (start > end || start >= info.size) {
+        res.writeHead(416, { 'Content-Range': `bytes */${info.size}` }).end();
+        return;
+      }
+      res.writeHead(206, {
+        ...headers,
+        'Content-Range': `bytes ${start}-${end}/${info.size}`,
+        'Content-Length': end - start + 1,
+      });
+      createReadStream(path, { start, end }).pipe(res);
+      return;
+    }
+
+    res.writeHead(200, { ...headers, 'Content-Length': info.size });
     createReadStream(path).pipe(res);
   } catch {
     res.writeHead(404).end('Not found');

@@ -12,23 +12,27 @@
  * autoplay was refused, and the clip would silently never have played. That bug
  * shipped past code review and was caught here.
  *
- * The shipped state has no clip (`HERO_CLIP` is `null` in
- * `app/src/app/shared/hero-clip.ts`), so the interesting behaviour is the one
- * nobody would otherwise exercise until the day they drop footage in. This
- * takes the real built preview, rewrites that one constant to point at a small
- * committed fixture, and drives it — so what is checked is the shipped markup,
- * not a copy of it written for the test.
+ * It reads `HERO_CLIP` out of the built preview and checks whichever state the
+ * repo is in, so neither can rot:
  *
- * It asserts, in order:
- *
- *   no clip        no <video> element at all, and no request for one; the CSS
- *                  plate carries the hero
  *   with a clip    the element mounts under the grain and scrim, is muted,
  *                  looping, inline and carries no audio track; it autoplays,
  *                  advances, and only then fades in (`.is-ready`), with the
- *                  plate still underneath it
+ *                  plate still underneath it — and the copy stays legible over
+ *                  the clip's brightest frame (see below)
+ *   no clip        no <video> element at all, and no request for one; the CSS
+ *                  plate carries the hero and its layers stay in order
  *   reduced motion the clip is never fetched — `preload="none"`, no autoplay,
  *                  paused — and the poster shows instead
+ *
+ * The *installed* path is driven against a small committed fixture rather than
+ * whatever ships, by rewriting that one constant in the real built preview — so
+ * what runs is the shipped markup, not a copy written for the test, and the path
+ * stays covered even when the manifest is `null`.
+ *
+ * The legibility assertion is the one nothing else here can make: `contrast.mjs`
+ * audits the stylesheet's tokens, and the token behind this copy is the plate,
+ * which the clip covers. It needs `serve.mjs`'s range support — see the sweep.
  *
  * The fixture is 320x180 and two seconds, about 4 kB for all three files.
  * To regenerate it:
@@ -260,6 +264,118 @@ for (const [surface, url] of installed) {
 
   if (!(await page.locator('.pp-lp-hero__plate').count())) fail('the plate was removed — nothing to fall back to');
   else ok('the plate is still underneath');
+
+  // ---------------------------------------------- the headline over the clip
+  //
+  // The one check a hero video actually needs, and the one nothing else here
+  // can do: `contrast.mjs` audits the stylesheet's own tokens, and the token
+  // behind this text is the dark plate — which the clip covers. Legibility now
+  // depends on footage that is not in the stylesheet at all.
+  //
+  // Composited in a canvas rather than read off a screenshot, because that is
+  // the only way to sample the *background alone*: with the copy in place the
+  // brightest pixels under the headline are the headline. Same geometry as the
+  // hero — object-fit: cover, then the scrim's exact stops — sampled across the
+  // whole clip, because a loop is only as legible as its brightest moment.
+  const legibility = await video.evaluate(async (v, dir) => {
+    const rtl = dir === 'rtl';
+    const box = v.getBoundingClientRect();
+    const copy = document.querySelector('.pp-lp-hero__copy > div').getBoundingClientRect();
+    const W = Math.round(box.width);
+    const H = Math.round(box.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    // object-fit: cover — the same crop the browser paints.
+    const scale = Math.max(W / v.videoWidth, H / v.videoHeight);
+    const dw = v.videoWidth * scale;
+    const dh = v.videoHeight * scale;
+    const dx = (W - dw) / 2;
+    const dy = (H - dh) / 2;
+
+    // The scrim, straight from styles.css. It flips in Arabic, and so does this.
+    const STOPS = [[0, 0.94], [0.38, 0.82], [0.72, 0.32], [1, 0.5]];
+    const grad = rtl ? ctx.createLinearGradient(W, 0, 0, 0) : ctx.createLinearGradient(0, 0, W, 0);
+    for (const [at, a] of STOPS) grad.addColorStop(at, `rgba(11, 12, 16, ${a})`);
+
+    const rect = {
+      x: Math.max(0, Math.round(copy.left - box.left)),
+      y: Math.max(0, Math.round(copy.top - box.top)),
+      w: Math.min(W, Math.round(copy.width)),
+      h: Math.min(H, Math.round(copy.height)),
+    };
+
+    const chan = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    const lum = (r, g, b) => 0.2126 * chan(r / 255) + 0.7152 * chan(g / 255) + 0.0722 * chan(b / 255);
+
+    const wasPaused = v.paused;
+    v.pause();
+    let brightest = 0;
+    let atTime = 0;
+    // Probed timestamps that actually landed. Seeking needs HTTP range support:
+    // without it Chromium leaves `currentTime` at 0 and says nothing, and this
+    // would sample one frame eight times while reporting it had swept the clip.
+    const landed = [];
+    // Eight probes across the loop: enough to catch a bright pass, cheap enough
+    // to keep this a check rather than a render job.
+    for (let i = 0; i < 8; i++) {
+      const t = (v.duration * i) / 8;
+      await new Promise((r) => {
+        let done = false;
+        const fin = () => {
+          if (!done) {
+            done = true;
+            r();
+          }
+        };
+        // `seeked` fires before the decoded frame is available to drawImage;
+        // requestVideoFrameCallback is the one that means "there is a frame".
+        if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(() => fin());
+        v.addEventListener('seeked', () => setTimeout(fin, 60), { once: true });
+        setTimeout(fin, 1500);
+        v.currentTime = t;
+      });
+      if (Math.abs(v.currentTime - t) < 0.5) landed.push(t);
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(v, dx, dy, dw, dh);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      const px = ctx.getImageData(rect.x, rect.y, rect.w, rect.h).data;
+      for (let p = 0; p < px.length; p += 4) {
+        const l = lum(px[p], px[p + 1], px[p + 2]);
+        if (l > brightest) {
+          brightest = l;
+          atTime = t;
+        }
+      }
+    }
+    if (!wasPaused) await v.play().catch(() => {});
+    return { brightest, atTime, rect, landed, probes: 8 };
+  }, await page.evaluate(() => document.documentElement.dir));
+
+  // A sweep that only covered one frame is not a sweep; say so rather than
+  // reporting a pass that was never earned.
+  if (legibility.landed.length < legibility.probes) {
+    fail(
+      `only ${legibility.landed.length}/${legibility.probes} timestamps were reachable — the ` +
+        'server is not answering range requests, so this swept one frame, not the clip',
+    );
+  }
+
+  // The two inks that sit on the clip, from styles.css.
+  const INKS = [['headline', 0xfb, 0xf9, 0xf4], ['lede', 0xc8, 0xcd, 0xdb]];
+  const chan = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  for (const [name, r, g, b] of INKS) {
+    const inkLum = 0.2126 * chan(r / 255) + 0.7152 * chan(g / 255) + 0.0722 * chan(b / 255);
+    const ratio = (inkLum + 0.05) / (legibility.brightest + 0.05);
+    if (ratio < 4.5) {
+      fail(`${name} drops to ${ratio.toFixed(2)}:1 over the clip at t=${legibility.atTime.toFixed(1)}s — below AA`);
+    } else {
+      ok(`${name} holds ${ratio.toFixed(2)}:1 over the clip's brightest frame (t=${legibility.atTime.toFixed(1)}s)`);
+    }
+  }
 
   await context.close();
 }
