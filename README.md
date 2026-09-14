@@ -15,6 +15,7 @@ app/                               Angular 18 application (standalone components
   src/app/pages/                   landing · analyze (questionnaire) · results · roadmap
   src/app/shared/                  metric tile, scenario card, cost breakdown, recommendation card, pipes
 preview/                           Dependency-free live preview built from the same compiled engine
+tools/                             hero-clip.mjs — cuts footage to the landing hero's spec
 ```
 
 ## Design system
@@ -65,6 +66,41 @@ asserts every referenced name resolves. No emoji anywhere in the interface.
 **Illustrations.** The landing page's drawings live in `app/src/app/shared/illustrations.ts`
 (same plain-data trick as the icons, so the preview reuses the file). They carry no colour
 of their own — stroke weight and hue come from the page, so one accent recolours the set.
+
+## The hero's background
+
+The landing hero is five layers, and the order is the point: an animated CSS **plate** on the
+floor, then the clip, then **grain** and a directional **scrim** on top. The scrim is what
+makes the headline legible over footage nobody has seen yet; the plate is what the hero falls
+back to when a clip 404s, stalls, or is refused autoplay — so the failure mode is a finished
+page, not a black band.
+
+**No clip ships.** `HERO_CLIP` in `app/src/app/shared/hero-clip.ts` is `null`, so no `<video>`
+renders and nothing is requested. The plate is a real design, not a placeholder.
+
+To install footage:
+
+```bash
+node tools/hero-clip.mjs your-clip.mov --loop-blend=1   # needs ffmpeg; nothing else does
+```
+
+That writes `hero.mp4`, `hero.webm` and `hero-poster.jpg` into `app/public/` at the hero's
+spec — 1600×900, 24fps, twelve seconds, no audio track at all (a muted autoplaying video that
+still carries audio is blocked by some autoplay policies). `--loop-blend` cross-dissolves the
+tail over the head, because arbitrary footage does not loop and the hard cut back to frame one
+is the thing that reads as cheap. Then fill in `HERO_CLIP` as that file documents, and
+`cd preview && node build.mjs` so both surfaces agree.
+
+A reader who has asked for reduced motion gets the poster and **no download**: `preload="none"`,
+no autoplay, and the plate stops drifting.
+
+There is deliberately no "generate a clip for me" mode. A synthesised gradient is what the
+plate already draws in eight lines of CSS for no bytes, and the one thing a real clip adds —
+grain and movement — is the one thing that does not compress: a 12s 720p loop with film grain
+lands at 4.5 MB. Either the footage earns that, or the CSS is the better trade.
+
+`preview/hero-video.mjs` checks both halves of this, including the half that has no clip in it
+— see below.
 
 Type is loaded from Google Fonts in `app/src/index.html` and `preview/build.mjs`. Arabic
 faces sit at the end of every stack: font fallback is per-glyph, so Latin copy and every
@@ -123,10 +159,19 @@ node i18n-check.mjs                               # catalogues: fidelity, parity
 node verify.mjs                                   # the dependency-free preview
 node verify.mjs http://localhost:4173             # a served Angular build too
 node contrast.mjs                                 # colour audit
+node hero-video.mjs http://localhost:4173         # the hero's background, clip or no clip
 ```
 
-`i18n-check.mjs` and `contrast.mjs` are plain Node; only `verify.mjs` and `e2e.mjs` drive a
-browser. The preview itself is one self-contained HTML file and needs no install at all.
+`hero-video.mjs` is the odd one out: it checks behaviour that *does not ship*. With no clip
+installed it asserts both surfaces render no `<video>`, request no media, and keep the five
+hero layers in order. Then it takes the real built preview, rewrites the one `HERO_CLIP`
+constant to point at a 4 kB committed fixture, and drives that — so the day someone drops
+footage in, the wiring underneath it has already been exercised: the element mounts under the
+grain and scrim, autoplays muted, advances, fades in only on `canplay`, and under
+`prefers-reduced-motion` sits paused on its poster having fetched nothing.
+
+`i18n-check.mjs` and `contrast.mjs` are plain Node; `verify.mjs`, `hero-video.mjs` and
+`e2e.mjs` drive a browser. The preview itself is one self-contained HTML file and needs no install at all.
 Set `PP_CHROMIUM` to point the Playwright scripts at an existing browser when the machine's
 build differs from the pinned one.
 

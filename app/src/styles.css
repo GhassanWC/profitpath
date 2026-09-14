@@ -650,8 +650,20 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
     linear-gradient(146deg, #10121a 0%, #191c26 52%, #0e1016 100%);
   animation: lpdrift 26s ease-in-out infinite;
 }
-/* The real clip goes here. Same box, same scrim — swap the poster and sources. */
-.pp-lp-hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* The clip, when `shared/hero-clip.ts` names one. It covers the plate rather
+   than replacing it: transparent until `canplay` fires, so the plate holds the
+   hero while the clip loads and keeps holding it if the clip never arrives.
+   A black band under the headline is the failure this avoids. */
+.pp-lp-hero__video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transition: opacity 900ms var(--pp-ease);
+}
+.pp-lp-hero__video.is-ready { opacity: 1; }
+/* Reduced motion: the poster is a still of the same footage, so it can show at
+   once — there is nothing to wait for and nothing to fade. */
+@media (prefers-reduced-motion: reduce) {
+  .pp-lp-hero__video { opacity: 1; transition: none; }
+}
 @keyframes lpdrift {
   0% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
   50% { transform: scale(1.12) translate3d(1.5%, 1%, 0); }

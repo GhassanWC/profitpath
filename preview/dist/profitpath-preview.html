@@ -684,8 +684,20 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
     linear-gradient(146deg, #10121a 0%, #191c26 52%, #0e1016 100%);
   animation: lpdrift 26s ease-in-out infinite;
 }
-/* The real clip goes here. Same box, same scrim — swap the poster and sources. */
-.pp-lp-hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* The clip, when `shared/hero-clip.ts` names one. It covers the plate rather
+   than replacing it: transparent until `canplay` fires, so the plate holds the
+   hero while the clip loads and keeps holding it if the clip never arrives.
+   A black band under the headline is the failure this avoids. */
+.pp-lp-hero__video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0; transition: opacity 900ms var(--pp-ease);
+}
+.pp-lp-hero__video.is-ready { opacity: 1; }
+/* Reduced motion: the poster is a still of the same footage, so it can show at
+   once — there is nothing to wait for and nothing to fade. */
+@media (prefers-reduced-motion: reduce) {
+  .pp-lp-hero__video { opacity: 1; transition: none; }
+}
 @keyframes lpdrift {
   0% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
   50% { transform: scale(1.12) translate3d(1.5%, 1%, 0); }
@@ -1106,6 +1118,45 @@ const CATEGORY_ART = {
   digital: `<g class="ink"><path d="M13 9h16l6 6v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2z"></path><path d="M29 9v6h6"></path></g><g class="ink-thin"><path d="M16 26h16"></path><path d="M16 32h10"></path></g>`,
   saas: `<g class="ink"><path d="M15 33a7 7 0 0 1-1-14 10 10 0 0 1 19 2 6 6 0 0 1 0 12z"></path></g><path d="M24 25v9" class="ink-thin"></path><path d="M20 30l4 4 4-4" class="ink-thin"></path>`,
 };
+</script>
+<script>/**
+ * The landing hero's background clip.
+ *
+ * `null` means there is no footage: the hero paints `.pp-lp-hero__plate` — the
+ * animated CSS gradient — and makes no network request. That is the shipped
+ * state, and it is a real design, not a placeholder.
+ *
+ * To ship footage:
+ *
+ *   node tools/hero-clip.mjs your-clip.mov --loop-blend=1
+ *
+ * which writes `hero.mp4`, `hero.webm` and `hero-poster.jpg` into `app/public/`,
+ * then replace the `null` below with:
+ *
+ *   export const HERO_CLIP = {
+ *     poster: 'hero-poster.jpg',
+ *     sources: [
+ *       { src: 'hero.webm', type: 'video/webm' },
+ *       { src: 'hero.mp4', type: 'video/mp4' },
+ *     ],
+ *   };
+ *
+ * WebM first: the browser takes the first type it can play, and VP9 is about a
+ * third smaller than the H.264 that everything else falls back to.
+ *
+ * The plate stays underneath whatever happens — a clip that 404s, stalls, or is
+ * refused autoplay leaves the hero looking finished rather than black.
+ *
+ * `preview/build.mjs` reads this file and strips the `export ` keyword to reuse
+ * it verbatim, the same trick as `icons.ts` and `illustrations.ts`, so keep
+ * every declaration here valid plain JavaScript: no type annotations, no
+ * imports. That is what stops the two surfaces disagreeing about the hero.
+ */
+
+/**
+ * @type {null | { poster: string, sources: { src: string, type: string }[] }}
+ */
+const HERO_CLIP = null;
 </script>
 <script>var ProfitPathEngine = (function () {
   var defs = {}, cache = {};
@@ -5987,6 +6038,32 @@ exports.FR = {
   const LP_PLANS = [['free', '$0', false], ['pro', '$9', true], ['business', '$19', true]];
 
   // ---------- landing ----------
+  /* A reader who has asked for reduced motion gets the poster and no download. */
+  const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /**
+   * The hero clip, or nothing. HERO_CLIP comes from
+   * app/src/app/shared/hero-clip.ts, which build.mjs inlines the same way it
+   * inlines the icons and the drawings — so the two surfaces cannot disagree
+   * about whether footage exists.
+   *
+   * `oncanplay` rather than a listener because the preview re-renders by
+   * replacing innerHTML, and an inline handler survives that without any
+   * bookkeeping. The plate underneath shows until the class lands, and keeps
+   * showing if the clip never loads — which is what happens by default here,
+   * since the preview is one self-contained file with no assets beside it.
+   */
+  function heroVideo() {
+    if (!HERO_CLIP) return '';
+    const sources = HERO_CLIP.sources
+      .map((s) => `<source src="${esc(s.src)}" type="${esc(s.type)}">`)
+      .join('');
+    return `<video class="pp-lp-hero__video" poster="${esc(HERO_CLIP.poster)}"` +
+      ` preload="${REDUCED_MOTION ? 'none' : 'auto'}"${REDUCED_MOTION ? '' : ' autoplay'}` +
+      ` muted loop playsinline disablepictureinpicture tabindex="-1" aria-hidden="true"` +
+      ` oncanplay="this.classList.add('is-ready')">${sources}</video>`;
+  }
+
   function renderLanding() {
     /* Every figure below is the sample run through the real engine — nothing on
        this page is a hardcoded illustration. */
@@ -6036,7 +6113,7 @@ exports.FR = {
 
     return `<div class="pp-lp">
     <section class="pp-lp-hero">
-      <div class="pp-lp-hero__plate"></div><div class="pp-lp-hero__grain"></div>
+      <div class="pp-lp-hero__plate"></div>${heroVideo()}<div class="pp-lp-hero__grain"></div>
       <div class="pp-lp-hero__scrim"></div><div class="pp-lp-hero__foot"></div>
       <div class="pp-lp-hero__copy pp-lp__inner">
         <div>

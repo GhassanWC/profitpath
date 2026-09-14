@@ -13,6 +13,8 @@ const app = readFileSync('app.js', 'utf8');
 const icons = readFileSync('../app/src/app/shared/icons.ts', 'utf8').replace(/^export /gm, '');
 /* The landing drawings ride along the same way, for the same reason. */
 const art = readFileSync('../app/src/app/shared/illustrations.ts', 'utf8').replace(/^export /gm, '');
+/* And the hero clip's manifest, so both surfaces agree on whether one exists. */
+const heroClip = readFileSync('../app/src/app/shared/hero-clip.ts', 'utf8').replace(/^export /gm, '');
 
 const head = `<title>ProfitPath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +27,7 @@ body { color-scheme: light; }
 const body = `<div id="app"></div>
 <script>${icons}</script>
 <script>${art}</script>
+<script>${heroClip}</script>
 <script>${engine}</script>
 <script>${i18n}</script>
 <script>${app}</script>`;
