@@ -50,6 +50,17 @@ const PAIRS = [
   ['neutral badge on neutral-soft', 'pp-ink-2', token('pp-neutral-soft')],
   ['white on brand button', WHITE, token('pp-brand')],
   ['white on dark card', WHITE, token('pp-dark')],
+
+  // Landing page — warm paper, and the dark hero and plate it sits between.
+  ['landing ink on paper', token('lp-ink'), token('lp-paper')],
+  ['landing ink-2 on paper', token('lp-ink-2'), token('lp-paper')],
+  ['landing muted on paper', token('lp-muted'), token('lp-paper')],
+  ['landing muted on raised', token('lp-muted'), token('lp-raised')],
+  ['brand text on paper', token('pp-brand-ink'), token('lp-paper')],
+  ['positive figure on paper', token('pp-pos'), token('lp-paper')],
+  ['plate ink on plate', token('lp-on-plate'), token('lp-plate')],
+  ['plate muted on plate', token('lp-on-plate-2'), token('lp-plate')],
+  ['plate positive on plate', token('lp-pos-plate'), token('lp-plate')],
 ];
 
 let worst = Infinity;

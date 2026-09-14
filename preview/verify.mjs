@@ -107,7 +107,7 @@ async function verify(browser, surface, url, locale) {
   });
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.pp-hero');
+  await page.waitForSelector('.pp-lp-hero');
 
   const screens = {};
   let pass = 0;
@@ -141,9 +141,12 @@ async function verify(browser, surface, url, locale) {
 
   await capture('landing');
 
-  // Icons must actually render — an empty registry entry would be silent.
-  const landingIcons = await page.locator('svg.pp-i, pp-icon svg').count();
-  if (landingIcons < 15) fail(`${label} · landing: only ${landingIcons} icons rendered`);
+  // Drawings and icons must actually render — an empty registry entry, or a
+  // name that does not resolve, would otherwise be silent.
+  const drawn = await page.locator('svg:has(path)').count();
+  if (drawn < 15) fail(`${label} · landing: only ${drawn} drawn vectors rendered`);
+  const illos = await page.locator('pp-illustration svg, .pp-lp-steps svg, .pp-lp-range svg').count();
+  if (illos < 14) fail(`${label} · landing: ${illos} illustrations, expected the 5 steps and 9 categories`);
 
   await page.locator('.pp-header-pill a.btn-pp, a[href$="/analyze"].btn').first().click();
   await page.waitForSelector('#offering, .pp-type-card');
@@ -157,8 +160,8 @@ async function verify(browser, surface, url, locale) {
   await capture('questions');
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('.pp-hero');
-  await page.locator('[data-action="example"], .pp-hero button.btn-pp-glass').first().click();
+  await page.waitForSelector('.pp-lp-hero');
+  await page.locator('[data-action="example"], .pp-lp-hero button').first().click();
   await page.waitForSelector('.pp-kpi--hero');
   await capture('results');
 

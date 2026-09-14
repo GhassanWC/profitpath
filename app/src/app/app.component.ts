@@ -1,5 +1,7 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, effect, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AnalysisStore } from './core/state/analysis.store';
 import { IconComponent } from './shared/icon.component';
 import { I18nService } from './shared/i18n.service';
@@ -59,4 +61,29 @@ export class AppComponent {
   readonly store = inject(AnalysisStore);
   readonly t = inject(I18nService).t;
   readonly year = new Date().getFullYear();
+
+  private readonly doc = inject(DOCUMENT);
+  private readonly router = inject(Router);
+
+  /**
+   * The landing page is the one screen on warm paper rather than the glass
+   * wash, and the header and footer are shared with the working screens — so
+   * the route, not the page component, has to say which surface is showing.
+   * The flag goes on <html> so the fixed page background changes with it.
+   */
+  private readonly onLanding = signal(this.isLanding(this.router.url));
+
+  constructor() {
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => this.onLanding.set(this.isLanding(e.urlAfterRedirects)));
+
+    effect(() => {
+      this.doc.documentElement.classList.toggle('pp-shell--paper', this.onLanding());
+    });
+  }
+
+  private isLanding(url: string): boolean {
+    return url === '/' || url.startsWith('/?') || url.startsWith('/#');
+  }
 }

@@ -1,6 +1,6 @@
 <title>ProfitPath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>/* Minimal utility subset (the Angular app uses Bootstrap 5 for these) */
 *, *::before, *::after { box-sizing: border-box; }
 .row { display: flex; flex-wrap: wrap; margin-inline: calc(-0.5 * var(--g, 1rem)); margin-top: calc(-1 * var(--g, 1rem)); }
@@ -668,6 +668,323 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark { animation: none; transition: none; }
 }
 
+/* ==========================================================================
+   Landing page — "Ledger"
+   --------------------------------------------------------------------------
+   A deliberately different surface from the rest of the app: warm paper, one
+   ink, a high-contrast serif for voice and a mono for every figure. It is the
+   only place the product speaks to someone who has not used it yet, so it gets
+   an editorial register the working screens do not.
+
+   Everything here is scoped under `.pp-lp`, and the shell picks up
+   `.pp-shell--paper` only on the landing route — so the glass system that the
+   analyze, results and roadmap screens depend on is untouched by this block.
+   ========================================================================== */
+.pp-lp {
+  --lp-paper: #f7f4ee;
+  --lp-raised: #fffdf8;
+  --lp-ink: #16181d;
+  --lp-ink-2: #3d4049;
+  --lp-muted: #6e6a60;   /* 4.95:1 on paper — audited in preview/contrast.mjs */
+  --lp-rule: #dcd5c6;
+  --lp-rule-2: #ede8dc;
+  --lp-plate: #14151a;
+  --lp-on-plate: #f2efe8;
+  --lp-on-plate-2: #9aa1b3;
+  --lp-pos-plate: #6fdca0; /* positive figures on the dark plate only */
+  --lp-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --lp-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --lp-gutter: 24px;
+
+  display: block;
+  background: var(--lp-paper);
+  color: var(--lp-ink);
+}
+/* The page wash and the glass header belong to the app, not to this page. */
+.pp-shell--paper, .pp-shell--paper body { background: var(--lp-paper); background-image: none; }
+.pp-shell--paper .pp-header { position: static; padding: 0; border-bottom: 1px solid #dcd5c6; }
+/* The shell's container is narrower than the landing's measure; on paper they
+   have to agree or the masthead sits inboard of the headline beneath it. */
+.pp-shell--paper .pp-header .pp-container,
+.pp-shell--paper .pp-footer .pp-container { max-width: 1200px; }
+.pp-shell--paper .pp-header-pill {
+  background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 0; border-radius: 0; box-shadow: none; padding: 0; height: 74px;
+}
+.pp-shell--paper .pp-logo { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 21px; }
+.pp-shell--paper .pp-nav a,
+.pp-shell--paper .pp-lang__button { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; }
+.pp-shell--paper .btn-pp {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 400;
+  background: transparent; background-image: none; color: #16181d;
+  border: 1.4px solid #16181d; border-radius: 0; box-shadow: none;
+}
+.pp-shell--paper .pp-footer { border-top: 1px solid #dcd5c6; background: #f7f4ee; }
+.pp-shell--paper .pp-footer .pp-container { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #6e6a60; }
+
+.pp-lp__inner { max-width: 1200px; margin: 0 auto; padding-inline: var(--lp-gutter); }
+
+/* ------------------------------------------------------------ type ladder */
+.pp-lp-serif { font-family: var(--lp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp-mono { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; }
+.pp-lp-eyebrow {
+  font-family: var(--lp-mono); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--lp-muted);
+}
+.pp-lp-body { font-size: 14.5px; line-height: 1.72; color: var(--lp-ink-2); font-weight: 300; }
+.pp-lp-cap { font-family: var(--lp-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-muted); }
+.pp-lp h1, .pp-lp h2, .pp-lp h3 { font-family: var(--lp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp h2 { font-size: clamp(32px, 3.4vw, 46px); line-height: 1.05; margin: 0; }
+.pp-lp-rule { border: 0; border-top: 1px solid var(--lp-rule); margin: 0; }
+.pp-lp-rule--ink { border: 0; border-top: 1.5px solid var(--lp-ink); margin: 0; }
+.pp-lp-section { padding-top: 86px; }
+.pp-lp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; padding-bottom: 18px; }
+
+/* ------------------------------------------------------------- drawn line */
+/* Three weights and two accents. The drawings in illustrations.ts carry no
+   colour of their own, so they recolour with the page rather than fighting it. */
+.pp-lp .ink, .pp-lp .ink-thin, .pp-lp .hatch, .pp-lp .ink-accent, .pp-lp .ink-pos {
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.pp-lp .ink { stroke: var(--lp-ink); stroke-width: 1.6; }
+.pp-lp .ink-thin { stroke: var(--lp-ink); stroke-width: 1; }
+.pp-lp .hatch { stroke: var(--lp-ink); stroke-width: 0.9; opacity: 0.42; }
+.pp-lp .ink-accent { stroke: var(--pp-brand-ink); stroke-width: 2.2; }
+.pp-lp .ink-pos { stroke: var(--pp-pos); stroke-width: 2.2; }
+.pp-lp .ink-fill-paper { fill: var(--lp-paper); }
+.pp-lp .ink-fill-pos { fill: var(--pp-pos-soft); stroke: none; }
+
+/* ------------------------------------------------------------------- hero */
+/* min-height, and the ticker in flow rather than pinned: a headline that runs
+   long grows the hero instead of sliding underneath the figures. */
+.pp-lp-hero {
+  position: relative; min-height: 740px; display: flex; flex-direction: column;
+  overflow: hidden; background: var(--lp-plate);
+}
+.pp-lp-hero__plate {
+  position: absolute; inset: -6%;
+  background:
+    radial-gradient(58% 74% at 22% 18%, #2b3450 0%, rgba(43, 52, 80, 0) 62%),
+    radial-gradient(46% 62% at 82% 72%, #1d3b5c 0%, rgba(29, 59, 92, 0) 60%),
+    linear-gradient(146deg, #10121a 0%, #191c26 52%, #0e1016 100%);
+  animation: lpdrift 26s ease-in-out infinite;
+}
+/* The real clip goes here. Same box, same scrim — swap the poster and sources. */
+.pp-lp-hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+@keyframes lpdrift {
+  0% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+  50% { transform: scale(1.12) translate3d(1.5%, 1%, 0); }
+  100% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+}
+/* Grain breaks the banding a compressed clip leaves behind large flat type. */
+.pp-lp-hero__grain {
+  position: absolute; inset: 0; opacity: 0.5; mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+}
+/* The load-bearing layer: heavy where the copy sits, clear where the footage
+   should show. Logical direction, so it flips with the page in Arabic. */
+/* A gradient takes no logical keyword, so the flip is explicit: the heavy end
+   must stay under the copy, and in Arabic the copy starts on the right. */
+.pp-lp-hero__scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right,
+    rgba(11, 12, 16, 0.94) 0%, rgba(11, 12, 16, 0.82) 38%,
+    rgba(11, 12, 16, 0.32) 72%, rgba(11, 12, 16, 0.5) 100%);
+}
+[dir='rtl'] .pp-lp-hero__scrim {
+  background: linear-gradient(to left,
+    rgba(11, 12, 16, 0.94) 0%, rgba(11, 12, 16, 0.82) 38%,
+    rgba(11, 12, 16, 0.32) 72%, rgba(11, 12, 16, 0.5) 100%);
+}
+/* Figures stay left-to-right inside the paper page too — but only the elements
+   that actually hold a figure. The mono face is also used for Arabic prose
+   (eyebrows, captions, the hero's fine print), and forcing direction there lays
+   the sentence out backwards. */
+[dir='rtl'] .pp-lp-figure,
+[dir='rtl'] .pp-lp-ledger .v,
+[dir='rtl'] .pp-lp-stats .v,
+[dir='rtl'] .pp-lp-hero__ticker b,
+[dir='rtl'] .pp-lp-steps--4 .impact .pp-lp-mono { direction: ltr; }
+
+/* Arabic has no italic: a browser-synthesised oblique is a slant applied to
+   letterforms that were never drawn for it. The emphasis carries by position
+   and size instead. */
+[dir='rtl'] .pp-lp-hero h1 em { font-style: normal; }
+.pp-lp-hero__foot {
+  position: absolute; inset-inline: 0; bottom: 0; height: 190px;
+  background: linear-gradient(180deg, rgba(11, 12, 16, 0) 0%, rgba(11, 12, 16, 0.92) 100%);
+}
+.pp-lp-hero__copy { position: relative; flex: 1 1 auto; width: 100%; padding-block: 92px 64px; }
+.pp-lp-hero__copy > div { max-width: 660px; }
+.pp-lp-hero h1 {
+  margin: 26px 0 0; font-size: clamp(46px, 5.9vw, 84px); line-height: 0.98;
+  letter-spacing: -0.022em; color: #fbf9f4; text-wrap: pretty;
+}
+.pp-lp-hero h1 em { font-style: italic; }
+.pp-lp-hero__lede { margin: 28px 0 0; max-width: 520px; font-size: 18px; line-height: 1.65; font-weight: 300; color: #c8cddb; }
+.pp-lp-hero__ticker { position: relative; flex: 0 0 auto; border-top: 1px solid rgba(232, 229, 221, 0.16); }
+.pp-lp-hero__ticker .pp-lp__inner {
+  display: flex; flex-wrap: wrap; gap: 8px 34px; padding-block: 17px;
+  font-family: var(--lp-mono); font-size: 11.5px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--lp-on-plate-2);
+}
+.pp-lp-hero__ticker b { font-weight: 400; color: #e8e5dd; }
+.pp-lp-hero__ticker .pos { color: var(--lp-pos-plate); }
+
+/* ------------------------------------------------------------------ ink CTA */
+/* Square, ruled, mono — the hero action reads as a stamp, not a pill. */
+.btn-lp {
+  display: inline-flex; align-items: center; gap: 11px; font-family: var(--lp-mono);
+  font-size: 13.5px; padding: 15px 26px; border: 0; border-radius: 0;
+  background: var(--pp-brand-ink); color: #fff; text-decoration: none;
+  transition: background var(--pp-ease);
+}
+.btn-lp:hover { background: #16409f; color: #fff; }
+.btn-lp--ghost { background: transparent; color: var(--lp-ink); border: 1.4px solid var(--lp-ink); }
+.btn-lp--ghost:hover { background: var(--lp-ink); color: var(--lp-paper); }
+.btn-lp--quiet {
+  background: transparent; color: #e8e5dd; padding: 3px 0;
+  border-bottom: 1px solid rgba(232, 229, 221, 0.42); font-size: 13px;
+}
+.btn-lp--quiet:hover { background: transparent; color: #fff; border-bottom-color: #fff; }
+
+/* ------------------------------------------------------------------ steps */
+.pp-lp-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pp-lp-steps > div { padding: 34px 22px 38px; border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-steps > div:last-child { border-inline-end: 0; }
+.pp-lp-steps svg { width: 100%; height: 122px; margin: 16px 0 20px; }
+.pp-lp-steps h3 { margin: 0 0 9px; font-family: var(--pp-font); font-size: 17px; font-weight: 500; letter-spacing: -0.012em; }
+.pp-lp-steps p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--lp-ink-2); font-weight: 300; }
+.pp-lp-steps .n { font-family: var(--lp-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--pp-brand-ink); }
+/* The roadmap strip reuses the step rhythm but carries four items, not five,
+   and its cells bottom-align: titles run to different lengths, and a row of
+   impact figures that does not line up is the whole point of the strip lost. */
+.pp-lp-steps--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pp-lp-steps--4 > div { display: flex; flex-direction: column; }
+.pp-lp-steps--4 .impact { margin-top: auto; padding-top: 18px; }
+
+/* ----------------------------------------------------------------- ledger */
+/* Label, leader, figure. The leader is what makes a column of money read as a
+   printed account rather than a web layout. */
+/* No column gap: the two cells carry one border each, so any gap between them
+   would cut the rule in half and the row would stop reading as a ruled line.
+   The breathing room is padding on the label instead. */
+.pp-lp-ledger { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 0; }
+.pp-lp-ledger > * { padding: 13px 0; border-bottom: 1px solid var(--lp-rule-2); }
+.pp-lp-ledger .k { font-size: 14px; color: var(--lp-ink); font-weight: 300; padding-inline-end: 18px; }
+.pp-lp-ledger .v { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; font-size: 15px; text-align: end; }
+.pp-lp-ledger .v small { color: var(--lp-muted); font-size: 12px; }
+.pp-lp-ledger .total {
+  padding: 18px 18px 6px 0; border-bottom: 4px double var(--lp-ink);
+  font-family: var(--lp-mono); letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px;
+}
+.pp-lp-ledger .total.v { font-size: 22px; letter-spacing: 0; text-transform: none; }
+.pp-lp-bar { display: flex; height: 7px; overflow: hidden; }
+
+/* -------------------------------------------------------------- the split */
+.pp-lp-split { display: grid; grid-template-columns: 1fr 1.15fr; align-items: stretch; }
+.pp-lp-split > :first-child { padding: 40px 56px 44px 0; border-inline-end: 1px solid var(--lp-rule); }
+.pp-lp-split > :last-child { padding: 40px 0 44px 56px; }
+.pp-lp-figure { font-family: var(--lp-serif); font-size: clamp(64px, 7.5vw, 108px); line-height: 0.92; letter-spacing: -0.03em; margin-top: 16px; }
+.pp-lp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--lp-rule); }
+.pp-lp-stats > div { padding: 20px 18px; border-bottom: 1px solid var(--lp-rule); border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-stats > div:nth-child(3n) { border-inline-end: 0; padding-inline-end: 0; }
+.pp-lp-stats > div:nth-child(3n + 1) { padding-inline-start: 0; }
+.pp-lp-stats .v { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; font-size: 21px; margin-top: 9px; }
+.pp-lp-stats .v.pos { color: var(--pp-pos); }
+
+/* ------------------------------------------------------------ dark compare */
+.pp-lp-plate { background: var(--lp-plate); color: var(--lp-on-plate); margin-top: 86px; }
+.pp-lp-plate .pp-lp__inner { padding-block: 74px 78px; }
+.pp-lp-plate h2 { color: var(--lp-on-plate); }
+.pp-lp-plate .pp-lp-eyebrow, .pp-lp-plate .pp-lp-cap { color: var(--lp-on-plate-2); }
+.pp-lp-plate .pp-lp-body { color: #b6bccb; }
+/* The comparison component is shared with the results and roadmap screens,
+   where it sits on white. On the plate its muted ink and pale bar track would
+   vanish, so the surface restates them rather than the component branching. */
+.pp-lp-plate .pp-compare__side .k,
+.pp-lp-plate .pp-compare__arrow,
+.pp-lp-plate .pp-compare__key { color: var(--lp-on-plate-2); }
+.pp-lp-plate .pp-compare .pp-kpi { color: var(--lp-on-plate); }
+.pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--lp-pos-plate); }
+.pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: 0; height: 9px; }
+.pp-lp-plate .pp-compare__bar .lift { background: var(--lp-pos-plate); opacity: 1; }
+.pp-lp-plate .pp-compare__lift {
+  background: rgba(111, 220, 160, 0.14); color: var(--lp-pos-plate); border-radius: 0;
+}
+.pp-lp-plate .pp-compare__key i { border-radius: 0; }
+
+/* ------------------------------------------------------------ the range */
+.pp-lp-range { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--lp-rule); }
+.pp-lp-range > div { padding: 32px 18px 26px; border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-range > div:nth-child(6n) { border-inline-end: 0; }
+.pp-lp-range svg { width: 46px; height: 46px; }
+.pp-lp-range .name { margin-top: 16px; font-size: 14px; font-weight: 500; }
+
+/* ---------------------------------------------------------------- pricing */
+.pp-lp-plans { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; align-items: center; }
+.pp-lp-plans > * { padding: 15px 0; border-bottom: 1px solid var(--lp-rule-2); }
+.pp-lp-plans .head { padding: 26px 0 20px; border-bottom: 1px solid var(--lp-rule); align-self: baseline; }
+.pp-lp-plans .feat { font-size: 14px; color: var(--lp-ink); font-weight: 300; }
+.pp-lp-plans .foot { padding: 30px 0 0; border-bottom: 0; }
+.pp-lp-tick { stroke: var(--pp-brand-ink); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pp-lp-plans .none { color: #c3bdae; font-size: 15px; }
+
+/* ---------------------------------------------------------------- closing */
+.pp-lp-close { margin-top: 92px; border-top: 1.5px solid var(--lp-ink); }
+.pp-lp-close .pp-lp__inner { padding-block: 86px 90px; display: flex; justify-content: space-between; align-items: flex-end; gap: 60px; }
+.pp-lp-close h2 { font-size: clamp(38px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.026em; max-width: 640px; }
+
+@media (prefers-reduced-motion: reduce) { .pp-lp-hero__plate { animation: none; } }
+
+@media (max-width: 991.98px) {
+  .pp-lp-steps, .pp-lp-steps--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pp-lp-steps > div:nth-child(2n) { border-inline-end: 0; }
+  .pp-lp-range { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pp-lp-range > div:nth-child(3n) { border-inline-end: 0; }
+  .pp-lp-split { grid-template-columns: 1fr; }
+  .pp-lp-split > :first-child { padding: 40px 0 36px; border-inline-end: 0; border-bottom: 1px solid var(--lp-rule); }
+  .pp-lp-split > :last-child { padding: 36px 0 44px; }
+}
+
+@media (max-width: 767.98px) {
+  /* Five columns become five rows; the drawing moves beside the words so a step
+     stays one glance rather than a scroll. */
+  .pp-lp-steps, .pp-lp-steps--4 { grid-template-columns: 1fr; }
+  .pp-lp-steps > div {
+    display: grid; grid-template-columns: 76px 1fr; gap: 18px; align-items: start;
+    padding: 24px 0; border-inline-end: 0; border-bottom: 1px solid var(--lp-rule-2);
+  }
+  .pp-lp-steps > div:last-child { border-bottom: 0; }
+  .pp-lp-steps svg { height: 66px; margin: 0; grid-row: span 3; }
+  .pp-lp-steps .n { grid-column: 2; }
+  .pp-lp-steps h3, .pp-lp-steps p { grid-column: 2; }
+  .pp-lp-range { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pp-lp-range > div:nth-child(3n) { border-inline-end: 1px solid var(--lp-rule-2); }
+  .pp-lp-range > div:nth-child(2n) { border-inline-end: 0; }
+  .pp-lp-section { padding-top: 48px; }
+  .pp-lp-head { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .pp-lp-hero { min-height: 560px; }
+  .pp-lp-hero__copy { padding-block: 44px; }
+  /* Copy runs the full width here, so a left-to-right ramp would leave the last
+     words of a line sitting on bare footage. */
+  .pp-lp-hero__scrim {
+    background: linear-gradient(180deg, rgba(11, 12, 16, 0.9) 0%, rgba(11, 12, 16, 0.62) 40%, rgba(11, 12, 16, 0.88) 100%);
+  }
+  .pp-lp-hero__foot { display: none; }
+  .pp-lp-hero__ticker .pp-lp__inner { gap: 6px 18px; font-size: 10px; }
+  .btn-lp { width: 100%; justify-content: center; min-height: 52px; }
+  .pp-lp-plate { margin-top: 48px; }
+  .pp-lp-plate .pp-lp__inner { padding-block: 40px 44px; }
+  .pp-lp-close { margin-top: 48px; }
+  .pp-lp-close .pp-lp__inner { padding-block: 40px 44px; flex-direction: column; align-items: stretch; gap: 24px; }
+  /* Four columns of plan will not fit; each plan becomes a block. */
+  .pp-lp-plans { grid-template-columns: 1fr; }
+  .pp-lp-plans .feat, .pp-lp-plans .cell { display: none; }
+}
+
 body { color-scheme: light; }
 </style>
 <div id="app"></div>
@@ -766,6 +1083,113 @@ const SCENARIO_ICONS = {
   low: 'triangle-alert',
   recommended: 'badge-check',
   premium: 'chevrons-up',
+};
+</script>
+<script>/**
+ * Landing-page illustrations — drawn for this product, not licensed or generated.
+ *
+ * Each value is the inner markup of a viewBox="0 0 160 140" drawing built from
+ * three stroke weights only (`ink`, `ink-thin`, `hatch`, defined in styles.css),
+ * plus one accent-coloured mark per drawing. That restraint is what makes five
+ * separate drawings read as one hand.
+ *
+ * `preview/build.mjs` reads this file and strips the `export ` keyword to reuse
+ * it verbatim, so keep every declaration here valid plain JavaScript: no type
+ * annotations, no imports.
+ *
+ * The category marks use a 0 0 48 48 box and half the detail: they sit at 46px,
+ * where a third line would turn to mud.
+ */
+
+/** Step drawings, 160x140. */
+const ILLUSTRATIONS = {
+  /** 01 — a phone rising out of an open carton, with what else you might sell. */
+  product: `
+    <g class="ink-thin">
+      <rect x="14" y="28" width="26" height="26" rx="5"></rect>
+      <path d="M22 42c0-3 2-5 5-5s5 2 5 5"></path><path d="M22 42v4h10v-4"></path>
+    </g>
+    <g class="ink-thin">
+      <rect x="122" y="20" width="26" height="26" rx="5"></rect>
+      <path d="M129 36v-4a6 6 0 0 1 12 0v4"></path>
+      <rect x="127" y="35" width="5" height="7" rx="2"></rect><rect x="138" y="35" width="5" height="7" rx="2"></rect>
+    </g>
+    <g class="ink"><rect x="63" y="18" width="34" height="66" rx="6"></rect><rect x="69" y="25" width="22" height="50" rx="2" class="ink-thin"></rect><path d="M74 22h12" class="ink-thin"></path></g>
+    <g class="ink-thin"><circle cx="76" cy="33" r="3.2"></circle><circle cx="85" cy="33" r="3.2"></circle><circle cx="80.5" cy="41" r="3.2"></circle></g>
+    <g class="hatch"><path d="M52 34l-7-5"></path><path d="M50 46l-9-2"></path><path d="M108 30l7-5"></path><path d="M110 42l9-2"></path></g>
+    <g class="ink">
+      <path d="M36 88h88v34a4 4 0 0 1-4 4H40a4 4 0 0 1-4-4z"></path>
+      <rect x="30" y="76" width="100" height="14" rx="3" class="ink-fill-paper"></rect>
+      <path d="M80 90v36" stroke-dasharray="3 4" class="ink-thin"></path>
+    </g>
+    <g class="hatch"><path d="M46 106h18"></path><path d="M46 113h11"></path></g>
+    <path d="M104 104l6-6 4 4 8-9" class="ink-accent"></path>`,
+
+  /** 02 — a receipt with a torn foot and the double rule that means "total". */
+  costs: `
+    <g class="ink"><path d="M42 20h76v98l-6-5-6 5-6-5-6 5-6-5-6 5-6-5-6 5-6-5-6 5-6-5-6 5-4-3z"></path></g>
+    <g class="ink"><rect x="66" y="12" width="28" height="12" rx="2" class="ink-fill-paper"></rect><path d="M74 12v-4h12v4" class="ink-thin"></path></g>
+    <g class="hatch"><path d="M52 42h26"></path><path d="M52 58h32"></path><path d="M52 74h22"></path><path d="M52 90h30"></path></g>
+    <g class="ink-thin" stroke-dasharray="1 3" opacity="0.55"><path d="M84 42h10"></path><path d="M90 58h4"></path><path d="M80 74h14"></path><path d="M88 90h6"></path></g>
+    <g class="ink" stroke-width="2.4"><path d="M98 42h12"></path><path d="M100 58h10"></path><path d="M96 74h14"></path><path d="M102 90h8"></path></g>
+    <path d="M52 100h58" class="ink"></path><path d="M52 104h58" class="ink-thin"></path>
+    <path d="M84 112h26" class="ink-accent" stroke-width="3"></path>`,
+
+  /** 03 — a swing tag carrying the price, with the margin on a ribbon. */
+  price: `
+    <path d="M52 34c-10-8-20-6-24 2s2 16 10 15" class="ink-thin"></path>
+    <g class="ink"><path d="M62 24h56a6 6 0 0 1 6 6v56a6 6 0 0 1-6 6H62L40 62z"></path><circle cx="58" cy="62" r="6"></circle></g>
+    <g class="ink" stroke-width="3"><path d="M74 54h34"></path></g>
+    <g class="hatch"><path d="M74 68h26"></path><path d="M74 76h16"></path></g>
+    <rect x="70" y="100" width="54" height="18" rx="9" class="ink-fill-pos"></rect>
+    <path d="M80 111l5-6 4 4 6-7" class="ink-pos"></path>
+    <path d="M100 109h14" class="ink-pos" stroke-width="2.4"></path>
+    <path d="M74 42h20" class="ink-accent" stroke-width="2.6"></path>`,
+
+  /** 04 — rising bars with the roadmap plotted across them, survey-style. */
+  roadmap: `
+    <g class="ink-thin" opacity="0.22"><path d="M24 36h116"></path><path d="M24 62h116"></path><path d="M24 88h116"></path></g>
+    <g class="ink"><rect x="30" y="88" width="18" height="26"></rect><rect x="56" y="74" width="18" height="40"></rect><rect x="82" y="58" width="18" height="56"></rect><rect x="108" y="38" width="18" height="76"></rect></g>
+    <g class="hatch"><path d="M110 44h14"></path><path d="M110 52h14"></path><path d="M110 60h14"></path><path d="M110 68h14"></path><path d="M110 76h14"></path><path d="M110 84h14"></path></g>
+    <path d="M22 114h124" class="ink"></path>
+    <g class="ink-thin"><path d="M39 114v5"></path><path d="M65 114v5"></path><path d="M91 114v5"></path><path d="M117 114v5"></path></g>
+    <path d="M39 96l26-18 26-16 26-20" class="ink-accent"></path>
+    <g class="ink-accent ink-fill-paper" stroke-width="1.8"><circle cx="39" cy="96" r="3.4"></circle><circle cx="65" cy="78" r="3.4"></circle><circle cx="91" cy="62" r="3.4"></circle><circle cx="117" cy="42" r="3.4"></circle></g>
+    <path d="M126 34l10-6-2 8" class="ink-accent"></path>`,
+
+  /** 05 — a seedling out of a coin stack; each coin occludes the one below. */
+  compound: `
+    <path d="M80 88V44" class="ink"></path>
+    <g class="ink"><path d="M80 62c-4-14-16-20-26-18 0 12 10 22 26 18z"></path><path d="M80 52c4-14 16-19 26-17-1 12-11 21-26 17z"></path></g>
+    <g class="hatch"><path d="M70 55l-8-5"></path><path d="M74 60l-10-4"></path><path d="M88 47l9-5"></path><path d="M91 52l10-4"></path></g>
+    <g class="ink">
+      <ellipse cx="80" cy="118" rx="34" ry="9"></ellipse><path d="M46 118v-8"></path><path d="M114 118v-8"></path>
+      <ellipse cx="80" cy="110" rx="34" ry="9" class="ink-fill-paper"></ellipse><path d="M46 110v-8"></path><path d="M114 110v-8"></path>
+      <ellipse cx="80" cy="102" rx="34" ry="9" class="ink-fill-paper"></ellipse><path d="M46 102v-8"></path><path d="M114 102v-8"></path>
+      <ellipse cx="80" cy="94" rx="34" ry="9" class="ink-fill-paper"></ellipse>
+    </g>
+    <ellipse cx="80" cy="94" rx="22" ry="5.4" class="ink-thin"></ellipse>
+    <path d="M118 74l10-8-1 9" class="ink-pos"></path>
+    <path d="M100 86c10-2 18-8 24-16" class="ink-pos"></path>`,
+};
+
+/** The five landing steps, in order, to the drawing that carries each. */
+const STEP_ILLUSTRATIONS = ['product', 'costs', 'price', 'roadmap', 'compound'];
+
+/**
+ * Category marks, 48x48 — one per business type the engine supports. Types that
+ * sell the same silhouette share a mark rather than forcing a weak distinction.
+ */
+const CATEGORY_ART = {
+  resell: `<g class="ink"><rect x="15" y="7" width="18" height="34" rx="4"></rect></g><g class="ink-thin"><path d="M21 10h6"></path><circle cx="20" cy="16" r="2"></circle><circle cx="26" cy="16" r="2"></circle></g>`,
+  import: `<g class="ink"><path d="M9 22h30l-4 15H13z"></path><path d="M17 22v-8h14v8"></path></g><path d="M17 29h14" class="ink-thin"></path>`,
+  manufacture: `<g class="ink"><path d="M9 38V20l9 6v-6l9 6v-6l9 6v12z"></path></g><g class="ink-thin"><path d="M16 32v3"></path><path d="M24 32v3"></path><path d="M32 32v3"></path></g>`,
+  handmade: `<g class="ink"><path d="M17 21h14v14a4 4 0 0 1-4 4h-6a4 4 0 0 1-4-4z"></path><path d="M24 18c3-2 3-5 0-8-3 3-3 6 0 8z"></path></g><path d="M17 27h14" class="ink-thin"></path>`,
+  food: `<g class="ink"><path d="M16 17h16v18a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4z"></path><rect x="17" y="9" width="14" height="7" rx="2"></rect></g><path d="M16 24h16" class="ink-thin"></path><path d="M16 30h16" class="ink-thin"></path>`,
+  service: `<g class="ink"><rect x="9" y="16" width="30" height="21" rx="3"></rect><path d="M18 16v-3a6 6 0 0 1 12 0v3"></path></g><path d="M9 26h30" class="ink-thin"></path>`,
+  freelance: `<g class="ink"><rect x="12" y="12" width="24" height="17" rx="2"></rect><path d="M8 33h32l-3 4H11z"></path></g><path d="M17 24l4-5 3 3 3-4" class="ink-thin"></path>`,
+  digital: `<g class="ink"><path d="M13 9h16l6 6v24a2 2 0 0 1-2 2H13a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2z"></path><path d="M29 9v6h6"></path></g><g class="ink-thin"><path d="M16 26h16"></path><path d="M16 32h10"></path></g>`,
+  saas: `<g class="ink"><path d="M15 33a7 7 0 0 1-1-14 10 10 0 0 1 19 2 6 6 0 0 1 0 12z"></path></g><path d="M24 25v9" class="ink-thin"></path><path d="M20 30l4 4 4-4" class="ink-thin"></path>`,
 };
 </script>
 <script>var ProfitPathEngine = (function () {
@@ -2614,8 +3038,11 @@ exports.AR = {
     'landing.chip': 'ذكاء تسعيري + خارطة طريق للربح',
     'landing.cta.example': 'شاهد مثالًا',
     'landing.cta.primary': 'احسب سعري',
+    'landing.example.costs': 'كم تكلفك الوحدة الواحدة فعليًا',
     'landing.example.eyebrow': 'مثال محلول',
     'landing.example.goals': '{count|plain} {units|t} شهريًا · ربح مستهدف {target|money0}',
+    'landing.example.lead': 'تكلفة الشراء هي {share|pct0} من كل شيء — ولهذا بالضبط تبدأ خارطة الطريق بعرض سعر من مورّد، لا برفع السعر.',
+    'landing.example.note': 'كل رقم في هذه الصفحة هو ناتج الحاسبة نفسها لهذا المثال — وليس رقمًا كتبه مصمم.',
     'landing.example.trueCost': 'التكلفة الحقيقية لكل {unit|t}',
     'landing.final.sub': 'لا حاجة للتسجيل في تحليلك الأول.',
     'landing.final.title': 'جاهز لتعرف كم تطلب؟',
@@ -2627,6 +3054,8 @@ exports.AR = {
     'landing.how.3.title': 'احصل على سعرك',
     'landing.how.4.body': 'طرق مرتّبة بالأولوية ومُقدَّرة بالأرقام لزيادة ربحك عند ذلك السعر: توريد أرخص، تكلفة جذب أقل، بيع إضافي، قنوات أفضل.',
     'landing.how.4.title': 'اتبع خارطة طريقك',
+    'landing.how.5.body': 'علّم على كل بند حال تنفيذه، وسترى الفجوة بين ربح اليوم والخطة تضيق مع الوقت.',
+    'landing.how.5.title': 'راقب الأرباح تتراكم',
     'landing.how.sub': 'حوار، لا جدول بيانات. خمس دقائق من الفكرة إلى السعر.',
     'landing.how.title': 'كيف يعمل',
     'landing.lead': 'أخبرنا بما تبيعه، وبما يكلّفك، وبما تريد أن تكسبه. سنحسب سعرك المثالي ونوضح لك كيف تحسّن ربحك.',
@@ -2650,6 +3079,9 @@ exports.AR = {
     'landing.pricing.popular': 'الأكثر اختيارًا',
     'landing.pricing.sub': 'ابدأ مجانًا. وارتقِ حين تسدّد خارطة الطريق تكلفتها بنفسها.',
     'landing.pricing.title': 'تسعير بسيط',
+    'landing.range.band': '{low|pct0}–{high|pct0} صافٍ',
+    'landing.range.sub': 'تسعة أنواع من الأنشطة، لكل نوع أسئلته ونطاق هامشه المعتاد — من إعادة بيع الهواتف إلى اشتراك شهري.',
+    'landing.range.title': 'يصلح لأي شيء تبيعه',
     'landing.title.accent': 'أن تطلب؟',
     'landing.title.before': 'كم ينبغي',
     'lang.change': 'تغيير اللغة',
@@ -3362,8 +3794,11 @@ exports.EN = {
     'landing.chip': 'Pricing intelligence + profit roadmap',
     'landing.cta.example': 'See an Example',
     'landing.cta.primary': 'Calculate My Price',
+    'landing.example.costs': 'What one unit really costs you',
     'landing.example.eyebrow': 'Worked example',
     'landing.example.goals': '{count|plain} {units|t} a month · target profit {target|money0}',
+    'landing.example.lead': 'Purchase cost is {share|pct0} of everything — which is exactly why the roadmap’s first move is a supplier quote, not a price rise.',
+    'landing.example.note': 'Every figure on this page is the calculator’s own output for this example — not a number written in by a designer.',
     'landing.example.trueCost': 'True cost per {unit|t}',
     'landing.final.sub': 'No sign-up needed for your first analysis.',
     'landing.final.title': 'Ready to find out what to charge?',
@@ -3375,6 +3810,8 @@ exports.EN = {
     'landing.how.3.title': 'Get your price',
     'landing.how.4.body': 'Prioritised, quantified ways to make more profit at that price: cheaper sourcing, lower acquisition cost, upsells, better channels.',
     'landing.how.4.title': 'Follow your roadmap',
+    'landing.how.5.body': 'Tick items off as you do them. The gap between today’s profit and the plan closes as you go.',
+    'landing.how.5.title': 'Watch it compound',
     'landing.how.sub': 'A conversation, not a spreadsheet. Five minutes from idea to price.',
     'landing.how.title': 'How it works',
     'landing.lead': 'Tell us what you\'re selling, what it costs you, and what you want to earn. We\'ll calculate your ideal price and show you how to improve your profit.',
@@ -3398,6 +3835,9 @@ exports.EN = {
     'landing.pricing.popular': 'Most popular',
     'landing.pricing.sub': 'Start free. Upgrade when the roadmap pays for itself.',
     'landing.pricing.title': 'Simple pricing',
+    'landing.range.band': '{low|pct0}–{high|pct0} net',
+    'landing.range.sub': 'Nine business types, each with its own questions and its own typical margin band — from reselling phones to a monthly subscription.',
+    'landing.range.title': 'Works for anything you sell',
     'landing.title.accent': 'you charge?',
     'landing.title.before': 'How much should',
     'lang.change': 'Change language',
@@ -4099,8 +4539,11 @@ exports.ES = {
     'landing.chip': 'Inteligencia de precios + hoja de ruta de beneficio',
     'landing.cta.example': 'Ver un ejemplo',
     'landing.cta.primary': 'Calcular mi precio',
+    'landing.example.costs': 'Lo que te cuesta de verdad una unidad',
     'landing.example.eyebrow': 'Ejemplo resuelto',
     'landing.example.goals': '{count|plain} {units|t} al mes · beneficio objetivo {target|money0}',
+    'landing.example.lead': 'El coste de compra es el {share|pct0} de todo, y por eso justamente la hoja de ruta empieza por pedir presupuesto a un proveedor, no por subir el precio.',
+    'landing.example.note': 'Cada cifra de esta página es la salida de la propia calculadora para este ejemplo, no un número escrito por un diseñador.',
     'landing.example.trueCost': 'Coste real por {unit|t}',
     'landing.final.sub': 'No hace falta registrarse para tu primer análisis.',
     'landing.final.title': '¿Listo para descubrir cuánto cobrar?',
@@ -4112,6 +4555,8 @@ exports.ES = {
     'landing.how.3.title': 'Obtén tu precio',
     'landing.how.4.body': 'Formas priorizadas y cuantificadas de ganar más a ese precio: abastecimiento más barato, menor coste de captación, ventas adicionales, mejores canales.',
     'landing.how.4.title': 'Sigue tu hoja de ruta',
+    'landing.how.5.body': 'Marca cada acción cuando la hagas. La diferencia entre el beneficio de hoy y el del plan se cierra sobre la marcha.',
+    'landing.how.5.title': 'Mira cómo se acumula',
     'landing.how.sub': 'Una conversación, no una hoja de cálculo. Cinco minutos de la idea al precio.',
     'landing.how.title': 'Cómo funciona',
     'landing.lead': 'Cuéntanos qué vendes, lo que te cuesta y lo que quieres ganar. Calcularemos tu precio ideal y te mostraremos cómo mejorar tu beneficio.',
@@ -4135,6 +4580,9 @@ exports.ES = {
     'landing.pricing.popular': 'El más popular',
     'landing.pricing.sub': 'Empieza gratis. Mejora tu plan cuando la hoja de ruta se pague sola.',
     'landing.pricing.title': 'Precios sencillos',
+    'landing.range.band': '{low|pct0}–{high|pct0} neto',
+    'landing.range.sub': 'Nueve tipos de negocio, cada uno con sus propias preguntas y su rango de margen habitual: desde revender móviles hasta una suscripción mensual.',
+    'landing.range.title': 'Sirve para cualquier cosa que vendas',
     'landing.title.accent': 'deberías cobrar?',
     'landing.title.before': '¿Cuánto',
     'lang.change': 'Cambiar idioma',
@@ -4836,8 +5284,11 @@ exports.FR = {
     'landing.chip': 'Intelligence tarifaire + feuille de route du profit',
     'landing.cta.example': 'Voir un exemple',
     'landing.cta.primary': 'Calculer mon prix',
+    'landing.example.costs': 'Ce qu’une unité vous coûte vraiment',
     'landing.example.eyebrow': 'Exemple chiffré',
     'landing.example.goals': '{count|plain} {units|t} par mois · profit visé {target|money0}',
+    'landing.example.lead': 'Le coût d’achat représente {share|pct0} du total — c’est exactement pourquoi la feuille de route commence par un devis fournisseur, et non par une hausse de prix.',
+    'landing.example.note': 'Chaque chiffre de cette page est la sortie du calculateur pour cet exemple — pas un nombre écrit par un designer.',
     'landing.example.trueCost': 'Coût réel par {unit|t}',
     'landing.final.sub': 'Aucune inscription nécessaire pour votre première analyse.',
     'landing.final.title': 'Prêt à savoir quel prix demander ?',
@@ -4849,6 +5300,8 @@ exports.FR = {
     'landing.how.3.title': 'Obtenez votre prix',
     'landing.how.4.body': 'Des moyens hiérarchisés et chiffrés d\'augmenter votre profit à ce prix : approvisionnement moins cher, acquisition moins coûteuse, ventes additionnelles, meilleurs canaux.',
     'landing.how.4.title': 'Suivez votre feuille de route',
+    'landing.how.5.body': 'Cochez chaque action une fois faite. L’écart entre le bénéfice d’aujourd’hui et celui du plan se resserre à mesure.',
+    'landing.how.5.title': 'Regardez les gains s’accumuler',
     'landing.how.sub': 'Une conversation, pas un tableur. Cinq minutes de l\'idée au prix.',
     'landing.how.title': 'Comment ça marche',
     'landing.lead': 'Dites-nous ce que vous vendez, ce que cela vous coûte et ce que vous voulez gagner. Nous calculerons votre prix idéal et vous montrerons comment améliorer votre profit.',
@@ -4872,6 +5325,9 @@ exports.FR = {
     'landing.pricing.popular': 'Le plus choisi',
     'landing.pricing.sub': 'Commencez gratuitement. Passez au niveau supérieur quand la feuille de route se rembourse d\'elle-même.',
     'landing.pricing.title': 'Tarifs simples',
+    'landing.range.band': '{low|pct0}–{high|pct0} net',
+    'landing.range.sub': 'Neuf types d’activité, chacun avec ses propres questions et sa fourchette de marge habituelle — de la revente de téléphones à un abonnement mensuel.',
+    'landing.range.title': 'Fonctionne pour tout ce que vous vendez',
     'landing.title.accent': 'devez-vous demander ?',
     'landing.title.before': 'Quel prix',
     'lang.change': 'Changer de langue',
@@ -5520,6 +5976,9 @@ exports.FR = {
     else if (r === 'results') page = pricing() ? renderResults() : (go('analyze'), '');
     else if (r === 'roadmap') page = pricing() ? renderRoadmap() : (go('analyze'), '');
     else page = renderLanding();
+    /* The landing is the one screen on paper; the flag goes on <html> so the
+       fixed page background changes with it. Mirrors AppComponent. */
+    document.documentElement.classList.toggle('pp-shell--paper', r === '');
     root.innerHTML = renderShell(page);
     bind();
     persist();
@@ -5537,6 +5996,8 @@ exports.FR = {
      Mirrors app/src/app/shared/format.ts — keep the two in step. A locale that
      puts the currency after the number simply has no mark to demote. */
   const splitMoney = (s) => { const m = /^([^\d-]*)(.*)$/.exec(s); return m ? [m[1].trim(), m[2]] : ['', s]; };
+  /* The landing figure sets its currency mark small and muted beside the digits. */
+  const heroMark = (v, cur) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<span style="font-size:0.42em;color:var(--lp-muted);vertical-align:top">${esc(c)}</span>${esc(d)}`; };
   const heroFigure = (v, cur, cls) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<div class="pp-kpi ${cls}"><span class="cur">${esc(c)}</span>${esc(d)}</div>`; };
 
   /* Current vs optimised — mirrors ProfitCompareComponent. Both figures come
@@ -5590,6 +6051,29 @@ exports.FR = {
       <footer class="pp-footer"><div class="pp-container d-flex flex-wrap justify-content-between gap-3"><div>${t('footer.legal', { year: new Date().getFullYear() })}</div><div>${t('footer.deterministic')}</div></div></footer>`;
   }
 
+  /* Drawings come from app/src/app/shared/illustrations.ts, injected by
+     build.mjs, so the app and this preview cannot drift. */
+  const illo = (n) => `<svg viewBox="0 0 160 140" aria-hidden="true" focusable="false">${ILLUSTRATIONS[n] || ''}</svg>`;
+  const catArt = (t) => `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">${CATEGORY_ART[t] || ''}</svg>`;
+  const stepNo = (i) => String(i + 1).padStart(2, '0');
+  const seriesColor = (i) => `var(--pp-series-${(i % 9) + 1})`;
+  const lpTick = (label) => `<svg class="pp-lp-tick" width="15" height="15" viewBox="0 0 24 24" role="img" aria-label="${esc(label)}"><path d="M4 12.5l5 5L20 6.5"></path></svg>`;
+  const lpNone = '<span class="none" aria-hidden="true">—</span>';
+
+  /* Which plans carry which capability — one list, so the table and the stacked
+     mobile blocks can never disagree. Mirrors FEATURES in landing.component.ts. */
+  const LP_FEATURES = [
+    ['landing.plan.free.1', 1, 1, 1],
+    ['landing.plan.free.2', 1, 1, 1],
+    ['landing.plan.free.3', 1, 1, 1],
+    ['landing.plan.pro.2', 0, 1, 1],
+    ['landing.plan.pro.3', 0, 1, 1],
+    ['landing.plan.pro.5', 0, 1, 1],
+    ['landing.plan.business.2', 0, 0, 1],
+    ['landing.plan.business.3', 0, 0, 1],
+  ];
+  const LP_PLANS = [['free', '$0', false], ['pro', '$9', true], ['business', '$19', true]];
+
   // ---------- landing ----------
   function renderLanding() {
     /* Every figure below is the sample run through the real engine — nothing on
@@ -5600,56 +6084,145 @@ exports.FR = {
     const r = E.buildRoadmap(m, p);
     const cur = p.currency;
     const u = unitParams(m.meta.businessType);
-    const chips = E.BUSINESS_TYPE_LIST.map((x) => `<span class="pp-chip">${icon(typeIcon(x.type), 13)} ${t('businessType.' + x.type + '.shortLabel')}</span>`).join('');
-    const top3 = r.recommendations.slice(0, 3);
-    const topMax = Math.max(1, ...top3.map((x) => x.estimatedMonthlyImpact));
-    const recs = top3.map((x) => `<div class="item"><span>${esc(msg(x.i18n && x.i18n.title, x.title))}</span><span class="pp-num">+${t('roadmap.perMonth', { amount: x.estimatedMonthlyImpact, cur })}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / topMax) * 100}%"></span></div></div>`).join('');
-    const ledger = p.costBreakdown.map((l) => `<span class="pp-muted">${esc(t(['costLine.' + l.key], {}) || l.label)}</span><span class="pp-num">${money(l.amount, cur)}</span>`).join('');
-    const how = ['square-pen', 'list-checks', 'calculator', 'map'];
-    const plans = [
-      ['free', '$0', '', false, 4],
-      ['pro', '$9', t('landing.pricing.perMonth'), true, 5],
-      ['business', '$19', t('landing.pricing.perMonth'), false, 4],
-    ];
-    return `
-    <section class="pp-hero pp-container pp-fade">
-      <span class="pp-chip mb-4">${icon('sparkles', 13)} ${t('landing.chip')}</span>
-      <h1>${t('landing.title.before')} <span class="pp-gradient-text">${t('landing.title.accent')}</span></h1>
-      <p class="lead">${t('landing.lead')}</p>
-      <div class="d-flex flex-wrap justify-content-center gap-2"><a href="#/analyze" class="btn btn-pp btn-pp-hero btn-pp-lg">${t('landing.cta.primary')} ${icon('arrow-right', 17, 'pp-icon-flip')}</a><button type="button" class="btn btn-pp-glass btn-pp-lg" data-action="example">${t('landing.cta.example')}</button></div>
-      <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">${chips}</div>
-    </section>
-    <section class="pp-section pp-container"><div class="row g-4 align-items-start">
-      <div class="col-lg-5"><div class="pp-card">
-        <div class="d-flex align-items-center gap-2 mb-1">${icon('receipt', 15)}<span class="pp-eyebrow">${t('landing.example.eyebrow')}</span></div>
-        <h3 class="mb-3" style="font-weight:400">${esc(s.offering)}</h3>
-        <div class="pp-ledger">${ledger}<span class="total">${t('landing.example.trueCost', u)}</span><span class="total pp-num">${money(p.trueCostPerUnit, cur)}</span></div>
-        <div class="pp-subhead mt-3">${t('landing.example.goals', { cur, count: m.goals.expectedUnits, units: u.units, target: m.goals.targetMonthlyProfit })}</div>
-      </div></div>
-      <div class="col-lg-7"><div class="pp-card pp-card--primary">
-        <div class="d-flex justify-content-between align-items-start gap-3 mb-3"><span class="pp-eyebrow">${t('landing.calc.eyebrow')}</span><button type="button" class="btn btn-pp btn-sm" data-action="example">${t('landing.calc.open')} ${icon('arrow-right', 13, 'pp-icon-flip')}</button></div>
-        ${heroFigure(p.recommended.price, cur, 'pp-kpi--xl')}
-        <div class="pp-subhead mb-3">${t('landing.calc.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
-        <div class="pp-stat-strip">
-          <div class="pp-stat"><div class="k">${icon('wallet', 12)} ${t('results.trueCost')}</div><div class="v pp-num">${money(p.trueCostPerUnit, cur, 0)}</div></div>
-          <div class="pp-stat"><div class="k">${icon('coins', 12)} ${t('results.whatif.profitPerUnit', u)}</div><div class="v pp-num">${money(p.recommended.profitPerUnit, cur, 0)}</div></div>
-          <div class="pp-stat"><div class="k">${icon('scale', 12)} ${t('results.margin')}</div><div class="v pp-num">${pct(p.recommended.marginPct)}</div></div>
-        </div>
-        <div class="d-flex align-items-center gap-2" style="margin:22px 0 12px">${icon('trending-up', 14)}<span class="pp-eyebrow">${t('landing.calc.lift')}</span></div>
-        <div class="pp-waterfall">${recs}</div>
-        <div class="mt-4">${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, true)}</div>
-      </div></div>
-    </div></section>
-    <section class="pp-section pp-container"><div class="text-center mb-4"><h2>${t('landing.how.title')}</h2><p class="pp-muted">${t('landing.how.sub')}</p></div>
-      <div class="pp-flow">${how.map((ic, i) => `<div class="pp-card"><div class="d-flex align-items-center gap-2"><span class="pp-step-num">${i + 1}</span>${iconBadge(ic, 'pp-icon-badge--sm pp-icon-badge--plain', 14)}</div><h5>${t('landing.how.' + (i + 1) + '.title')}</h5><p class="pp-muted mb-0">${t('landing.how.' + (i + 1) + '.body')}</p></div>`).join('')}</div></section>
-    <section class="pp-section pp-container"><div class="text-center mb-4"><h2>${t('landing.pricing.title')}</h2><p class="pp-muted">${t('landing.pricing.sub')}</p></div>
-      <div class="row g-3 justify-content-center">${plans.map(([key, price, per, hot, lines]) => `<div class="col-md-4"><div class="pp-card h-100 ${hot ? 'pp-card--dark' : ''}">
-        <div class="d-flex justify-content-between align-items-center gap-2"><span class="pp-subhead">${t('landing.plan.' + key + '.name')}</span>${hot ? `<span class="pp-badge recommended">${icon('sparkles', 11)} ${t('landing.pricing.popular')}</span>` : ''}</div>
-        <div class="pp-kpi pp-kpi--lg my-2 pp-num">${price}<span class="pp-subhead">${per}</span></div>
-        <ul class="pp-muted ps-3 mb-0" style="font-size:13px;line-height:1.9">${Array.from({ length: lines }, (_, i) => `<li>${t('landing.plan.' + key + '.' + (i + 1))}</li>`).join('')}</ul></div></div>`).join('')}</div></section>
-    <section class="pp-section pp-container text-center"><div class="pp-card" style="padding-block:56px"><h2>${t('landing.final.title')}</h2><p class="pp-muted mb-4" style="font-size:13px">${t('landing.final.sub')}</p><a href="#/analyze" class="btn btn-pp btn-pp-hero btn-pp-lg">${t('landing.cta.primary')} ${icon('arrow-right', 17, 'pp-icon-flip')}</a></div></section>`;
-  }
+    const lift = r.optimisedMonthlyProfit - r.current.monthlyProfit;
+    const topShare = p.costBreakdown[0] ? p.costBreakdown[0].share : 0;
 
+    const steps = STEP_ILLUSTRATIONS.map((art, i) => `<div>
+        <div class="n">${stepNo(i)}</div>${illo(art)}
+        <h3>${t('landing.how.' + (i + 1) + '.title')}</h3>
+        <p>${t('landing.how.' + (i + 1) + '.body')}</p>
+      </div>`).join('');
+
+    const ledger = p.costBreakdown.map((l) => `<span class="k">${esc(t(['costLine.' + l.key], {}) || l.label)}</span><span class="v">${money(l.amount, cur)} <small>· ${pct(l.share, 0)}</small></span>`).join('');
+    const bar = p.costBreakdown.map((l, i) => `<span style="width:${l.share * 100}%;background:${seriesColor(i)}"></span>`).join('');
+
+    const recs = r.recommendations.slice(0, 4).map((x, i) => `<div style="border-inline-end-color:rgba(242,239,232,0.14);padding-block:28px 30px">
+        <div class="n" style="color:var(--lp-on-plate-2)">${stepNo(i)}</div>
+        <h3 style="margin-top:14px;color:var(--lp-on-plate)">${esc(msg(x.i18n && x.i18n.title, x.title))}</h3>
+        <div class="impact">
+          <div class="pp-lp-mono" style="font-size:22px;color:var(--lp-pos-plate)">+${money(x.estimatedMonthlyImpact, cur, 0)}</div>
+          <div class="pp-lp-cap" style="margin-top:12px;color:var(--lp-on-plate-2)">${t('roadmap.priority', { priority: t('priority.' + x.priority) })} · ${t('roadmap.difficulty', { difficulty: t('difficulty.' + x.difficulty) })}</div>
+        </div>
+      </div>`).join('');
+
+    const range = E.BUSINESS_TYPE_LIST.map((x) => `<div>${catArt(x.type)}
+        <div class="name">${t('businessType.' + x.type + '.label')}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:11px;color:var(--lp-muted)">${t('landing.range.band', { low: x.marginBand.low, high: x.marginBand.high })}</div>
+      </div>`).join('');
+
+    const planHeads = LP_PLANS.map(([id, price, per]) => `<div class="head">
+        <div class="pp-lp-serif" style="font-size:30px">${t('landing.plan.' + id + '.name')}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:13px;color:${id === 'pro' ? 'var(--pp-brand-ink)' : 'var(--lp-muted)'}">${price}${per ? t('landing.pricing.perMonth') : ''}</div>
+      </div>`).join('');
+    const planRows = LP_FEATURES.map(([key, f, pr, b]) => `<div class="feat">${t(key)}</div>
+      <div class="cell">${f ? lpTick(t('landing.plan.free.name')) : lpNone}</div>
+      <div class="cell">${pr ? lpTick(t('landing.plan.pro.name')) : lpNone}</div>
+      <div class="cell">${b ? lpTick(t('landing.plan.business.name')) : lpNone}</div>`).join('');
+    const planFeet = LP_PLANS.map(([id]) => `<div class="foot"><a href="#/analyze" class="btn-lp pp-lp-mono ${id === 'pro' ? '' : 'btn-lp--ghost'}" style="font-size:12.5px;padding:12px 20px">${t('landing.cta.primary')}</a></div>`).join('');
+
+    const arrow = (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pp-icon-flip" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>`;
+
+    return `<div class="pp-lp">
+    <section class="pp-lp-hero">
+      <div class="pp-lp-hero__plate"></div><div class="pp-lp-hero__grain"></div>
+      <div class="pp-lp-hero__scrim"></div><div class="pp-lp-hero__foot"></div>
+      <div class="pp-lp-hero__copy pp-lp__inner">
+        <div>
+          <div class="pp-lp-eyebrow d-flex align-items-center gap-3" style="color:#b9c2d6">
+            <span style="display:inline-block;width:30px;height:1px;background:var(--pp-brand-ink)"></span>${t('landing.chip')}
+          </div>
+          <h1>${t('landing.title.before')} <em>${t('landing.title.accent')}</em></h1>
+          <p class="pp-lp-hero__lede">${t('landing.lead')}</p>
+          <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+            <a href="#/analyze" class="btn-lp pp-lp-mono">${t('landing.cta.primary')} ${arrow(15)}</a>
+            <button type="button" class="btn-lp btn-lp--quiet pp-lp-mono" data-action="example">${t('landing.cta.example')}</button>
+          </div>
+          <div class="pp-lp-mono mt-4" style="font-size:11.5px;color:#8c93a6">${t('landing.final.sub')}</div>
+        </div>
+      </div>
+      <div class="pp-lp-hero__ticker"><div class="pp-lp__inner">
+        <span><b>${t('landing.example.eyebrow')}</b></span>
+        <span>${esc(s.offering)}</span>
+        <span>${t('results.trueCost')} <b>${money(p.trueCostPerUnit, cur)}</b></span>
+        <span>${t('results.badge')} <b>${money(p.recommended.price, cur, 0)}</b></span>
+        <span>${t('results.margin')} <b>${pct(p.recommended.marginPct)}</b></span>
+        <span>${t('nav.roadmap')} <b class="pos">+${money(lift, cur, 0)}</b></span>
+      </div></div>
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.how.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:380px;font-size:14px">${t('landing.how.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-steps">${steps}</div>
+      <hr class="pp-lp-rule">
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head">
+        <div><div class="pp-lp-eyebrow mb-3">${t('landing.example.eyebrow')}</div><h2>${esc(s.offering)}</h2></div>
+        <p class="pp-lp-mono mb-0" style="max-width:330px;font-size:11.5px;line-height:1.9;color:var(--lp-muted)">${t('landing.example.note')}</p>
+      </div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-split">
+        <div>
+          <div class="pp-lp-eyebrow">${t('landing.example.costs')}</div>
+          <div class="pp-lp-ledger mt-4">${ledger}
+            <span class="total">${t('landing.example.trueCost', u)}</span>
+            <span class="total v">${money(p.trueCostPerUnit, cur)}</span>
+          </div>
+          <div class="pp-lp-bar mt-4">${bar}</div>
+          <p class="pp-lp-body mt-4 mb-0" style="font-size:13.5px">${t('landing.example.lead', { share: topShare })}</p>
+        </div>
+        <div>
+          <div class="pp-lp-eyebrow">${t('landing.calc.eyebrow')}</div>
+          <div class="pp-lp-figure">${heroMark(p.recommended.price, cur)}</div>
+          <div class="pp-lp-mono mt-3" style="font-size:12px;color:var(--lp-muted)">${t('landing.calc.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
+          <div class="pp-lp-stats mt-4">
+            <div><div class="pp-lp-cap">${t('results.trueCost')}</div><div class="v">${money(p.trueCostPerUnit, cur)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.profitPerUnit', u)}</div><div class="v">${money(p.recommended.profitPerUnit, cur)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.margin')}</div><div class="v">${pct(p.recommended.marginPct)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.revenue')}</div><div class="v">${money(p.recommended.monthlyRevenue, cur, 0)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.profit')}</div><div class="v pos">${money(p.recommended.monthlyProfit, cur, 0)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.breakEvenSales')}</div><div class="v">${p.recommended.breakEvenUnits ?? '—'} <span style="font-size:13px;color:var(--lp-muted)">${t('results.breakEvenSales.sub', { count: p.expectedUnits })}</span></div></div>
+          </div>
+          <p class="pp-lp-body mt-4 mb-0" style="font-size:13.5px;max-width:470px">${t('landing.example.goals', { cur, count: m.goals.expectedUnits, units: u.units, target: m.goals.targetMonthlyProfit })}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pp-lp-plate"><div class="pp-lp__inner">
+      <div class="pp-lp-head" style="padding-bottom:20px;border-bottom:1.5px solid rgba(242,239,232,0.28)">
+        <h2>${t('results.roadmapWorth')}</h2>
+        <p class="pp-lp-mono mb-0" style="font-size:11.5px;line-height:1.9;color:var(--lp-on-plate-2);max-width:340px">${t('roadmap.intro')}</p>
+      </div>
+      <div class="mt-5">${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>
+      <div class="pp-lp-steps pp-lp-steps--4 mt-5" style="border-top:1px solid rgba(242,239,232,0.22)">${recs}</div>
+    </div></section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.range.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:400px;font-size:14px">${t('landing.range.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-range">${range}</div>
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.pricing.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:330px;font-size:14px">${t('landing.pricing.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-plans"><div class="head"></div>${planHeads}${planRows}<div class="foot"></div>${planFeet}</div>
+    </section>
+
+    <section class="pp-lp-close"><div class="pp-lp__inner">
+      <div>
+        <h2>${t('landing.final.title')}</h2>
+        <p class="pp-lp-body mt-3 mb-0" style="font-size:15px;max-width:460px">${t('landing.how.sub')} ${t('landing.final.sub')}</p>
+      </div>
+      <a href="#/analyze" class="btn-lp pp-lp-mono" style="font-size:14px;padding:18px 32px;white-space:nowrap">${t('landing.cta.primary')} ${arrow(16)}</a>
+    </div></section>
+    </div>`;
+  }
   // ---------- analyze ----------
   const groups = () => (S.type ? E.questionGroupsFor(S.type) : []);
   const merged = () => ({ ...S.answers, ...S.formValues });

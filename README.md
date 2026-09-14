@@ -46,6 +46,15 @@ inverted card only. Brand *text* uses `--pp-brand-ink`, which is darkened to cle
 `--pp-subtle-2`. `node preview/contrast.mjs` audits the shipped stylesheet and fails if a
 pair drops below that — run it after touching a colour.
 
+**The landing page is a second surface.** It is the only screen a visitor sees before they
+have used anything, so it gets an editorial register rather than the glass one: warm paper,
+one ink, Instrument Serif for voice and IBM Plex Mono for every figure. All of it is scoped
+under `.pp-lp`, and `AppComponent` puts `.pp-shell--paper` on `<html>` only on the landing
+route — so the analyze, results and roadmap screens are untouched by that block. Its
+drawings live in `app/src/app/shared/illustrations.ts` (same plain-data trick as the icons,
+so the preview reuses the file) and carry no colour of their own: stroke weight and hue come
+from the page, so one accent recolours the set.
+
 **Icons.** Lucide, inlined in `app/src/app/shared/icons.ts` rather than loaded from a CDN,
 so both surfaces share one registry and neither needs a network round-trip. Angular renders
 them through `<pp-icon name="…">`; `preview/build.mjs` strips the `export` keyword and

@@ -633,3 +633,320 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   .pp-fade, .pp-progress > div, .pp-steps .seg,
   .btn-pp, .btn-pp-ghost, .btn-pp-white, .btn-pp-glass, .btn-pp-dark { animation: none; transition: none; }
 }
+
+/* ==========================================================================
+   Landing page — "Ledger"
+   --------------------------------------------------------------------------
+   A deliberately different surface from the rest of the app: warm paper, one
+   ink, a high-contrast serif for voice and a mono for every figure. It is the
+   only place the product speaks to someone who has not used it yet, so it gets
+   an editorial register the working screens do not.
+
+   Everything here is scoped under `.pp-lp`, and the shell picks up
+   `.pp-shell--paper` only on the landing route — so the glass system that the
+   analyze, results and roadmap screens depend on is untouched by this block.
+   ========================================================================== */
+.pp-lp {
+  --lp-paper: #f7f4ee;
+  --lp-raised: #fffdf8;
+  --lp-ink: #16181d;
+  --lp-ink-2: #3d4049;
+  --lp-muted: #6e6a60;   /* 4.95:1 on paper — audited in preview/contrast.mjs */
+  --lp-rule: #dcd5c6;
+  --lp-rule-2: #ede8dc;
+  --lp-plate: #14151a;
+  --lp-on-plate: #f2efe8;
+  --lp-on-plate-2: #9aa1b3;
+  --lp-pos-plate: #6fdca0; /* positive figures on the dark plate only */
+  --lp-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --lp-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --lp-gutter: 24px;
+
+  display: block;
+  background: var(--lp-paper);
+  color: var(--lp-ink);
+}
+/* The page wash and the glass header belong to the app, not to this page. */
+.pp-shell--paper, .pp-shell--paper body { background: var(--lp-paper); background-image: none; }
+.pp-shell--paper .pp-header { position: static; padding: 0; border-bottom: 1px solid #dcd5c6; }
+/* The shell's container is narrower than the landing's measure; on paper they
+   have to agree or the masthead sits inboard of the headline beneath it. */
+.pp-shell--paper .pp-header .pp-container,
+.pp-shell--paper .pp-footer .pp-container { max-width: 1200px; }
+.pp-shell--paper .pp-header-pill {
+  background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+  border: 0; border-radius: 0; box-shadow: none; padding: 0; height: 74px;
+}
+.pp-shell--paper .pp-logo { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 21px; }
+.pp-shell--paper .pp-nav a,
+.pp-shell--paper .pp-lang__button { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; }
+.pp-shell--paper .btn-pp {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 400;
+  background: transparent; background-image: none; color: #16181d;
+  border: 1.4px solid #16181d; border-radius: 0; box-shadow: none;
+}
+.pp-shell--paper .pp-footer { border-top: 1px solid #dcd5c6; background: #f7f4ee; }
+.pp-shell--paper .pp-footer .pp-container { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #6e6a60; }
+
+.pp-lp__inner { max-width: 1200px; margin: 0 auto; padding-inline: var(--lp-gutter); }
+
+/* ------------------------------------------------------------ type ladder */
+.pp-lp-serif { font-family: var(--lp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp-mono { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; }
+.pp-lp-eyebrow {
+  font-family: var(--lp-mono); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--lp-muted);
+}
+.pp-lp-body { font-size: 14.5px; line-height: 1.72; color: var(--lp-ink-2); font-weight: 300; }
+.pp-lp-cap { font-family: var(--lp-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-muted); }
+.pp-lp h1, .pp-lp h2, .pp-lp h3 { font-family: var(--lp-serif); font-weight: 400; letter-spacing: -0.02em; }
+.pp-lp h2 { font-size: clamp(32px, 3.4vw, 46px); line-height: 1.05; margin: 0; }
+.pp-lp-rule { border: 0; border-top: 1px solid var(--lp-rule); margin: 0; }
+.pp-lp-rule--ink { border: 0; border-top: 1.5px solid var(--lp-ink); margin: 0; }
+.pp-lp-section { padding-top: 86px; }
+.pp-lp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; padding-bottom: 18px; }
+
+/* ------------------------------------------------------------- drawn line */
+/* Three weights and two accents. The drawings in illustrations.ts carry no
+   colour of their own, so they recolour with the page rather than fighting it. */
+.pp-lp .ink, .pp-lp .ink-thin, .pp-lp .hatch, .pp-lp .ink-accent, .pp-lp .ink-pos {
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.pp-lp .ink { stroke: var(--lp-ink); stroke-width: 1.6; }
+.pp-lp .ink-thin { stroke: var(--lp-ink); stroke-width: 1; }
+.pp-lp .hatch { stroke: var(--lp-ink); stroke-width: 0.9; opacity: 0.42; }
+.pp-lp .ink-accent { stroke: var(--pp-brand-ink); stroke-width: 2.2; }
+.pp-lp .ink-pos { stroke: var(--pp-pos); stroke-width: 2.2; }
+.pp-lp .ink-fill-paper { fill: var(--lp-paper); }
+.pp-lp .ink-fill-pos { fill: var(--pp-pos-soft); stroke: none; }
+
+/* ------------------------------------------------------------------- hero */
+/* min-height, and the ticker in flow rather than pinned: a headline that runs
+   long grows the hero instead of sliding underneath the figures. */
+.pp-lp-hero {
+  position: relative; min-height: 740px; display: flex; flex-direction: column;
+  overflow: hidden; background: var(--lp-plate);
+}
+.pp-lp-hero__plate {
+  position: absolute; inset: -6%;
+  background:
+    radial-gradient(58% 74% at 22% 18%, #2b3450 0%, rgba(43, 52, 80, 0) 62%),
+    radial-gradient(46% 62% at 82% 72%, #1d3b5c 0%, rgba(29, 59, 92, 0) 60%),
+    linear-gradient(146deg, #10121a 0%, #191c26 52%, #0e1016 100%);
+  animation: lpdrift 26s ease-in-out infinite;
+}
+/* The real clip goes here. Same box, same scrim — swap the poster and sources. */
+.pp-lp-hero__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+@keyframes lpdrift {
+  0% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+  50% { transform: scale(1.12) translate3d(1.5%, 1%, 0); }
+  100% { transform: scale(1.06) translate3d(-1.5%, -1%, 0); }
+}
+/* Grain breaks the banding a compressed clip leaves behind large flat type. */
+.pp-lp-hero__grain {
+  position: absolute; inset: 0; opacity: 0.5; mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+}
+/* The load-bearing layer: heavy where the copy sits, clear where the footage
+   should show. Logical direction, so it flips with the page in Arabic. */
+/* A gradient takes no logical keyword, so the flip is explicit: the heavy end
+   must stay under the copy, and in Arabic the copy starts on the right. */
+.pp-lp-hero__scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(to right,
+    rgba(11, 12, 16, 0.94) 0%, rgba(11, 12, 16, 0.82) 38%,
+    rgba(11, 12, 16, 0.32) 72%, rgba(11, 12, 16, 0.5) 100%);
+}
+[dir='rtl'] .pp-lp-hero__scrim {
+  background: linear-gradient(to left,
+    rgba(11, 12, 16, 0.94) 0%, rgba(11, 12, 16, 0.82) 38%,
+    rgba(11, 12, 16, 0.32) 72%, rgba(11, 12, 16, 0.5) 100%);
+}
+/* Figures stay left-to-right inside the paper page too — but only the elements
+   that actually hold a figure. The mono face is also used for Arabic prose
+   (eyebrows, captions, the hero's fine print), and forcing direction there lays
+   the sentence out backwards. */
+[dir='rtl'] .pp-lp-figure,
+[dir='rtl'] .pp-lp-ledger .v,
+[dir='rtl'] .pp-lp-stats .v,
+[dir='rtl'] .pp-lp-hero__ticker b,
+[dir='rtl'] .pp-lp-steps--4 .impact .pp-lp-mono { direction: ltr; }
+
+/* Arabic has no italic: a browser-synthesised oblique is a slant applied to
+   letterforms that were never drawn for it. The emphasis carries by position
+   and size instead. */
+[dir='rtl'] .pp-lp-hero h1 em { font-style: normal; }
+.pp-lp-hero__foot {
+  position: absolute; inset-inline: 0; bottom: 0; height: 190px;
+  background: linear-gradient(180deg, rgba(11, 12, 16, 0) 0%, rgba(11, 12, 16, 0.92) 100%);
+}
+.pp-lp-hero__copy { position: relative; flex: 1 1 auto; width: 100%; padding-block: 92px 64px; }
+.pp-lp-hero__copy > div { max-width: 660px; }
+.pp-lp-hero h1 {
+  margin: 26px 0 0; font-size: clamp(46px, 5.9vw, 84px); line-height: 0.98;
+  letter-spacing: -0.022em; color: #fbf9f4; text-wrap: pretty;
+}
+.pp-lp-hero h1 em { font-style: italic; }
+.pp-lp-hero__lede { margin: 28px 0 0; max-width: 520px; font-size: 18px; line-height: 1.65; font-weight: 300; color: #c8cddb; }
+.pp-lp-hero__ticker { position: relative; flex: 0 0 auto; border-top: 1px solid rgba(232, 229, 221, 0.16); }
+.pp-lp-hero__ticker .pp-lp__inner {
+  display: flex; flex-wrap: wrap; gap: 8px 34px; padding-block: 17px;
+  font-family: var(--lp-mono); font-size: 11.5px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--lp-on-plate-2);
+}
+.pp-lp-hero__ticker b { font-weight: 400; color: #e8e5dd; }
+.pp-lp-hero__ticker .pos { color: var(--lp-pos-plate); }
+
+/* ------------------------------------------------------------------ ink CTA */
+/* Square, ruled, mono — the hero action reads as a stamp, not a pill. */
+.btn-lp {
+  display: inline-flex; align-items: center; gap: 11px; font-family: var(--lp-mono);
+  font-size: 13.5px; padding: 15px 26px; border: 0; border-radius: 0;
+  background: var(--pp-brand-ink); color: #fff; text-decoration: none;
+  transition: background var(--pp-ease);
+}
+.btn-lp:hover { background: #16409f; color: #fff; }
+.btn-lp--ghost { background: transparent; color: var(--lp-ink); border: 1.4px solid var(--lp-ink); }
+.btn-lp--ghost:hover { background: var(--lp-ink); color: var(--lp-paper); }
+.btn-lp--quiet {
+  background: transparent; color: #e8e5dd; padding: 3px 0;
+  border-bottom: 1px solid rgba(232, 229, 221, 0.42); font-size: 13px;
+}
+.btn-lp--quiet:hover { background: transparent; color: #fff; border-bottom-color: #fff; }
+
+/* ------------------------------------------------------------------ steps */
+.pp-lp-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pp-lp-steps > div { padding: 34px 22px 38px; border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-steps > div:last-child { border-inline-end: 0; }
+.pp-lp-steps svg { width: 100%; height: 122px; margin: 16px 0 20px; }
+.pp-lp-steps h3 { margin: 0 0 9px; font-family: var(--pp-font); font-size: 17px; font-weight: 500; letter-spacing: -0.012em; }
+.pp-lp-steps p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--lp-ink-2); font-weight: 300; }
+.pp-lp-steps .n { font-family: var(--lp-mono); font-size: 12px; letter-spacing: 0.08em; color: var(--pp-brand-ink); }
+/* The roadmap strip reuses the step rhythm but carries four items, not five,
+   and its cells bottom-align: titles run to different lengths, and a row of
+   impact figures that does not line up is the whole point of the strip lost. */
+.pp-lp-steps--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.pp-lp-steps--4 > div { display: flex; flex-direction: column; }
+.pp-lp-steps--4 .impact { margin-top: auto; padding-top: 18px; }
+
+/* ----------------------------------------------------------------- ledger */
+/* Label, leader, figure. The leader is what makes a column of money read as a
+   printed account rather than a web layout. */
+/* No column gap: the two cells carry one border each, so any gap between them
+   would cut the rule in half and the row would stop reading as a ruled line.
+   The breathing room is padding on the label instead. */
+.pp-lp-ledger { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 0; }
+.pp-lp-ledger > * { padding: 13px 0; border-bottom: 1px solid var(--lp-rule-2); }
+.pp-lp-ledger .k { font-size: 14px; color: var(--lp-ink); font-weight: 300; padding-inline-end: 18px; }
+.pp-lp-ledger .v { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; font-size: 15px; text-align: end; }
+.pp-lp-ledger .v small { color: var(--lp-muted); font-size: 12px; }
+.pp-lp-ledger .total {
+  padding: 18px 18px 6px 0; border-bottom: 4px double var(--lp-ink);
+  font-family: var(--lp-mono); letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px;
+}
+.pp-lp-ledger .total.v { font-size: 22px; letter-spacing: 0; text-transform: none; }
+.pp-lp-bar { display: flex; height: 7px; overflow: hidden; }
+
+/* -------------------------------------------------------------- the split */
+.pp-lp-split { display: grid; grid-template-columns: 1fr 1.15fr; align-items: stretch; }
+.pp-lp-split > :first-child { padding: 40px 56px 44px 0; border-inline-end: 1px solid var(--lp-rule); }
+.pp-lp-split > :last-child { padding: 40px 0 44px 56px; }
+.pp-lp-figure { font-family: var(--lp-serif); font-size: clamp(64px, 7.5vw, 108px); line-height: 0.92; letter-spacing: -0.03em; margin-top: 16px; }
+.pp-lp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--lp-rule); }
+.pp-lp-stats > div { padding: 20px 18px; border-bottom: 1px solid var(--lp-rule); border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-stats > div:nth-child(3n) { border-inline-end: 0; padding-inline-end: 0; }
+.pp-lp-stats > div:nth-child(3n + 1) { padding-inline-start: 0; }
+.pp-lp-stats .v { font-family: var(--lp-mono); font-variant-numeric: tabular-nums; font-size: 21px; margin-top: 9px; }
+.pp-lp-stats .v.pos { color: var(--pp-pos); }
+
+/* ------------------------------------------------------------ dark compare */
+.pp-lp-plate { background: var(--lp-plate); color: var(--lp-on-plate); margin-top: 86px; }
+.pp-lp-plate .pp-lp__inner { padding-block: 74px 78px; }
+.pp-lp-plate h2 { color: var(--lp-on-plate); }
+.pp-lp-plate .pp-lp-eyebrow, .pp-lp-plate .pp-lp-cap { color: var(--lp-on-plate-2); }
+.pp-lp-plate .pp-lp-body { color: #b6bccb; }
+/* The comparison component is shared with the results and roadmap screens,
+   where it sits on white. On the plate its muted ink and pale bar track would
+   vanish, so the surface restates them rather than the component branching. */
+.pp-lp-plate .pp-compare__side .k,
+.pp-lp-plate .pp-compare__arrow,
+.pp-lp-plate .pp-compare__key { color: var(--lp-on-plate-2); }
+.pp-lp-plate .pp-compare .pp-kpi { color: var(--lp-on-plate); }
+.pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--lp-pos-plate); }
+.pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: 0; height: 9px; }
+.pp-lp-plate .pp-compare__bar .lift { background: var(--lp-pos-plate); opacity: 1; }
+.pp-lp-plate .pp-compare__lift {
+  background: rgba(111, 220, 160, 0.14); color: var(--lp-pos-plate); border-radius: 0;
+}
+.pp-lp-plate .pp-compare__key i { border-radius: 0; }
+
+/* ------------------------------------------------------------ the range */
+.pp-lp-range { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--lp-rule); }
+.pp-lp-range > div { padding: 32px 18px 26px; border-inline-end: 1px solid var(--lp-rule-2); }
+.pp-lp-range > div:nth-child(6n) { border-inline-end: 0; }
+.pp-lp-range svg { width: 46px; height: 46px; }
+.pp-lp-range .name { margin-top: 16px; font-size: 14px; font-weight: 500; }
+
+/* ---------------------------------------------------------------- pricing */
+.pp-lp-plans { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; align-items: center; }
+.pp-lp-plans > * { padding: 15px 0; border-bottom: 1px solid var(--lp-rule-2); }
+.pp-lp-plans .head { padding: 26px 0 20px; border-bottom: 1px solid var(--lp-rule); align-self: baseline; }
+.pp-lp-plans .feat { font-size: 14px; color: var(--lp-ink); font-weight: 300; }
+.pp-lp-plans .foot { padding: 30px 0 0; border-bottom: 0; }
+.pp-lp-tick { stroke: var(--pp-brand-ink); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pp-lp-plans .none { color: #c3bdae; font-size: 15px; }
+
+/* ---------------------------------------------------------------- closing */
+.pp-lp-close { margin-top: 92px; border-top: 1.5px solid var(--lp-ink); }
+.pp-lp-close .pp-lp__inner { padding-block: 86px 90px; display: flex; justify-content: space-between; align-items: flex-end; gap: 60px; }
+.pp-lp-close h2 { font-size: clamp(38px, 4.6vw, 64px); line-height: 1; letter-spacing: -0.026em; max-width: 640px; }
+
+@media (prefers-reduced-motion: reduce) { .pp-lp-hero__plate { animation: none; } }
+
+@media (max-width: 991.98px) {
+  .pp-lp-steps, .pp-lp-steps--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pp-lp-steps > div:nth-child(2n) { border-inline-end: 0; }
+  .pp-lp-range { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pp-lp-range > div:nth-child(3n) { border-inline-end: 0; }
+  .pp-lp-split { grid-template-columns: 1fr; }
+  .pp-lp-split > :first-child { padding: 40px 0 36px; border-inline-end: 0; border-bottom: 1px solid var(--lp-rule); }
+  .pp-lp-split > :last-child { padding: 36px 0 44px; }
+}
+
+@media (max-width: 767.98px) {
+  /* Five columns become five rows; the drawing moves beside the words so a step
+     stays one glance rather than a scroll. */
+  .pp-lp-steps, .pp-lp-steps--4 { grid-template-columns: 1fr; }
+  .pp-lp-steps > div {
+    display: grid; grid-template-columns: 76px 1fr; gap: 18px; align-items: start;
+    padding: 24px 0; border-inline-end: 0; border-bottom: 1px solid var(--lp-rule-2);
+  }
+  .pp-lp-steps > div:last-child { border-bottom: 0; }
+  .pp-lp-steps svg { height: 66px; margin: 0; grid-row: span 3; }
+  .pp-lp-steps .n { grid-column: 2; }
+  .pp-lp-steps h3, .pp-lp-steps p { grid-column: 2; }
+  .pp-lp-range { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pp-lp-range > div:nth-child(3n) { border-inline-end: 1px solid var(--lp-rule-2); }
+  .pp-lp-range > div:nth-child(2n) { border-inline-end: 0; }
+  .pp-lp-section { padding-top: 48px; }
+  .pp-lp-head { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .pp-lp-hero { min-height: 560px; }
+  .pp-lp-hero__copy { padding-block: 44px; }
+  /* Copy runs the full width here, so a left-to-right ramp would leave the last
+     words of a line sitting on bare footage. */
+  .pp-lp-hero__scrim {
+    background: linear-gradient(180deg, rgba(11, 12, 16, 0.9) 0%, rgba(11, 12, 16, 0.62) 40%, rgba(11, 12, 16, 0.88) 100%);
+  }
+  .pp-lp-hero__foot { display: none; }
+  .pp-lp-hero__ticker .pp-lp__inner { gap: 6px 18px; font-size: 10px; }
+  .btn-lp { width: 100%; justify-content: center; min-height: 52px; }
+  .pp-lp-plate { margin-top: 48px; }
+  .pp-lp-plate .pp-lp__inner { padding-block: 40px 44px; }
+  .pp-lp-close { margin-top: 48px; }
+  .pp-lp-close .pp-lp__inner { padding-block: 40px 44px; flex-direction: column; align-items: stretch; gap: 24px; }
+  /* Four columns of plan will not fit; each plan becomes a block. */
+  .pp-lp-plans { grid-template-columns: 1fr; }
+  .pp-lp-plans .feat, .pp-lp-plans .cell { display: none; }
+}

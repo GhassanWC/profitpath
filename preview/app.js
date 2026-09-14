@@ -101,6 +101,9 @@
     else if (r === 'results') page = pricing() ? renderResults() : (go('analyze'), '');
     else if (r === 'roadmap') page = pricing() ? renderRoadmap() : (go('analyze'), '');
     else page = renderLanding();
+    /* The landing is the one screen on paper; the flag goes on <html> so the
+       fixed page background changes with it. Mirrors AppComponent. */
+    document.documentElement.classList.toggle('pp-shell--paper', r === '');
     root.innerHTML = renderShell(page);
     bind();
     persist();
@@ -118,6 +121,8 @@
      Mirrors app/src/app/shared/format.ts — keep the two in step. A locale that
      puts the currency after the number simply has no mark to demote. */
   const splitMoney = (s) => { const m = /^([^\d-]*)(.*)$/.exec(s); return m ? [m[1].trim(), m[2]] : ['', s]; };
+  /* The landing figure sets its currency mark small and muted beside the digits. */
+  const heroMark = (v, cur) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<span style="font-size:0.42em;color:var(--lp-muted);vertical-align:top">${esc(c)}</span>${esc(d)}`; };
   const heroFigure = (v, cur, cls) => { const [c, d] = splitMoney(money(v, cur, 0)); return `<div class="pp-kpi ${cls}"><span class="cur">${esc(c)}</span>${esc(d)}</div>`; };
 
   /* Current vs optimised — mirrors ProfitCompareComponent. Both figures come
@@ -171,6 +176,29 @@
       <footer class="pp-footer"><div class="pp-container d-flex flex-wrap justify-content-between gap-3"><div>${t('footer.legal', { year: new Date().getFullYear() })}</div><div>${t('footer.deterministic')}</div></div></footer>`;
   }
 
+  /* Drawings come from app/src/app/shared/illustrations.ts, injected by
+     build.mjs, so the app and this preview cannot drift. */
+  const illo = (n) => `<svg viewBox="0 0 160 140" aria-hidden="true" focusable="false">${ILLUSTRATIONS[n] || ''}</svg>`;
+  const catArt = (t) => `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">${CATEGORY_ART[t] || ''}</svg>`;
+  const stepNo = (i) => String(i + 1).padStart(2, '0');
+  const seriesColor = (i) => `var(--pp-series-${(i % 9) + 1})`;
+  const lpTick = (label) => `<svg class="pp-lp-tick" width="15" height="15" viewBox="0 0 24 24" role="img" aria-label="${esc(label)}"><path d="M4 12.5l5 5L20 6.5"></path></svg>`;
+  const lpNone = '<span class="none" aria-hidden="true">—</span>';
+
+  /* Which plans carry which capability — one list, so the table and the stacked
+     mobile blocks can never disagree. Mirrors FEATURES in landing.component.ts. */
+  const LP_FEATURES = [
+    ['landing.plan.free.1', 1, 1, 1],
+    ['landing.plan.free.2', 1, 1, 1],
+    ['landing.plan.free.3', 1, 1, 1],
+    ['landing.plan.pro.2', 0, 1, 1],
+    ['landing.plan.pro.3', 0, 1, 1],
+    ['landing.plan.pro.5', 0, 1, 1],
+    ['landing.plan.business.2', 0, 0, 1],
+    ['landing.plan.business.3', 0, 0, 1],
+  ];
+  const LP_PLANS = [['free', '$0', false], ['pro', '$9', true], ['business', '$19', true]];
+
   // ---------- landing ----------
   function renderLanding() {
     /* Every figure below is the sample run through the real engine — nothing on
@@ -181,56 +209,145 @@
     const r = E.buildRoadmap(m, p);
     const cur = p.currency;
     const u = unitParams(m.meta.businessType);
-    const chips = E.BUSINESS_TYPE_LIST.map((x) => `<span class="pp-chip">${icon(typeIcon(x.type), 13)} ${t('businessType.' + x.type + '.shortLabel')}</span>`).join('');
-    const top3 = r.recommendations.slice(0, 3);
-    const topMax = Math.max(1, ...top3.map((x) => x.estimatedMonthlyImpact));
-    const recs = top3.map((x) => `<div class="item"><span>${esc(msg(x.i18n && x.i18n.title, x.title))}</span><span class="pp-num">+${t('roadmap.perMonth', { amount: x.estimatedMonthlyImpact, cur })}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / topMax) * 100}%"></span></div></div>`).join('');
-    const ledger = p.costBreakdown.map((l) => `<span class="pp-muted">${esc(t(['costLine.' + l.key], {}) || l.label)}</span><span class="pp-num">${money(l.amount, cur)}</span>`).join('');
-    const how = ['square-pen', 'list-checks', 'calculator', 'map'];
-    const plans = [
-      ['free', '$0', '', false, 4],
-      ['pro', '$9', t('landing.pricing.perMonth'), true, 5],
-      ['business', '$19', t('landing.pricing.perMonth'), false, 4],
-    ];
-    return `
-    <section class="pp-hero pp-container pp-fade">
-      <span class="pp-chip mb-4">${icon('sparkles', 13)} ${t('landing.chip')}</span>
-      <h1>${t('landing.title.before')} <span class="pp-gradient-text">${t('landing.title.accent')}</span></h1>
-      <p class="lead">${t('landing.lead')}</p>
-      <div class="d-flex flex-wrap justify-content-center gap-2"><a href="#/analyze" class="btn btn-pp btn-pp-hero btn-pp-lg">${t('landing.cta.primary')} ${icon('arrow-right', 17, 'pp-icon-flip')}</a><button type="button" class="btn btn-pp-glass btn-pp-lg" data-action="example">${t('landing.cta.example')}</button></div>
-      <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">${chips}</div>
-    </section>
-    <section class="pp-section pp-container"><div class="row g-4 align-items-start">
-      <div class="col-lg-5"><div class="pp-card">
-        <div class="d-flex align-items-center gap-2 mb-1">${icon('receipt', 15)}<span class="pp-eyebrow">${t('landing.example.eyebrow')}</span></div>
-        <h3 class="mb-3" style="font-weight:400">${esc(s.offering)}</h3>
-        <div class="pp-ledger">${ledger}<span class="total">${t('landing.example.trueCost', u)}</span><span class="total pp-num">${money(p.trueCostPerUnit, cur)}</span></div>
-        <div class="pp-subhead mt-3">${t('landing.example.goals', { cur, count: m.goals.expectedUnits, units: u.units, target: m.goals.targetMonthlyProfit })}</div>
-      </div></div>
-      <div class="col-lg-7"><div class="pp-card pp-card--primary">
-        <div class="d-flex justify-content-between align-items-start gap-3 mb-3"><span class="pp-eyebrow">${t('landing.calc.eyebrow')}</span><button type="button" class="btn btn-pp btn-sm" data-action="example">${t('landing.calc.open')} ${icon('arrow-right', 13, 'pp-icon-flip')}</button></div>
-        ${heroFigure(p.recommended.price, cur, 'pp-kpi--xl')}
-        <div class="pp-subhead mb-3">${t('landing.calc.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
-        <div class="pp-stat-strip">
-          <div class="pp-stat"><div class="k">${icon('wallet', 12)} ${t('results.trueCost')}</div><div class="v pp-num">${money(p.trueCostPerUnit, cur, 0)}</div></div>
-          <div class="pp-stat"><div class="k">${icon('coins', 12)} ${t('results.whatif.profitPerUnit', u)}</div><div class="v pp-num">${money(p.recommended.profitPerUnit, cur, 0)}</div></div>
-          <div class="pp-stat"><div class="k">${icon('scale', 12)} ${t('results.margin')}</div><div class="v pp-num">${pct(p.recommended.marginPct)}</div></div>
-        </div>
-        <div class="d-flex align-items-center gap-2" style="margin:22px 0 12px">${icon('trending-up', 14)}<span class="pp-eyebrow">${t('landing.calc.lift')}</span></div>
-        <div class="pp-waterfall">${recs}</div>
-        <div class="mt-4">${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, true)}</div>
-      </div></div>
-    </div></section>
-    <section class="pp-section pp-container"><div class="text-center mb-4"><h2>${t('landing.how.title')}</h2><p class="pp-muted">${t('landing.how.sub')}</p></div>
-      <div class="pp-flow">${how.map((ic, i) => `<div class="pp-card"><div class="d-flex align-items-center gap-2"><span class="pp-step-num">${i + 1}</span>${iconBadge(ic, 'pp-icon-badge--sm pp-icon-badge--plain', 14)}</div><h5>${t('landing.how.' + (i + 1) + '.title')}</h5><p class="pp-muted mb-0">${t('landing.how.' + (i + 1) + '.body')}</p></div>`).join('')}</div></section>
-    <section class="pp-section pp-container"><div class="text-center mb-4"><h2>${t('landing.pricing.title')}</h2><p class="pp-muted">${t('landing.pricing.sub')}</p></div>
-      <div class="row g-3 justify-content-center">${plans.map(([key, price, per, hot, lines]) => `<div class="col-md-4"><div class="pp-card h-100 ${hot ? 'pp-card--dark' : ''}">
-        <div class="d-flex justify-content-between align-items-center gap-2"><span class="pp-subhead">${t('landing.plan.' + key + '.name')}</span>${hot ? `<span class="pp-badge recommended">${icon('sparkles', 11)} ${t('landing.pricing.popular')}</span>` : ''}</div>
-        <div class="pp-kpi pp-kpi--lg my-2 pp-num">${price}<span class="pp-subhead">${per}</span></div>
-        <ul class="pp-muted ps-3 mb-0" style="font-size:13px;line-height:1.9">${Array.from({ length: lines }, (_, i) => `<li>${t('landing.plan.' + key + '.' + (i + 1))}</li>`).join('')}</ul></div></div>`).join('')}</div></section>
-    <section class="pp-section pp-container text-center"><div class="pp-card" style="padding-block:56px"><h2>${t('landing.final.title')}</h2><p class="pp-muted mb-4" style="font-size:13px">${t('landing.final.sub')}</p><a href="#/analyze" class="btn btn-pp btn-pp-hero btn-pp-lg">${t('landing.cta.primary')} ${icon('arrow-right', 17, 'pp-icon-flip')}</a></div></section>`;
-  }
+    const lift = r.optimisedMonthlyProfit - r.current.monthlyProfit;
+    const topShare = p.costBreakdown[0] ? p.costBreakdown[0].share : 0;
 
+    const steps = STEP_ILLUSTRATIONS.map((art, i) => `<div>
+        <div class="n">${stepNo(i)}</div>${illo(art)}
+        <h3>${t('landing.how.' + (i + 1) + '.title')}</h3>
+        <p>${t('landing.how.' + (i + 1) + '.body')}</p>
+      </div>`).join('');
+
+    const ledger = p.costBreakdown.map((l) => `<span class="k">${esc(t(['costLine.' + l.key], {}) || l.label)}</span><span class="v">${money(l.amount, cur)} <small>· ${pct(l.share, 0)}</small></span>`).join('');
+    const bar = p.costBreakdown.map((l, i) => `<span style="width:${l.share * 100}%;background:${seriesColor(i)}"></span>`).join('');
+
+    const recs = r.recommendations.slice(0, 4).map((x, i) => `<div style="border-inline-end-color:rgba(242,239,232,0.14);padding-block:28px 30px">
+        <div class="n" style="color:var(--lp-on-plate-2)">${stepNo(i)}</div>
+        <h3 style="margin-top:14px;color:var(--lp-on-plate)">${esc(msg(x.i18n && x.i18n.title, x.title))}</h3>
+        <div class="impact">
+          <div class="pp-lp-mono" style="font-size:22px;color:var(--lp-pos-plate)">+${money(x.estimatedMonthlyImpact, cur, 0)}</div>
+          <div class="pp-lp-cap" style="margin-top:12px;color:var(--lp-on-plate-2)">${t('roadmap.priority', { priority: t('priority.' + x.priority) })} · ${t('roadmap.difficulty', { difficulty: t('difficulty.' + x.difficulty) })}</div>
+        </div>
+      </div>`).join('');
+
+    const range = E.BUSINESS_TYPE_LIST.map((x) => `<div>${catArt(x.type)}
+        <div class="name">${t('businessType.' + x.type + '.label')}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:11px;color:var(--lp-muted)">${t('landing.range.band', { low: x.marginBand.low, high: x.marginBand.high })}</div>
+      </div>`).join('');
+
+    const planHeads = LP_PLANS.map(([id, price, per]) => `<div class="head">
+        <div class="pp-lp-serif" style="font-size:30px">${t('landing.plan.' + id + '.name')}</div>
+        <div class="pp-lp-mono mt-2" style="font-size:13px;color:${id === 'pro' ? 'var(--pp-brand-ink)' : 'var(--lp-muted)'}">${price}${per ? t('landing.pricing.perMonth') : ''}</div>
+      </div>`).join('');
+    const planRows = LP_FEATURES.map(([key, f, pr, b]) => `<div class="feat">${t(key)}</div>
+      <div class="cell">${f ? lpTick(t('landing.plan.free.name')) : lpNone}</div>
+      <div class="cell">${pr ? lpTick(t('landing.plan.pro.name')) : lpNone}</div>
+      <div class="cell">${b ? lpTick(t('landing.plan.business.name')) : lpNone}</div>`).join('');
+    const planFeet = LP_PLANS.map(([id]) => `<div class="foot"><a href="#/analyze" class="btn-lp pp-lp-mono ${id === 'pro' ? '' : 'btn-lp--ghost'}" style="font-size:12.5px;padding:12px 20px">${t('landing.cta.primary')}</a></div>`).join('');
+
+    const arrow = (size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pp-icon-flip" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>`;
+
+    return `<div class="pp-lp">
+    <section class="pp-lp-hero">
+      <div class="pp-lp-hero__plate"></div><div class="pp-lp-hero__grain"></div>
+      <div class="pp-lp-hero__scrim"></div><div class="pp-lp-hero__foot"></div>
+      <div class="pp-lp-hero__copy pp-lp__inner">
+        <div>
+          <div class="pp-lp-eyebrow d-flex align-items-center gap-3" style="color:#b9c2d6">
+            <span style="display:inline-block;width:30px;height:1px;background:var(--pp-brand-ink)"></span>${t('landing.chip')}
+          </div>
+          <h1>${t('landing.title.before')} <em>${t('landing.title.accent')}</em></h1>
+          <p class="pp-lp-hero__lede">${t('landing.lead')}</p>
+          <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+            <a href="#/analyze" class="btn-lp pp-lp-mono">${t('landing.cta.primary')} ${arrow(15)}</a>
+            <button type="button" class="btn-lp btn-lp--quiet pp-lp-mono" data-action="example">${t('landing.cta.example')}</button>
+          </div>
+          <div class="pp-lp-mono mt-4" style="font-size:11.5px;color:#8c93a6">${t('landing.final.sub')}</div>
+        </div>
+      </div>
+      <div class="pp-lp-hero__ticker"><div class="pp-lp__inner">
+        <span><b>${t('landing.example.eyebrow')}</b></span>
+        <span>${esc(s.offering)}</span>
+        <span>${t('results.trueCost')} <b>${money(p.trueCostPerUnit, cur)}</b></span>
+        <span>${t('results.badge')} <b>${money(p.recommended.price, cur, 0)}</b></span>
+        <span>${t('results.margin')} <b>${pct(p.recommended.marginPct)}</b></span>
+        <span>${t('nav.roadmap')} <b class="pos">+${money(lift, cur, 0)}</b></span>
+      </div></div>
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.how.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:380px;font-size:14px">${t('landing.how.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-steps">${steps}</div>
+      <hr class="pp-lp-rule">
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head">
+        <div><div class="pp-lp-eyebrow mb-3">${t('landing.example.eyebrow')}</div><h2>${esc(s.offering)}</h2></div>
+        <p class="pp-lp-mono mb-0" style="max-width:330px;font-size:11.5px;line-height:1.9;color:var(--lp-muted)">${t('landing.example.note')}</p>
+      </div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-split">
+        <div>
+          <div class="pp-lp-eyebrow">${t('landing.example.costs')}</div>
+          <div class="pp-lp-ledger mt-4">${ledger}
+            <span class="total">${t('landing.example.trueCost', u)}</span>
+            <span class="total v">${money(p.trueCostPerUnit, cur)}</span>
+          </div>
+          <div class="pp-lp-bar mt-4">${bar}</div>
+          <p class="pp-lp-body mt-4 mb-0" style="font-size:13.5px">${t('landing.example.lead', { share: topShare })}</p>
+        </div>
+        <div>
+          <div class="pp-lp-eyebrow">${t('landing.calc.eyebrow')}</div>
+          <div class="pp-lp-figure">${heroMark(p.recommended.price, cur)}</div>
+          <div class="pp-lp-mono mt-3" style="font-size:12px;color:var(--lp-muted)">${t('landing.calc.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
+          <div class="pp-lp-stats mt-4">
+            <div><div class="pp-lp-cap">${t('results.trueCost')}</div><div class="v">${money(p.trueCostPerUnit, cur)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.profitPerUnit', u)}</div><div class="v">${money(p.recommended.profitPerUnit, cur)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.margin')}</div><div class="v">${pct(p.recommended.marginPct)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.revenue')}</div><div class="v">${money(p.recommended.monthlyRevenue, cur, 0)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.profit')}</div><div class="v pos">${money(p.recommended.monthlyProfit, cur, 0)}</div></div>
+            <div><div class="pp-lp-cap">${t('results.breakEvenSales')}</div><div class="v">${p.recommended.breakEvenUnits ?? '—'} <span style="font-size:13px;color:var(--lp-muted)">${t('results.breakEvenSales.sub', { count: p.expectedUnits })}</span></div></div>
+          </div>
+          <p class="pp-lp-body mt-4 mb-0" style="font-size:13.5px;max-width:470px">${t('landing.example.goals', { cur, count: m.goals.expectedUnits, units: u.units, target: m.goals.targetMonthlyProfit })}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pp-lp-plate"><div class="pp-lp__inner">
+      <div class="pp-lp-head" style="padding-bottom:20px;border-bottom:1.5px solid rgba(242,239,232,0.28)">
+        <h2>${t('results.roadmapWorth')}</h2>
+        <p class="pp-lp-mono mb-0" style="font-size:11.5px;line-height:1.9;color:var(--lp-on-plate-2);max-width:340px">${t('roadmap.intro')}</p>
+      </div>
+      <div class="mt-5">${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>
+      <div class="pp-lp-steps pp-lp-steps--4 mt-5" style="border-top:1px solid rgba(242,239,232,0.22)">${recs}</div>
+    </div></section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.range.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:400px;font-size:14px">${t('landing.range.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-range">${range}</div>
+    </section>
+
+    <section class="pp-lp-section pp-lp__inner">
+      <div class="pp-lp-head"><h2>${t('landing.pricing.title')}</h2>
+        <p class="pp-lp-body mb-0" style="max-width:330px;font-size:14px">${t('landing.pricing.sub')}</p></div>
+      <hr class="pp-lp-rule--ink">
+      <div class="pp-lp-plans"><div class="head"></div>${planHeads}${planRows}<div class="foot"></div>${planFeet}</div>
+    </section>
+
+    <section class="pp-lp-close"><div class="pp-lp__inner">
+      <div>
+        <h2>${t('landing.final.title')}</h2>
+        <p class="pp-lp-body mt-3 mb-0" style="font-size:15px;max-width:460px">${t('landing.how.sub')} ${t('landing.final.sub')}</p>
+      </div>
+      <a href="#/analyze" class="btn-lp pp-lp-mono" style="font-size:14px;padding:18px 32px;white-space:nowrap">${t('landing.cta.primary')} ${arrow(16)}</a>
+    </div></section>
+    </div>`;
+  }
   // ---------- analyze ----------
   const groups = () => (S.type ? E.questionGroupsFor(S.type) : []);
   const merged = () => ({ ...S.answers, ...S.formValues });

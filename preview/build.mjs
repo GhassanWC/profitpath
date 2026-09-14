@@ -11,10 +11,12 @@ const app = readFileSync('app.js', 'utf8');
  * the `export ` keyword is all it takes to reuse it here.
  */
 const icons = readFileSync('../app/src/app/shared/icons.ts', 'utf8').replace(/^export /gm, '');
+/* The landing drawings ride along the same way, for the same reason. */
+const art = readFileSync('../app/src/app/shared/illustrations.ts', 'utf8').replace(/^export /gm, '');
 
 const head = `<title>ProfitPath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>${css}
 body { color-scheme: light; }
 </style>`;
@@ -22,6 +24,7 @@ body { color-scheme: light; }
    reader's language — there is no English flash to correct. */
 const body = `<div id="app"></div>
 <script>${icons}</script>
+<script>${art}</script>
 <script>${engine}</script>
 <script>${i18n}</script>
 <script>${app}</script>`;
