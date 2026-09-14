@@ -13,7 +13,7 @@
  *   contribution(p)     = p(1 - f) - D - V
  *   monthlyProfit(p,U)  = contribution(p) * U - F
  */
-import { CostLine, CostModel, PricingResult, Scenario, ScenarioStatus, TargetAnalysis } from './types';
+import { CostLine, CostModel, EngineMsg, PricingResult, Scenario, ScenarioStatus, TargetAnalysis } from './types';
 import { businessTypeDef } from './business-types';
 import { charmRound, round2, safeDiv } from './money';
 
@@ -86,7 +86,7 @@ export function evaluatePrice(
   price: number,
   key: Scenario['key'] = 'custom',
   label = 'Custom',
-  opts: { units?: number; status?: ScenarioStatus; note?: string } = {},
+  opts: { units?: number; status?: ScenarioStatus; note?: string; noteI18n?: EngineMsg } = {},
 ): Scenario {
   const e = unitEconomics(m, { units: opts.units });
   const profitPerUnit = profitPerUnitAt(e, price);
@@ -111,6 +111,7 @@ export function evaluatePrice(
     breakEvenUnits: breakEvenUnitsAt(e, price),
     status,
     note: opts.note ?? '',
+    noteI18n: opts.noteI18n,
   };
 }
 
@@ -128,6 +129,10 @@ export function computePricing(m: CostModel): PricingResult {
   const midTarget = desired ?? band.mid;
   if (desired !== undefined) {
     band.rationale = `You asked for a ${Math.round(desired * 100)}% margin. For reference, ${def.shortLabel.toLowerCase()} businesses typically run ${pct(def.marginBand.low)}–${pct(def.marginBand.high)}.`;
+    band.rationaleI18n = {
+      key: 'marginBand.requested',
+      params: { desired, low: def.marginBand.low, high: def.marginBand.high, typeKey: `businessType.${m.meta.businessType}.shortLabelLower` },
+    };
   }
   const lowTarget = Math.max(def.floorMargin, Math.min(band.low, midTarget - 0.05));
   const highTarget = Math.max(midTarget + 0.05, band.high);
@@ -142,14 +147,20 @@ export function computePricing(m: CostModel): PricingResult {
   const minimum = evaluatePrice(m, minimumPrice, 'minimum', 'Minimum', {
     status: 'low',
     note: 'Covers every cost with a thin safety margin. Little room for surprises.',
+    noteI18n: { key: 'scenario.minimum.note' },
   });
   const recommended = evaluatePrice(m, recommendedPrice, 'recommended', 'Recommended', {
     status: 'recommended',
     note: `Targets a ${pct(midTarget)} net margin — ${desired !== undefined ? 'your requested margin' : `the midpoint for ${def.shortLabel.toLowerCase()} businesses`}.`,
+    noteI18n: {
+      key: desired !== undefined ? 'scenario.recommended.note.requested' : 'scenario.recommended.note.midpoint',
+      params: { margin: midTarget, typeKey: `businessType.${m.meta.businessType}.shortLabelLower` },
+    },
   });
   const premium = evaluatePrice(m, premiumPrice, 'premium', 'Premium', {
     status: 'premium',
     note: 'Higher margin per sale, but you will likely need stronger positioning or fewer, better customers.',
+    noteI18n: { key: 'scenario.premium.note' },
   });
 
   const trueCostPerUnit = e.B + recommended.price * e.f;
@@ -197,10 +208,24 @@ export function computePricing(m: CostModel): PricingResult {
   lines.sort((a, b) => b.amount - a.amount);
 
   // Warnings (conservative, plain language)
-  if (e.O / e.B > 0.4) warnings.push(`Fixed costs are ${pct(e.O / e.B)} of your cost per ${def.unitLabel}. Your price depends heavily on actually selling ${e.U} ${def.unitLabelPlural} a month.`);
-  if (e.f > 0.2) warnings.push(`Percentage fees take ${pct(e.f)} of every sale before you see any profit.`);
-  if (!target.achievableAtRecommended && T > 0) warnings.push(`At the recommended price and ${e.U} ${def.unitLabelPlural}/month you would be about ${Math.round(-gapAtRecommended)} ${m.meta.currency} short of your ${T} ${m.meta.currency} target. See the target panel and roadmap.`);
-  if (desired !== undefined && desired > def.marginBand.high + 0.1) warnings.push(`A ${pct(desired)} margin is well above the typical ${pct(def.marginBand.low)}–${pct(def.marginBand.high)} for this business type; expect a harder sell.`);
+  const warningsI18n: EngineMsg[] = [];
+  const unitKeys = { cur: m.meta.currency, unit: `unit.${m.meta.businessType}.one`, units: `unit.${m.meta.businessType}.other` };
+  if (e.O / e.B > 0.4) {
+    warnings.push(`Fixed costs are ${pct(e.O / e.B)} of your cost per ${def.unitLabel}. Your price depends heavily on actually selling ${e.U} ${def.unitLabelPlural} a month.`);
+    warningsI18n.push({ key: 'warning.fixedShare', params: { ...unitKeys, share: e.O / e.B, count: e.U } });
+  }
+  if (e.f > 0.2) {
+    warnings.push(`Percentage fees take ${pct(e.f)} of every sale before you see any profit.`);
+    warningsI18n.push({ key: 'warning.fees', params: { ...unitKeys, share: e.f } });
+  }
+  if (!target.achievableAtRecommended && T > 0) {
+    warnings.push(`At the recommended price and ${e.U} ${def.unitLabelPlural}/month you would be about ${Math.round(-gapAtRecommended)} ${m.meta.currency} short of your ${T} ${m.meta.currency} target. See the target panel and roadmap.`);
+    warningsI18n.push({ key: 'warning.shortOfTarget', params: { ...unitKeys, count: e.U, gap: Math.round(-gapAtRecommended), target: T } });
+  }
+  if (desired !== undefined && desired > def.marginBand.high + 0.1) {
+    warnings.push(`A ${pct(desired)} margin is well above the typical ${pct(def.marginBand.low)}–${pct(def.marginBand.high)} for this business type; expect a harder sell.`);
+    warningsI18n.push({ key: 'warning.marginTooHigh', params: { ...unitKeys, desired, low: def.marginBand.low, high: def.marginBand.high } });
+  }
 
   return {
     currency: m.meta.currency,
@@ -215,12 +240,13 @@ export function computePricing(m: CostModel): PricingResult {
     breakEvenPrice: round2(breakEvenPrice),
     variableBreakEvenPrice: round2(variableBreakEvenPrice),
     trueCostPerUnit: round2(trueCostPerUnit),
-    marginBand: { low: lowTarget, mid: midTarget, high: highTarget, rationale: band.rationale },
+    marginBand: { low: lowTarget, mid: midTarget, high: highTarget, rationale: band.rationale, rationaleI18n: band.rationaleI18n },
     scenarios: { minimum, recommended, premium },
     recommended,
     target,
     costBreakdown: lines,
     warnings,
+    warningsI18n,
   };
 }
 

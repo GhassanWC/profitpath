@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist-i18n",
+    "rootDir": "src/app/core/i18n",
+    "types": [],
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["src/app/core/i18n/**/*.ts"]
+}

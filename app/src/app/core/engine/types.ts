@@ -81,6 +81,7 @@ export interface Scenario {
   breakEvenUnits: number | null;
   status: ScenarioStatus;
   note: string;
+  noteI18n?: EngineMsg;
 }
 
 export interface CostLine {
@@ -108,6 +109,7 @@ export interface MarginBand {
   mid: number;
   high: number;
   rationale: string;
+  rationaleI18n?: EngineMsg;
 }
 
 export interface PricingResult {
@@ -137,11 +139,35 @@ export interface PricingResult {
   target: TargetAnalysis;
   costBreakdown: CostLine[];
   warnings: string[];
+  warningsI18n?: EngineMsg[];
 }
 
 export type RecCategory = 'reduce_costs' | 'increase_revenue' | 'reduce_cac' | 'increase_value';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type Priority = 'high' | 'medium' | 'low';
+
+/**
+ * A translatable string the engine emitted: a catalogue key plus the values it
+ * interpolates. Structurally identical to core/i18n's `Msg`, declared here so the
+ * engine keeps no dependency outside its own folder — `tsconfig.engine.json`
+ * compiles this directory alone.
+ *
+ * These fields are additive. Every English string the engine already produced is
+ * still produced; `i18n` simply lets a translated UI rebuild the same sentence in
+ * another language. `preview/i18n-check.mjs` asserts the English catalogue
+ * reproduces the engine's own prose character for character.
+ */
+export interface EngineMsg {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
+export interface RecommendationMessages {
+  title: EngineMsg;
+  why: EngineMsg;
+  action: EngineMsg;
+  assumptions: EngineMsg[];
+}
 
 export interface Recommendation {
   id: string;
@@ -154,6 +180,8 @@ export interface Recommendation {
   priority: Priority;
   assumptions: string[];
   done?: boolean;
+  /** The same copy as keys + params, for locales other than English. */
+  i18n?: RecommendationMessages;
 }
 
 export interface ProfitRoadmap {
@@ -171,6 +199,7 @@ export interface ProfitRoadmap {
   optimisedMonthlyProfit: number;
   targetReached: boolean;
   disclaimer: string;
+  disclaimerI18n?: EngineMsg;
 }
 
 export interface BusinessAnalysis {
