@@ -29,9 +29,9 @@ square corners, **Instrument Serif** for headings and the hero figure, **IBM Ple
 every number, and **Plus Jakarta Sans** for the copy you actually read. Nothing floats and
 nothing is rounded; a surface is told apart from the ground by a rule and a tint.
 
-**One surface layer.** A card *is* the sheet. (The glass system this replaced drew a white
-card inside a frosted panel with `::before`; that pseudo-element is still in the cascade,
-disabled, because the templates carry markup that assumed it.)
+**One surface layer.** A card *is* the sheet, told apart from the ground by a rule and a
+tint — not a white card floating inside a frosted panel, which is what the glass system this
+replaced did with a `::before`.
 
 **Card hierarchy — four treatments and one inverted. Do not add a fifth.**
 
@@ -129,6 +129,19 @@ node contrast.mjs                                 # colour audit
 browser. The preview itself is one self-contained HTML file and needs no install at all.
 Set `PP_CHROMIUM` to point the Playwright scripts at an existing browser when the machine's
 build differs from the pinned one.
+
+**All of it runs in CI** (`.github/workflows/ci.yml`) on every push to the default branch and
+every pull request, so none of it depends on someone remembering. The workflow also rebuilds
+`preview/engine.bundle.js` and `preview/i18n.bundle.js` and fails if they differ from what is
+committed — that is what catches a TypeScript source edited without the bundle regenerated.
+It uploads the built preview as an artifact, so a reviewer can download one file and open it.
+
+`preview/serve.mjs` is a dependency-free static server for pointing `verify.mjs` at a real
+Angular build:
+
+```bash
+node serve.mjs ../app/dist/profitpath/browser 4173
+```
 
 ## Run the Angular app
 
