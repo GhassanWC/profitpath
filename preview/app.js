@@ -197,6 +197,32 @@
   const LP_PLANS = [['free', '$0', false], ['pro', '$9', true], ['business', '$19', true]];
 
   // ---------- landing ----------
+  /* A reader who has asked for reduced motion gets the poster and no download. */
+  const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /**
+   * The hero clip, or nothing. HERO_CLIP comes from
+   * app/src/app/shared/hero-clip.ts, which build.mjs inlines the same way it
+   * inlines the icons and the drawings — so the two surfaces cannot disagree
+   * about whether footage exists.
+   *
+   * `oncanplay` rather than a listener because the preview re-renders by
+   * replacing innerHTML, and an inline handler survives that without any
+   * bookkeeping. The plate underneath shows until the class lands, and keeps
+   * showing if the clip never loads — which is what happens by default here,
+   * since the preview is one self-contained file with no assets beside it.
+   */
+  function heroVideo() {
+    if (!HERO_CLIP) return '';
+    const sources = HERO_CLIP.sources
+      .map((s) => `<source src="${esc(s.src)}" type="${esc(s.type)}">`)
+      .join('');
+    return `<video class="pp-lp-hero__video" poster="${esc(HERO_CLIP.poster)}"` +
+      ` preload="${REDUCED_MOTION ? 'none' : 'auto'}"${REDUCED_MOTION ? '' : ' autoplay'}` +
+      ` muted loop playsinline disablepictureinpicture tabindex="-1" aria-hidden="true"` +
+      ` oncanplay="this.classList.add('is-ready')">${sources}</video>`;
+  }
+
   function renderLanding() {
     /* Every figure below is the sample run through the real engine — nothing on
        this page is a hardcoded illustration. */
@@ -246,7 +272,7 @@
 
     return `<div class="pp-lp">
     <section class="pp-lp-hero">
-      <div class="pp-lp-hero__plate"></div><div class="pp-lp-hero__grain"></div>
+      <div class="pp-lp-hero__plate"></div>${heroVideo()}<div class="pp-lp-hero__grain"></div>
       <div class="pp-lp-hero__scrim"></div><div class="pp-lp-hero__foot"></div>
       <div class="pp-lp-hero__copy pp-lp__inner">
         <div>

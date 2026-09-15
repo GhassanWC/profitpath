@@ -89,6 +89,7 @@ jobs:
             sleep 1
           done
           node verify.mjs http://localhost:4173
+          node hero-video.mjs --installed=http://localhost:4173 http://localhost:4173
 
       # A reviewer can download this and open it — no install, no server.
       - name: Upload the built preview

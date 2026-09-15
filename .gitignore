@@ -4,3 +4,4 @@ app/dist-engine/
 app/.angular/
 preview/shots/
 app/dist-i18n/
+preview/fixtures/hero-video-fixture.html

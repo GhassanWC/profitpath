@@ -15,6 +15,7 @@ app/                               Angular 18 application (standalone components
   src/app/pages/                   landing · analyze (questionnaire) · results · roadmap
   src/app/shared/                  metric tile, scenario card, cost breakdown, recommendation card, pipes
 preview/                           Dependency-free live preview built from the same compiled engine
+tools/                             ledger-clip.mjs draws the hero clip; hero-clip.mjs cuts it to spec
 ```
 
 ## Design system
@@ -25,9 +26,18 @@ surfaces cannot drift — retargeting the tokens there moves the whole product a
 
 **An editorial register, not a dashboard one.** The product prices things for people who
 sell things, so it reads as financial print: a flat paper ground, rules instead of shadows,
-square corners, **Instrument Serif** for headings and the hero figure, **IBM Plex Mono** for
-every number, and **Plus Jakarta Sans** for the copy you actually read. Nothing floats and
-nothing is rounded; a surface is told apart from the ground by a rule and a tint.
+**Instrument Serif** for headings and the hero figure, **IBM Plex Mono** for every number, and
+**Plus Jakarta Sans** for the copy you actually read. Nothing floats; a surface is told apart
+from the ground by a rule and a tint, not by a shadow.
+
+**Corners follow Apple's own restraint, not a blanket value.** A `--pp-radius-*` scale in
+`styles.css` steps the rounding with a control's own footprint — a chip's corner and a card's
+corner are different numbers, and a shape nested inside another (a metric tile inside a card)
+steps down a tier so the ring of space around it stays even, the concentric-corner logic
+behind system controls. Full rounding is reserved for shapes that are pills or circles by
+nature — tags, thin progress bars, round marks — never applied to a rectangular button or
+card, which should still read as a button or a card. Hairline rules and grid dividers stay
+unrounded: a straight line has no corner to soften.
 
 **One surface layer.** A card *is* the sheet, told apart from the ground by a rule and a
 tint — not a white card floating inside a frosted panel, which is what the glass system this
@@ -65,6 +75,52 @@ asserts every referenced name resolves. No emoji anywhere in the interface.
 **Illustrations.** The landing page's drawings live in `app/src/app/shared/illustrations.ts`
 (same plain-data trick as the icons, so the preview reuses the file). They carry no colour
 of their own — stroke weight and hue come from the page, so one accent recolours the set.
+
+## The hero's background
+
+The landing hero is five layers, and the order is the point: an animated CSS **plate** on the
+floor, then the clip, then **grain** and a directional **scrim** on top. The scrim is what
+makes the headline legible over footage nobody has seen yet; the plate is what the hero falls
+back to when a clip 404s, stalls, or is refused autoplay — so the failure mode is a finished
+page, not a black band.
+
+**The clip that ships** is supplied footage — banknotes assembling into a heart — cut to spec
+by `tools/hero-clip.mjs`. `tools/ledger-clip.mjs` renders the drawn alternative (raking light
+moving across a ruled ledger sheet, at 410 kB) if it is ever dropped.
+
+```bash
+node tools/hero-clip.mjs your-clip.mov --loop-blend=1 --dim=0.45
+cd preview && node build.mjs               # so both surfaces agree
+```
+
+The delivery spec is 24fps, twelve seconds, **no audio track at all** — a muted autoplaying
+video that still carries audio is blocked by some autoplay policies. The three flags each exist
+because a real clip needed them:
+
+| Flag | Why |
+| --- | --- |
+| `--loop-blend=1` | arbitrary footage does not loop; this cross-dissolves the tail over the head, because the hard cut back to frame one is what reads as cheap |
+| `--dim=0.45` | grading the footage down, not deepening the scrim, is what keeps a **bright** clip legible without changing the design for every other clip. This one measured 4.09:1 under the headline ungraded — below AA |
+| `--width` | rarely needed: the frame is 1600×900, but the tool caps output at what the source can fill natively rather than upscaling. Portrait phone footage would otherwise be blown up 2.2× and the encoder would spend bits on detail that was never there — 2.3 MB against 784 kB, for no visible difference |
+
+**H.264 is listed first, WebM second** — the reverse of the usual advice. The source order is a
+*preference*, not a fallback chain: a browser takes the first entry it can play. VP9 usually
+wins on smooth dark footage, but on this detailed live-action it lost outright (959 kB against
+784 kB), so H.264 leads and almost everyone gets the smaller file. WebM stays behind it because
+the open-source Chromium build ships **no H.264 at all** — an mp4-only manifest leaves it with
+nothing to decode, which is silent: `readyState` stays 0 and `networkState` goes to `NO_SOURCE`
+*after* every byte has downloaded. The tool prints both sizes and says which should lead.
+
+Setting `HERO_CLIP` back to `null` is a supported state, not a broken one: no `<video>` renders
+and nothing is requested. A reader who has asked for reduced motion gets the poster and **no
+download** — `preload="none"`, no autoplay, and the plate stops drifting.
+
+Film grain is the tempting addition and the one to refuse: it is incompressible, and adding it
+to the drawn clip took the same twelve seconds from 410 kB to 4.5 MB. The grain in this hero is
+a CSS layer above the clip, which costs nothing.
+
+`preview/hero-video.mjs` checks all of this, including the state that is not currently shipped
+— see below.
 
 Type is loaded from Google Fonts in `app/src/index.html` and `preview/build.mjs`. Arabic
 faces sit at the end of every stack: font fallback is per-glyph, so Latin copy and every
@@ -123,10 +179,30 @@ node i18n-check.mjs                               # catalogues: fidelity, parity
 node verify.mjs                                   # the dependency-free preview
 node verify.mjs http://localhost:4173             # a served Angular build too
 node contrast.mjs                                 # colour audit
+node hero-video.mjs http://localhost:4173         # the hero's background, clip or no clip
 ```
 
-`i18n-check.mjs` and `contrast.mjs` are plain Node; only `verify.mjs` and `e2e.mjs` drive a
-browser. The preview itself is one self-contained HTML file and needs no install at all.
+`hero-video.mjs` drives the hero's clip on both surfaces: the element mounts under the grain
+and scrim, autoplays muted, advances, fades in only on `canplay`, and under
+`prefers-reduced-motion` sits paused on its poster having fetched nothing. It adapts to the
+manifest — with `HERO_CLIP` set to `null` it instead asserts that no `<video>` renders, no
+media is requested, and the hero's layers stay in order, so neither state can rot. It carries a
+4 kB fixture clip so the *installed* path can be exercised without rebuilding the app.
+
+Its last assertion is the one nothing else can make. `contrast.mjs` audits the stylesheet's own
+tokens, and the token behind the hero copy is the dark plate — which the clip covers, so
+legibility now depends on footage that is not in the stylesheet at all. `hero-video.mjs`
+composites the clip and the scrim in a canvas with the hero's exact geometry, sweeps eight
+timestamps across the loop, and measures the headline and lede against the *brightest* frame
+under them. The shipped clip holds **13.1:1** and **8.7:1**; AA wants 4.5.
+
+That sweep is why `serve.mjs` answers range requests. Without them Chromium refuses to seek a
+`<video>` and silently leaves `currentTime` at zero — the check went on reporting a pass while
+measuring one frame eight times. It now verifies each seek landed and fails if they did not,
+because a check that quietly narrows its own coverage is worse than no check.
+
+`i18n-check.mjs` and `contrast.mjs` are plain Node; `verify.mjs`, `hero-video.mjs` and
+`e2e.mjs` drive a browser. The preview itself is one self-contained HTML file and needs no install at all.
 Set `PP_CHROMIUM` to point the Playwright scripts at an existing browser when the machine's
 build differs from the pinned one.
 

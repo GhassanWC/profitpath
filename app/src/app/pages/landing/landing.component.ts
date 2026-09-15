@@ -1,13 +1,24 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { BUSINESS_TYPE_LIST, SAMPLES, buildRoadmap, computePricing, normalizeAnswers } from '../../core/engine';
 import { AnalysisStore } from '../../core/state/analysis.store';
 import { splitMoney } from '../../shared/format';
+import { HERO_CLIP } from '../../shared/hero-clip';
 import { I18nService } from '../../shared/i18n.service';
 import { IllustrationComponent } from '../../shared/illustration.component';
 import { STEP_ILLUSTRATIONS } from '../../shared/illustrations';
 import { MoneyPipe, PctPipe } from '../../shared/pipes';
 import { ProfitCompareComponent } from '../../shared/profit-compare.component';
+
+/**
+ * The shape of `HERO_CLIP`. It lives here rather than beside the manifest
+ * because that file has to stay valid plain JavaScript for `preview/build.mjs`
+ * to read it, and an interface is not.
+ */
+interface HeroClip {
+  poster: string;
+  sources: { src: string; type: string }[];
+}
 
 /** Plan prices are the product's own list prices, not analysis output. */
 const PLANS = [
@@ -39,11 +50,40 @@ const FEATURES: { key: string; free: boolean | string; pro: boolean | string; bu
   host: { class: 'pp-lp' },
   template: `
     <!-- ===================================================== hero -->
-    <!-- Layers 1-3 are what let an arbitrary clip sit behind reading copy. To
-         ship real footage, drop a <video class="pp-lp-hero__video" muted loop
-         playsinline poster="..."> in place of the plate; nothing else moves. -->
+    <!-- Five layers, and the order is the whole trick: the plate is the floor,
+         so a clip that 404s, stalls or is refused autoplay leaves a finished
+         hero rather than a black band. Grain and scrim sit on top of whatever
+         won, which is what lets arbitrary footage carry reading copy.
+
+         The muted binding is a property binding, not a bare attribute: Angular
+         writes static attributes with setAttribute, and muted is one of the few
+         that only reflects to the property when the HTML *parser* sees it.
+         Spelled as an attribute here the property stays false, and every
+         autoplay policy then refuses the clip. The preview can spell it as an
+         attribute because its markup does go through the parser, via innerHTML.
+         preview/hero-video.mjs is what catches this. -->
     <section class="pp-lp-hero">
       <div class="pp-lp-hero__plate"></div>
+      @if (clip) {
+        <video
+          class="pp-lp-hero__video"
+          [class.is-ready]="clipReady()"
+          [poster]="clip.poster"
+          [attr.preload]="reducedMotion ? 'none' : 'auto'"
+          [attr.autoplay]="reducedMotion ? null : ''"
+          [muted]="true"
+          loop
+          playsinline
+          disablepictureinpicture
+          tabindex="-1"
+          aria-hidden="true"
+          (canplay)="clipReady.set(true)"
+        >
+          @for (source of clip.sources; track source.src) {
+            <source [src]="source.src" [type]="source.type" />
+          }
+        </video>
+      }
       <div class="pp-lp-hero__grain"></div>
       <div class="pp-lp-hero__scrim"></div>
       <div class="pp-lp-hero__foot"></div>
@@ -311,6 +351,27 @@ export class LandingComponent {
   readonly steps = STEP_ILLUSTRATIONS;
   readonly plans = PLANS;
   readonly features = FEATURES;
+
+  /**
+   * The hero clip, or `null` when none is installed — see `shared/hero-clip.ts`.
+   * The cast is the price of keeping that file plain JavaScript so the preview
+   * can read it: with no annotation TypeScript infers the literal type `null`.
+   */
+  readonly clip = HERO_CLIP as HeroClip | null;
+
+  /**
+   * A reader who has asked for reduced motion gets the poster and no download:
+   * `preload="none"` and no `autoplay`, so the clip is never fetched at all.
+   * The CSS already stops the plate drifting under the same query.
+   */
+  readonly reducedMotion =
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+  /**
+   * Fade in on `canplay`, not on load: the plate holds the hero until there are
+   * frames to show, so a slow clip never flashes a black band over the headline.
+   */
+  readonly clipReady = signal(false);
 
   private readonly sample = SAMPLES[0];
   private readonly exModel = normalizeAnswers(this.sample.type, this.sample.answers, this.sample.offering);
