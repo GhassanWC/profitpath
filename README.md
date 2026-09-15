@@ -75,41 +75,40 @@ makes the headline legible over footage nobody has seen yet; the plate is what t
 back to when a clip 404s, stalls, or is refused autoplay — so the failure mode is a finished
 page, not a black band.
 
-**The clip that ships** is drawn, not licensed — the same principle as the illustrations.
-`tools/ledger-clip.mjs` renders raking light moving across a ruled ledger sheet: the plate's
-own diagonal ground, a ledger's rules and money columns, and two cool light pools, each
-drifting at a different rate. The rules are *multiplied* by the lights, so they exist only
-where the light falls and surface as the pools drift — which is the thing CSS cannot do, and
-the only reason a video earns its download here.
-
-Both tools are in the repo, so the three files in `app/public/` can be regenerated:
+**The clip that ships** is supplied footage — banknotes assembling into a heart — cut to spec
+by `tools/hero-clip.mjs`. `tools/ledger-clip.mjs` renders the drawn alternative (raking light
+moving across a ruled ledger sheet, at 410 kB) if it is ever dropped.
 
 ```bash
-node tools/ledger-clip.mjs master.mp4      # draw it       (needs ffmpeg; nothing else does)
-node tools/hero-clip.mjs master.mp4        # cut to spec
-```
-
-The delivery spec is 1600×900, 24fps, twelve seconds, **no audio track at all** — a muted
-autoplaying video that still carries audio is blocked by some autoplay policies. It lands at
-**410 kB of H.264 and 84 kB of VP9**, which most browsers take. Every drift completes exactly
-one cycle over the duration, so the loop closes without a cut.
-
-To swap in your own footage, cut it to the same filenames and leave the manifest alone.
-`--loop-blend=1` cross-dissolves the tail over the head, because arbitrary footage does not
-loop and the hard cut back to frame one is what reads as cheap:
-
-```bash
-node tools/hero-clip.mjs your-clip.mov --loop-blend=1
+node tools/hero-clip.mjs your-clip.mov --loop-blend=1 --dim=0.45
 cd preview && node build.mjs               # so both surfaces agree
 ```
+
+The delivery spec is 24fps, twelve seconds, **no audio track at all** — a muted autoplaying
+video that still carries audio is blocked by some autoplay policies. The three flags each exist
+because a real clip needed them:
+
+| Flag | Why |
+| --- | --- |
+| `--loop-blend=1` | arbitrary footage does not loop; this cross-dissolves the tail over the head, because the hard cut back to frame one is what reads as cheap |
+| `--dim=0.45` | grading the footage down, not deepening the scrim, is what keeps a **bright** clip legible without changing the design for every other clip. This one measured 4.09:1 under the headline ungraded — below AA |
+| `--width` | rarely needed: the frame is 1600×900, but the tool caps output at what the source can fill natively rather than upscaling. Portrait phone footage would otherwise be blown up 2.2× and the encoder would spend bits on detail that was never there — 2.3 MB against 784 kB, for no visible difference |
+
+**H.264 is listed first, WebM second** — the reverse of the usual advice. The source order is a
+*preference*, not a fallback chain: a browser takes the first entry it can play. VP9 usually
+wins on smooth dark footage, but on this detailed live-action it lost outright (959 kB against
+784 kB), so H.264 leads and almost everyone gets the smaller file. WebM stays behind it because
+the open-source Chromium build ships **no H.264 at all** — an mp4-only manifest leaves it with
+nothing to decode, which is silent: `readyState` stays 0 and `networkState` goes to `NO_SOURCE`
+*after* every byte has downloaded. The tool prints both sizes and says which should lead.
 
 Setting `HERO_CLIP` back to `null` is a supported state, not a broken one: no `<video>` renders
 and nothing is requested. A reader who has asked for reduced motion gets the poster and **no
 download** — `preload="none"`, no autoplay, and the plate stops drifting.
 
 Film grain is the tempting addition and the one to refuse: it is incompressible, and adding it
-took the same twelve seconds from 410 kB to 4.5 MB. The grain in this hero is a CSS layer above
-the clip, which costs nothing.
+to the drawn clip took the same twelve seconds from 410 kB to 4.5 MB. The grain in this hero is
+a CSS layer above the clip, which costs nothing.
 
 `preview/hero-video.mjs` checks all of this, including the state that is not currently shipped
 — see below.

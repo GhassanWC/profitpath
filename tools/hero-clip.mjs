@@ -1,18 +1,28 @@
 /**
  * Cut a video to the landing hero's background spec.
  *
- *   node tools/hero-clip.mjs <file> [--loop-blend=1] [--start=0]
+ *   node tools/hero-clip.mjs <file> [--loop-blend=1] [--start=0] [--dim=0.35]
  *
  * Writes three files into `app/public/`, which is what the manifest in
  * `app/src/app/shared/hero-clip.ts` already names, so nothing else changes:
  *
- *   hero.mp4          H.264 — what almost everything plays
- *   hero.webm         VP9 — roughly a third smaller where it is supported
+ *   hero.mp4          H.264 — what everything plays
+ *   hero.webm         VP9 — usually smaller, but NOT always: on detailed
+ *                     live-action it can lose to H.264 outright, and the
+ *                     browser takes the first source it can play. Both sizes
+ *                     are printed, and a warning names the case where listing
+ *                     WebM first would serve most people the bigger file.
  *   hero-poster.jpg   the first frame: shown while the clip loads, and instead
  *                     of it when the reader has asked for reduced motion
  *
  * Then set `HERO_CLIP` in the manifest to the descriptor beside it. Until you
  * do, the hero paints the CSS plate and makes no request.
+ *
+ * `--dim` grades the footage down so the copy over it stays legible; `--width`
+ * overrides the output size, which otherwise caps at what the source can fill
+ * natively rather than upscaling portrait phone footage into a landscape frame.
+ * `preview/hero-video.mjs` measures the result at both breakpoints — run it
+ * after cutting a clip, and let it pick the `--dim` rather than guessing.
  *
  * Why the spec is what it is: the clip sits under a scrim between 32% and 94%
  * opaque, so most of its detail is thrown away before anyone sees it. It is cut
@@ -21,9 +31,9 @@
  * autoplay policies). A bitrate that would be indefensible for footage anyone
  * looks at directly is right here.
  *
- * This cuts footage; it does not invent any. `tools/ledger-clip.mjs` renders the
- * clip that currently ships, and its output comes through here like anything
- * else. The line between them is worth keeping: a synthesised *gradient* would
+ * This cuts footage; it does not invent any. `tools/ledger-clip.mjs` draws a
+ * clip from scratch, and its output comes through here like anything else. The
+ * line between them is worth keeping: a synthesised *gradient* would
  * be pointless — `.pp-lp-hero__plate` draws one in eight lines of CSS for no
  * bytes — so what that script draws is the thing CSS cannot, light moving across
  * a ruled sheet. Film grain is the other tempting addition and the one to
@@ -68,6 +78,23 @@ function ffmpegPath() {
   }
 }
 
+/**
+ * The source's pixel dimensions, read back from ffmpeg's own report.
+ *
+ * `-i` alone exits non-zero ("At least one output file must be specified"),
+ * which is expected — the dimensions are on stderr either way.
+ */
+function probe(ff, source) {
+  let out = '';
+  try {
+    execFileSync(ff, ['-hide_banner', '-i', source], { encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) {
+    out = `${e.stderr ?? ''}`;
+  }
+  const m = /Stream #\d+:\d+.*Video:.*?, (\d+)x(\d+)/.exec(out);
+  return m ? { w: Number(m[1]), h: Number(m[2]) } : null;
+}
+
 function run(ff, args) {
   try {
     execFileSync(ff, ['-hide_banner', '-loglevel', 'error', '-y', ...args], { stdio: 'inherit' });
@@ -81,14 +108,23 @@ function run(ff, args) {
 
 // --------------------------------------------------------------------- filter
 
-function buildFilter({ start, blend }) {
+function buildFilter({ start, blend, dim, out }) {
   // cover, not contain: the hero is full-bleed at the window's aspect ratio, so
   // anything letterboxed here shows as bars behind the headline.
   const fit =
-    `fps=${FPS},scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H},setsar=1`;
+    `fps=${FPS},scale=${out.w}:${out.h}:force_original_aspect_ratio=increase,crop=${out.w}:${out.h},setsar=1`;
   const take = `trim=${start}:${start + SECONDS},setpts=PTS-STARTPTS`;
 
-  if (!blend) return `[0:v]${fit},${take},format=yuv420p[v]`;
+  // Grading the footage down, rather than deepening the scrim, is what keeps a
+  // bright clip legible without changing the design for every other clip. It is
+  // a straight multiply in RGB — the same arithmetic as laying black over it at
+  // `dim` opacity — so the effect is predictable: luminance falls by roughly
+  // (1-dim)^2.2, and `preview/hero-video.mjs` reports what it actually bought.
+  // Applied before the loop blend so the cross-dissolve grades with it.
+  const k = (1 - dim).toFixed(4);
+  const grade = dim ? `,colorchannelmixer=rr=${k}:gg=${k}:bb=${k}` : '';
+
+  if (!blend) return `[0:v]${fit},${take}${grade},format=yuv420p[v]`;
 
   // Arbitrary footage does not loop, and the hard cut back to frame one is the
   // thing that reads as cheap. Cross-dissolve the last `blend` seconds over the
@@ -98,7 +134,7 @@ function buildFilter({ start, blend }) {
   // rate from the stream's metadata, and xfade refuses an input whose rate it
   // cannot read ("current rate of 1/0 is invalid").
   return [
-    `[0:v]${fit},${take}[all]`,
+    `[0:v]${fit},${take}${grade}[all]`,
     `[all]split=2[a][b]`,
     `[a]trim=0:${keep},setpts=PTS-STARTPTS,fps=${FPS}[head]`,
     `[b]trim=${keep}:${SECONDS},setpts=PTS-STARTPTS,fps=${FPS}[tail]`,
@@ -145,6 +181,20 @@ function write(ff, source, filter, start) {
   console.log(`  app/public/hero.mp4        ${kb(mp4)}`);
   console.log(`  app/public/hero.webm       ${kb(webm)}`);
   console.log(`  app/public/hero-poster.jpg ${kb(poster)}`);
+
+  // The manifest's source ORDER is a preference, not a fallback chain: the
+  // browser takes the first entry it can play. VP9 usually wins on the smooth
+  // dark footage this hero wants, but on detailed live-action it can lose to
+  // H.264 outright, and then leading with WebM hands most people the bigger
+  // file. Keep both either way — the open-source Chromium build ships no H.264,
+  // so an mp4-only manifest leaves it with nothing to decode.
+  if (statSync(webm).size >= statSync(mp4).size) {
+    console.warn(
+      `\nhero.webm (${kb(webm)}) is larger than hero.mp4 (${kb(mp4)}) for this clip, so put\n` +
+        'the mp4 source FIRST in app/src/app/shared/hero-clip.ts. Keep the webm entry\n' +
+        'behind it: browsers without H.264 have nothing else to play.',
+    );
+  }
   console.log('');
   console.log('Now set HERO_CLIP in app/src/app/shared/hero-clip.ts, and rebuild the');
   console.log('preview so both surfaces agree:  cd preview && node build.mjs');
@@ -170,7 +220,7 @@ const flag = (name, fallback) => {
 
 const source = argv.find((a) => !a.startsWith('--'));
 if (!source) {
-  console.error('Usage: node tools/hero-clip.mjs <file> [--loop-blend=1] [--start=0]');
+  console.error('Usage: node tools/hero-clip.mjs <file> [--loop-blend=1] [--start=0] [--dim=0.35] [--width=1600]');
   process.exit(1);
 }
 if (!existsSync(resolve(source))) {
@@ -180,9 +230,44 @@ if (!existsSync(resolve(source))) {
 
 const blend = flag('loop-blend', 0);
 const start = flag('start', 0);
+const dim = flag('dim', 0);
+const widthOverride = flag('width', 0);
 if (blend < 0 || blend >= SECONDS) {
   console.error(`--loop-blend must be between 0 and ${SECONDS}.`);
   process.exit(1);
 }
+if (dim < 0 || dim >= 1) {
+  console.error('--dim must be between 0 and 1 (0.35 knocks the footage back by a third).');
+  process.exit(1);
+}
 
-write(ffmpegPath(), resolve(source), buildFilter({ start, blend }), start);
+const ff = ffmpegPath();
+const src = probe(ff, resolve(source));
+
+/**
+ * Never encode more pixels than the source actually has.
+ *
+ * A cover crop from portrait phone footage into this landscape frame upscales
+ * hard — 720x1280 has to be blown up 2.2x to fill 1600x900 — and the encoder
+ * then spends bits storing detail that was never in the file. Capping at what
+ * the source can fill natively cut this clip from 2.3 MB to well under a third
+ * with no visible difference, because the browser does the same upscale for
+ * free and the whole thing sits under a scrim regardless.
+ *
+ * `--width` overrides, for footage where you want the headroom anyway.
+ */
+const out = (() => {
+  if (widthOverride) {
+    const w = Math.round(widthOverride / 2) * 2;
+    return { w, h: Math.round((w * H) / W / 2) * 2, why: 'requested' };
+  }
+  if (!src) return { w: W, h: H, why: 'default (could not read the source size)' };
+  // The width the source fills without stretching, given the crop keeps this frame's ratio.
+  const native = Math.min(src.w, Math.round((src.h * W) / H));
+  if (native >= W) return { w: W, h: H, why: 'full spec' };
+  const w = Math.max(640, Math.round(native / 2) * 2);
+  return { w, h: Math.round((w * H) / W / 2) * 2, why: `capped to the source's ${src.w}x${src.h}` };
+})();
+
+console.log(`source ${src ? `${src.w}x${src.h}` : 'unknown'} -> output ${out.w}x${out.h} (${out.why})`);
+write(ff, resolve(source), buildFilter({ start, blend, dim, out }), start);

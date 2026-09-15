@@ -1,18 +1,28 @@
 /**
  * The landing hero's background clip.
  *
- * What ships is the ledger clip — raking light moving across a ruled sheet,
- * rendered by `tools/ledger-clip.mjs` and cut to spec by `tools/hero-clip.mjs`.
- * Both are in the repo, so the three files in `app/public/` can be regenerated
- * rather than being binaries nobody can reproduce.
+ * What ships is supplied footage — banknotes assembling into a heart — cut to
+ * spec by `tools/hero-clip.mjs`, graded down 45% so the copy over it clears
+ * WCAG AA, and capped to the source's own resolution instead of being upscaled
+ * into the 1600x900 frame. `tools/ledger-clip.mjs` still renders the drawn
+ * alternative if this is ever dropped.
  *
- * WebM first: the browser takes the first type it can play, and VP9 is about a
- * third smaller than the H.264 that everything else falls back to.
+ * H.264 FIRST, WebM second — the reverse of the usual advice, and deliberate.
+ * The browser takes the first source it can play, so the order is a preference,
+ * not a fallback chain: VP9 normally wins on the smooth dark footage this hero
+ * wants, but on this detailed live-action it lost outright (959 kB against
+ * 784 kB), so H.264 leads and almost everyone gets the smaller file.
+ *
+ * WebM still earns its place behind it. The open-source Chromium build ships no
+ * H.264 at all — that is what Playwright drives — so an mp4-only manifest gives
+ * it no decodable source, `networkState` goes to NO_SOURCE after downloading
+ * every byte, and `preview/hero-video.mjs` cannot measure the clip it is meant
+ * to be checking. `hero-clip.mjs` prints both sizes; put the smaller first.
  *
  * To swap in different footage, cut it to the same filenames and leave this
  * alone:
  *
- *   node tools/hero-clip.mjs your-clip.mov --loop-blend=1
+ *   node tools/hero-clip.mjs your-clip.mov --loop-blend=1 --dim=0.45
  *
  * Setting this back to `null` is also a supported state, not a broken one: the
  * hero then paints `.pp-lp-hero__plate` — the animated CSS gradient — and makes
@@ -33,7 +43,7 @@
 export const HERO_CLIP = {
   poster: 'hero-poster.jpg',
   sources: [
-    { src: 'hero.webm', type: 'video/webm' },
     { src: 'hero.mp4', type: 'video/mp4' },
+    { src: 'hero.webm', type: 'video/webm' },
   ],
 };

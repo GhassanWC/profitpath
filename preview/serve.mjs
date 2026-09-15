@@ -31,6 +31,18 @@ const TYPES = {
   '.woff2': 'font/woff2',
   '.woff': 'font/woff',
   '.map': 'application/json; charset=utf-8',
+  // Media, and these are not optional. Served as the octet-stream default, a
+  // <video> is refused outright — readyState stays 0 and networkState goes to
+  // NO_SOURCE — *after* the browser has downloaded every byte, with nothing in
+  // the console. The `type` on <source> does not rescue it. Any real server
+  // sets these, so it only ever bites here.
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.webm': 'video/webm',
+  '.ogv': 'video/ogg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.avif': 'image/avif',
 };
 
 const server = createServer(async (req, res) => {

@@ -42,6 +42,15 @@
  *     color=0x2b3450@1:t=fill,format=yuv420p[v]" -map "[v]" -an \
  *     -c:v libx264 -crf 30 fixtures/hero-sample.mp4
  *
+ * ONE TRAP WORTH KNOWING, because it costs an hour and looks like a broken
+ * clip: Playwright drives the open-source Chromium build, which ships NO H.264.
+ * An mp4-only manifest therefore gives it nothing decodable — `readyState` stays
+ * 0 and `networkState` goes to NO_SOURCE *after* every byte has downloaded, with
+ * nothing in the console. Everything measured here is decoding the WebM, so keep
+ * a WebM entry in the manifest even when H.264 is the smaller file and leads.
+ * (`serve.mjs` must also send `video/mp4` and `video/webm`; as the octet-stream
+ * default the same silent refusal happens to every browser.)
+ *
  * Prerequisite: `node build.mjs`. Set PP_CHROMIUM to override the browser.
  */
 import { chromium } from 'playwright';
@@ -229,7 +238,20 @@ for (const [surface, url] of installed) {
   } else ok(`layer order ${order.slice(0, 4).join(' → ')}`);
 
   // It actually decodes and advances, rather than merely existing.
-  await video.evaluate((v) => v.readyState >= 3 || new Promise((r) => v.addEventListener('canplay', r, { once: true })));
+  // Bounded, because `canplay` may already have fired before this listener is
+  // attached: an unbounded wait then hangs forever, and `evaluate` has no
+  // timeout of its own — the run just stops, with no failure and no message.
+  // The assertions below are what report an unready clip, so timing out here is
+  // the right behaviour, not a silent pass.
+  await video.evaluate(
+    (v) =>
+      v.readyState >= 3 ||
+      new Promise((r) => {
+        const done = () => r();
+        v.addEventListener('canplay', done, { once: true });
+        setTimeout(done, 10000);
+      }),
+  );
   const played = await video.evaluate(
     (v) =>
       new Promise((r) => {
@@ -277,7 +299,7 @@ for (const [surface, url] of installed) {
   // brightest pixels under the headline are the headline. Same geometry as the
   // hero — object-fit: cover, then the scrim's exact stops — sampled across the
   // whole clip, because a loop is only as legible as its brightest moment.
-  const legibility = await video.evaluate(async (v, dir) => {
+  const measure = async () => video.evaluate(async (v, dir) => {
     const rtl = dir === 'rtl';
     const box = v.getBoundingClientRect();
     const copy = document.querySelector('.pp-lp-hero__copy > div').getBoundingClientRect();
@@ -295,10 +317,40 @@ for (const [surface, url] of installed) {
     const dx = (W - dw) / 2;
     const dy = (H - dh) / 2;
 
-    // The scrim, straight from styles.css. It flips in Arabic, and so does this.
-    const STOPS = [[0, 0.94], [0.38, 0.82], [0.72, 0.32], [1, 0.5]];
-    const grad = rtl ? ctx.createLinearGradient(W, 0, 0, 0) : ctx.createLinearGradient(0, 0, W, 0);
-    for (const [at, a] of STOPS) grad.addColorStop(at, `rgba(11, 12, 16, ${a})`);
+    // The scrim is READ from the page, not copied from styles.css. It differs by
+    // breakpoint — horizontal on desktop, vertical and much weaker in the middle
+    // at phone width — and it flips in Arabic. A hardcoded copy measured the
+    // desktop scrim at every width and silently passed the case that actually
+    // fails, so the gradient comes from getComputedStyle instead.
+    const css = getComputedStyle(document.querySelector('.pp-lp-hero__scrim')).backgroundImage;
+    // Computed values are not the source spelling: Chromium drops `to bottom`
+    // (it is the default) and drops the 0%/100% positions on the end stops, so
+    // a parser that demands either finds nothing.
+    const stops = [...css.matchAll(/(rgba?\([^)]*\))(?:\s+([\d.]+)%)?/g)].map((m) => ({
+      css: m[1],
+      at: m[2] === undefined ? null : Number(m[2]) / 100,
+    }));
+    if (stops.length < 2) throw new Error(`could not read the scrim gradient from: ${css}`);
+    // Fill the positions CSS leaves implicit: ends anchor, interior stops spread
+    // evenly between their known neighbours.
+    if (stops[0].at === null) stops[0].at = 0;
+    if (stops[stops.length - 1].at === null) stops[stops.length - 1].at = 1;
+    for (let a = 0; a < stops.length; a++) {
+      if (stops[a].at !== null) continue;
+      let b = a;
+      while (stops[b].at === null) b++;
+      const span = (stops[b].at - stops[a - 1].at) / (b - a + 1);
+      for (let k = a; k < b; k++) stops[k].at = stops[a - 1].at + span * (k - a + 1);
+    }
+    // Direction. No keyword at all means `to bottom`, so vertical is the default
+    // and horizontal is the thing that has to be stated.
+    const horizontal = /\bto (left|right)\b|(^|[^\d.])(90|270)deg/.test(css);
+    const vertical = !horizontal;
+    const reversed = /\bto (left|top)\b|(^|[^\d.])(0deg|270deg)/.test(css) || (horizontal && rtl);
+    let grad;
+    if (vertical) grad = reversed ? ctx.createLinearGradient(0, H, 0, 0) : ctx.createLinearGradient(0, 0, 0, H);
+    else grad = reversed ? ctx.createLinearGradient(W, 0, 0, 0) : ctx.createLinearGradient(0, 0, W, 0);
+    for (const s of stops) grad.addColorStop(s.at, s.css);
 
     const rect = {
       x: Math.max(0, Math.round(copy.left - box.left)),
@@ -355,25 +407,34 @@ for (const [surface, url] of installed) {
     return { brightest, atTime, rect, landed, probes: 8 };
   }, await page.evaluate(() => document.documentElement.dir));
 
-  // A sweep that only covered one frame is not a sweep; say so rather than
-  // reporting a pass that was never earned.
-  if (legibility.landed.length < legibility.probes) {
-    fail(
-      `only ${legibility.landed.length}/${legibility.probes} timestamps were reachable — the ` +
-        'server is not answering range requests, so this swept one frame, not the clip',
-    );
-  }
 
-  // The two inks that sit on the clip, from styles.css.
-  const INKS = [['headline', 0xfb, 0xf9, 0xf4], ['lede', 0xc8, 0xcd, 0xdb]];
-  const chan = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-  for (const [name, r, g, b] of INKS) {
-    const inkLum = 0.2126 * chan(r / 255) + 0.7152 * chan(g / 255) + 0.0722 * chan(b / 255);
-    const ratio = (inkLum + 0.05) / (legibility.brightest + 0.05);
-    if (ratio < 4.5) {
-      fail(`${name} drops to ${ratio.toFixed(2)}:1 over the clip at t=${legibility.atTime.toFixed(1)}s — below AA`);
-    } else {
-      ok(`${name} holds ${ratio.toFixed(2)}:1 over the clip's brightest frame (t=${legibility.atTime.toFixed(1)}s)`);
+  // Both breakpoints. The phone scrim is a different gradient over a copy block
+  // that runs the full width, so desktop passing says nothing about it — which
+  // is exactly the case a bright clip fails first.
+  for (const [label, width, height] of [['desktop', 1440, 900], ['phone', 390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.waitForTimeout(250);
+    const legibility = await measure();
+    // A sweep that only covered one frame is not a sweep; say so rather than
+    // reporting a pass that was never earned.
+    if (legibility.landed.length < legibility.probes) {
+      fail(
+        `${label}: only ${legibility.landed.length}/${legibility.probes} timestamps were reachable — the ` +
+          'server is not answering range requests, so this swept one frame, not the clip',
+      );
+    }
+
+    // The two inks that sit on the clip, from styles.css.
+    const INKS = [['headline', 0xfb, 0xf9, 0xf4], ['lede', 0xc8, 0xcd, 0xdb]];
+    const chan = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    for (const [name, r, g, b] of INKS) {
+      const inkLum = 0.2126 * chan(r / 255) + 0.7152 * chan(g / 255) + 0.0722 * chan(b / 255);
+      const ratio = (inkLum + 0.05) / (legibility.brightest + 0.05);
+      if (ratio < 4.5) {
+        fail(`${label}: ${name} drops to ${ratio.toFixed(2)}:1 over the clip at t=${legibility.atTime.toFixed(1)}s — below AA`);
+      } else {
+        ok(`${label}: ${name} holds ${ratio.toFixed(2)}:1 at the clip's brightest (t=${legibility.atTime.toFixed(1)}s)`);
+      }
     }
   }
 
