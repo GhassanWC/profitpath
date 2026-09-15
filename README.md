@@ -26,9 +26,18 @@ surfaces cannot drift — retargeting the tokens there moves the whole product a
 
 **An editorial register, not a dashboard one.** The product prices things for people who
 sell things, so it reads as financial print: a flat paper ground, rules instead of shadows,
-square corners, **Instrument Serif** for headings and the hero figure, **IBM Plex Mono** for
-every number, and **Plus Jakarta Sans** for the copy you actually read. Nothing floats and
-nothing is rounded; a surface is told apart from the ground by a rule and a tint.
+**Instrument Serif** for headings and the hero figure, **IBM Plex Mono** for every number, and
+**Plus Jakarta Sans** for the copy you actually read. Nothing floats; a surface is told apart
+from the ground by a rule and a tint, not by a shadow.
+
+**Corners follow Apple's own restraint, not a blanket value.** A `--pp-radius-*` scale in
+`styles.css` steps the rounding with a control's own footprint — a chip's corner and a card's
+corner are different numbers, and a shape nested inside another (a metric tile inside a card)
+steps down a tier so the ring of space around it stays even, the concentric-corner logic
+behind system controls. Full rounding is reserved for shapes that are pills or circles by
+nature — tags, thin progress bars, round marks — never applied to a rectangular button or
+card, which should still read as a button or a card. Hairline rules and grid dividers stay
+unrounded: a straight line has no corner to soften.
 
 **One surface layer.** A card *is* the sheet, told apart from the ground by a rule and a
 tint — not a white card floating inside a frosted panel, which is what the glass system this

@@ -4,9 +4,11 @@
 
    An editorial register, not a dashboard one. The product prices things for
    people who sell things, so it reads as financial print: a flat ground, rules
-   and tint instead of shadow and blur, square corners, a serif for headings
-   and the hero figure, a mono for every number, a sans for the copy you
-   actually read. Nothing floats and nothing is rounded.
+   and tint instead of shadow and blur, a serif for headings and the hero
+   figure, a mono for every number, a sans for the copy you actually read.
+   Nothing floats. Corners take Apple's restraint rather than either extreme —
+   never a hard square, never a capsule pill on a rectangle — see the radius
+   scale below.
 
    This file is the whole system. `preview/build.mjs` compiles it in verbatim,
    so retargeting a token here moves the Angular app and the dependency-free
@@ -92,11 +94,26 @@
   --pp-fig-sm: 15px;
 
 
-  /* Print has no rounded corners and no shadow: a surface is told apart by a
-     rule and a tint. The one exception is the language menu, which floats over
-     the page and needs to read as lifted off it. */
+  /* Print still has no shadow and no lift: a surface is told apart by a rule
+     and a tint, not levitation. The one exception is the language menu, which
+     floats over the page and needs to read as lifted off it. */
   --pp-shadow-menu: 0 18px 40px -24px rgba(38, 34, 24, 0.45);
   --pp-ring-brand: 0 0 0 3px rgba(31, 87, 224, 0.18);
+
+  /* Corner radius — Apple's strategy, not a blanket value. Rounding scales
+     with a control's own footprint (a chip's corner and a card's corner are
+     not the same number), and a shape nested inside another steps DOWN a tier
+     so the ring of space around it stays an even width — the concentric-
+     corner logic behind system controls. True full rounding is reserved for
+     things that are pills or circles by nature — tags, thin bars, round marks
+     — never applied to a rectangular button or card, which should still read
+     as a button or a card, not a capsule. Hairline rules and grid dividers
+     stay unrounded throughout: a straight line has no corner to soften. */
+  --pp-radius-xs: 6px;    /* legend/composition dots round instead — see below */
+  --pp-radius-sm: 8px;    /* blocks nested inside a card: metric tiles, callouts */
+  --pp-radius-md: 10px;   /* buttons, inputs, option rows, notices, the menu */
+  --pp-radius-lg: 14px;   /* cards themselves — one radius for all four tiers */
+  --pp-radius-full: 999px; /* pills and round marks: chips, checks, thin bars */
 
   /* Motion */
   --pp-ease: 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -178,8 +195,8 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-lang__menu {
   position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 60;
   margin: 0; padding: 0; list-style: none; min-width: 200px;
-  background: var(--pp-card); border-radius: 0; box-shadow: var(--pp-shadow-menu);
-  border: 1px solid var(--pp-ink);
+  background: var(--pp-card); border-radius: var(--pp-radius-md); box-shadow: var(--pp-shadow-menu);
+  border: 1px solid var(--pp-ink); overflow: hidden;
 }
 .pp-lang__item {
   display: flex; align-items: center; gap: 10px; width: 100%; border: 0; cursor: pointer;
@@ -226,12 +243,13 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 }
 
 /* --------------------------------------------------------------- buttons -- */
-/* Every button is a full pill. Hover lifts 1px; there is no press state. */
-/* Square and ruled, set in the mono: an action reads as a stamp on the page.
-   No lift on hover — nothing in a printed system floats. */
+/* Ruled and set in the mono: an action still reads as a stamp on the page, not
+   a capsule. No lift on hover — nothing in a printed system floats. The corner
+   is Apple's own restraint on a system button — rounded enough to soften, far
+   short of a pill. */
 .btn-pp, .btn-pp-ghost, .btn-pp-white {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border: 0; border-radius: 0; font-family: var(--pp-mono); font-weight: 400;
+  border: 0; border-radius: var(--pp-radius-md); font-family: var(--pp-mono); font-weight: 400;
   line-height: 1.2; padding: 12px 22px; font-size: 13px; white-space: nowrap; cursor: pointer;
   transition: background var(--pp-ease), border-color var(--pp-ease), color var(--pp-ease);
 }
@@ -250,7 +268,13 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .btn-pp-white:hover, .btn-pp-white:focus { background: var(--pp-ink); color: var(--pp-bg-2); }
 
 .btn-pp-lg { padding: 16px 30px; font-size: 14px; gap: 10px; }
-.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm { padding: 9px 16px; font-size: 12px; gap: 7px; }
+/* A bigger button earns a hair more curve, a smaller one a hair less — the
+   same proportional step Apple's own controls take between sizes, not one
+   fixed radius regardless of height. */
+.btn-pp-hero, .btn-pp-lg { border-radius: var(--pp-radius-lg); }
+.btn-sm, .btn-pp.btn-sm, .btn-pp-ghost.btn-sm, .btn-pp-white.btn-sm {
+  padding: 9px 16px; font-size: 12px; gap: 7px; border-radius: var(--pp-radius-sm);
+}
 
 /* --------------------------------------------------- surfaces: the model -- */
 /* One layer: a card IS the sheet, told apart from the
@@ -259,6 +283,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   position: relative;
   background: var(--pp-card);
   border: 1px solid var(--pp-line);
+  border-radius: var(--pp-radius-lg);
   padding: var(--pp-card-pad);
 }
 
@@ -268,6 +293,9 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-card--primary {
   padding: var(--pp-card-pad-lg);
   border-color: var(--pp-ink);
+  /* Clips the accent strip below to the card's own rounded top corners rather
+     than letting its square edges poke past the curve. */
+  overflow: hidden;
 }
 /* A brand rule along the top edge, full bleed to the card. */
 .pp-card--primary::after {
@@ -290,10 +318,12 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-card--dark .pp-eyebrow, .pp-card--dark .pp-kpi { color: var(--pp-on-dark); }
 .pp-card--dark .pp-muted, .pp-card--dark .pp-subhead, .pp-card--dark ul { color: var(--pp-on-dark-muted) !important; }
 
-/* A plain block nested inside a card — never floated on the page ground. */
+/* A plain block nested inside a card — never floated on the page ground. Its
+   corner steps down a tier from the card's own, the concentric-radius logic
+   that keeps a nested shape from reading as sharper than its container. */
 .pp-card-bare {
   background: var(--pp-bg-2); border: 1px solid var(--pp-line-2);
-  border-radius: 0; padding: var(--pp-card-pad);
+  border-radius: var(--pp-radius-sm); padding: var(--pp-card-pad);
 }
 .pp-card-bare--data { background: var(--pp-subtle-2); }
 
@@ -324,7 +354,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* Notices are quiet pills; the frosted one is the only translucent inline UI. */
 .pp-notice, .pp-warn, .pp-ok {
   display: inline-flex; align-items: center; gap: 7px;
-  padding: 9px 16px; font-size: 12px; line-height: 1.45;
+  padding: 9px 16px; font-size: 12px; line-height: 1.45; border-radius: var(--pp-radius-full);
 }
 .pp-notice { background: var(--pp-subtle-2); border: 1px solid var(--pp-line); color: var(--pp-ink-2); }
 .pp-warn { background: var(--pp-warn-soft); color: var(--pp-warn-ink); }
@@ -332,13 +362,16 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* Notices that wrap relax from a pill to a rounded block. */
 .pp-notice-block, .pp-warn-block, .pp-ok-block {
   display: flex; align-items: flex-start; padding: 12px 16px; line-height: 1.55;
+  border-radius: var(--pp-radius-md);
 }
 .pp-notice-block pp-icon, .pp-warn-block pp-icon, .pp-ok-block pp-icon,
 .pp-notice-block .pp-i, .pp-warn-block .pp-i, .pp-ok-block .pp-i { margin-top: 1px; }
 
-/* An icon in a soft round chip — used for category heads and step markers. */
+/* An icon in a soft round chip — used for category heads and step markers.
+   Equal width and height, so a full circle is the natural shape, not a chip
+   that merely has rounded corners. */
 .pp-icon-badge {
-  width: 34px; height: 34px; border-radius: 0; display: inline-grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 50%; display: inline-grid; place-items: center;
   border: 1px solid var(--pp-line); background: transparent; color: var(--pp-brand-ink); flex: 0 0 auto;
 }
 .pp-icon-badge--plain { color: var(--pp-ink-2); }
@@ -347,7 +380,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* A chip labels the run in progress: the business type, what is being priced. */
 .pp-chip {
   display: inline-flex; align-items: center; gap: 7px;
-  background: transparent; border: 1px solid var(--pp-line);
+  background: transparent; border: 1px solid var(--pp-line); border-radius: var(--pp-radius-full);
   padding: 7px 13px; font-family: var(--pp-mono); font-size: 11.5px; color: var(--pp-ink-2);
 }
 .pp-chip pp-icon, .pp-chip .pp-i { color: var(--pp-brand-ink); }
@@ -360,15 +393,15 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* --------------------------------------------------------- questionnaire -- */
 /* A consultation, not a form: segments show how far the conversation has run. */
 .pp-steps { display: flex; gap: 5px; }
-.pp-steps .seg { flex: 1; height: 4px; border-radius: 0; background: var(--pp-line); transition: background var(--pp-ease-slow); }
+.pp-steps .seg { flex: 1; height: 4px; border-radius: var(--pp-radius-full); background: var(--pp-line); transition: background var(--pp-ease-slow); }
 .pp-steps .seg.done { background: var(--pp-brand-2); }
 .pp-steps .seg.current { background: var(--pp-brand); }
 .pp-steps-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; color: var(--pp-ink-2); margin-bottom: 8px; }
 .pp-steps-meta .now { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--pp-ink); }
 
 /* Progress (roadmap completion) */
-.pp-progress { height: 6px; background: var(--pp-subtle); border-radius: 0; overflow: hidden; }
-.pp-progress > div { height: 100%; background: var(--pp-brand); border-radius: 0; transition: width var(--pp-ease-slow); }
+.pp-progress { height: 6px; background: var(--pp-subtle); border-radius: var(--pp-radius-full); overflow: hidden; }
+.pp-progress > div { height: 100%; background: var(--pp-brand); border-radius: var(--pp-radius-full); transition: width var(--pp-ease-slow); }
 
 .pp-q { padding: 16px 0; border-top: 1px solid var(--pp-line); }
 .pp-q:first-of-type { border-top: 0; padding-top: 4px; }
@@ -381,7 +414,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
    darkens it and adds a ring rather than conjuring a border from nothing. */
 .pp-input-group {
   display: flex; align-items: stretch; background: var(--pp-card);
-  border: 1px solid var(--pp-line); border-radius: 0; overflow: hidden;
+  border: 1px solid var(--pp-line); border-radius: var(--pp-radius-md); overflow: hidden;
   transition: border-color var(--pp-ease), box-shadow var(--pp-ease);
 }
 .pp-input-group:hover { border-color: var(--pp-muted); }
@@ -399,7 +432,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 .pp-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .pp-option {
-  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 0;
+  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-radius-md);
   padding: 14px 15px; text-align: start; cursor: pointer; font-family: inherit; font-size: 13px;
   font-weight: 500; color: var(--pp-ink); display: flex; gap: 10px; align-items: center;
   transition: background var(--pp-ease), border-color var(--pp-ease);
@@ -411,7 +444,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-option small { display: block; color: var(--pp-muted); font-weight: 400; font-size: 12px; margin-top: 2px; }
 
 .pp-type-card {
-  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: 0; padding: 15px;
+  background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-radius-md); padding: 15px;
   cursor: pointer; text-align: start; font-family: inherit;
   display: flex; gap: 12px; align-items: flex-start;
   transition: background var(--pp-ease), border-color var(--pp-ease);
@@ -422,7 +455,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-type-card .name { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
 .pp-type-card small { color: var(--pp-muted); display: block; font-size: 12px; margin-top: 2px; }
 
-.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-brand-soft); border: 1px solid var(--pp-brand); border-radius: 0; padding: 14px 15px; }
+.pp-detect { display: flex; gap: 12px; align-items: center; background: var(--pp-brand-soft); border: 1px solid var(--pp-brand); border-radius: var(--pp-radius-md); padding: 14px 15px; }
 .pp-detect .title { font-weight: 500; font-size: 13px; color: var(--pp-ink); }
 .pp-detect .sub { font-size: 12px; color: var(--pp-brand-ink); }
 
@@ -436,8 +469,9 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-stat--accent { border-top-color: var(--pp-brand); }
 .pp-stat--accent .k { color: var(--pp-brand-ink); }
 
-/* Metric tiles — pale blocks inside a card, never cards in their own right. */
-.pp-metric { background: var(--pp-card); border: 1px solid var(--pp-line-2); border-radius: 0; padding: 15px 16px; height: 100%; }
+/* Metric tiles — pale blocks inside a card, never cards in their own right.
+   Same nested step-down as pp-card-bare. */
+.pp-metric { background: var(--pp-card); border: 1px solid var(--pp-line-2); border-radius: var(--pp-radius-sm); padding: 15px 16px; height: 100%; }
 .pp-card--data .pp-metric { background: var(--pp-card); }
 .pp-metric .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
 .pp-metric .sub { font-size: 11px; color: var(--pp-muted); margin-top: 4px; }
@@ -451,14 +485,14 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-compare__arrow { display: flex; align-items: center; color: var(--pp-muted); padding-bottom: 8px; }
 .pp-compare__lift {
   display: inline-flex; align-items: center; gap: 7px; align-self: center;
-  background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: 0;
+  background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: var(--pp-radius-full);
   padding: 8px 14px; font-family: var(--pp-mono); font-size: 12.5px; font-variant-numeric: tabular-nums;
 }
-.pp-compare__bar { display: flex; height: 9px; border-radius: 0; overflow: hidden; background: var(--pp-subtle); }
+.pp-compare__bar { display: flex; height: 9px; border-radius: var(--pp-radius-full); overflow: hidden; background: var(--pp-subtle); }
 .pp-compare__bar .now { background: var(--pp-brand); }
 .pp-compare__bar .lift { background: var(--pp-brand-2); }
 .pp-compare__key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--pp-mono); font-size: 11px; color: var(--pp-muted); }
-.pp-compare__key i { width: 8px; height: 8px; border-radius: 0; display: inline-block; margin-inline-end: 7px; }
+.pp-compare__key i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-inline-end: 7px; }
 
 /* Scenario cards stay a tier below the recommended price. */
 .pp-scenario { height: 100%; }
@@ -470,7 +504,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* Badges are soft pills — the text carries the meaning, never colour alone. */
 /* Badges are tinted blocks; the word carries the meaning, never colour alone. */
 .pp-badge {
-  display: inline-flex; align-items: center; gap: 6px; border-radius: 0;
+  display: inline-flex; align-items: center; gap: 6px; border-radius: var(--pp-radius-full);
   font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 5px 9px; background: var(--pp-neutral-soft); color: var(--pp-ink-2);
 }
@@ -483,11 +517,14 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* On the inverted card, badges invert too. */
 .pp-scenario.recommended .pp-badge, .pp-card--dark .pp-badge { background: rgba(242, 239, 232, 0.14); color: var(--pp-on-dark); }
 
-/* Cost bar — one continuous strip, the way a composition is printed. */
-.pp-bar { display: flex; height: 7px; background: transparent; }
+/* Cost bar — one continuous strip, the way a composition is printed. Rounded
+   as a whole capsule with the segments clipped inside it, not each segment
+   rounded on its own — a row of independently-pilled chunks would read as
+   beads, not one strip. */
+.pp-bar { display: flex; height: 7px; background: transparent; border-radius: var(--pp-radius-full); overflow: hidden; }
 .pp-bar span { display: block; height: 100%; border-radius: 0; }
 .pp-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; font-size: 12px; }
-.pp-legend .dot { width: 8px; height: 8px; border-radius: 0; display: inline-block; margin-inline-end: 8px; }
+.pp-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-inline-end: 8px; }
 
 /* Tabs sit on a frosted bed; the active tab is the brand. */
 .pp-tabs {
@@ -531,7 +568,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 /* The next action is the point of the card, so it gets its own surface. */
 .pp-rec__action {
   display: flex; gap: 10px; align-items: flex-start; background: var(--pp-brand-wash);
-  border-inline-start: 2px solid var(--pp-brand); border-radius: 0;
+  border-inline-start: 2px solid var(--pp-brand); border-radius: var(--pp-radius-sm);
   padding: 13px 15px; font-size: 13px; color: var(--pp-ink-2);
 }
 .pp-rec__action .k { font-size: 11px; color: var(--pp-brand-ink); font-weight: 500; margin-bottom: 3px; }
@@ -541,7 +578,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 
 /* Round, brand when checked — a completed item reads as done, not as an alarm. */
 .pp-check {
-  width: 24px; height: 24px; border-radius: 0; border: 1.4px solid var(--pp-line);
+  width: 24px; height: 24px; border-radius: 50%; border: 1.4px solid var(--pp-line);
   display: inline-grid; place-items: center; cursor: pointer; background: var(--pp-card); color: var(--pp-muted);
   font-family: inherit; padding: 0; flex: 0 0 auto; transition: all var(--pp-ease);
 }
@@ -555,7 +592,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-waterfall { display: grid; gap: 11px; }
 .pp-waterfall .item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; font-size: 12px; }
 .pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--pp-ink); }
-.pp-waterfall .track { height: 5px; border-radius: 0; background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
+.pp-waterfall .track { height: 5px; border-radius: var(--pp-radius-full); background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
 .pp-waterfall .track span { display: block; height: 100%; background: var(--pp-brand); border-radius: 0; }
 
 /* ------------------------------------------------------------- animation -- */
@@ -727,10 +764,11 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-lp-hero__ticker .pos { color: var(--pp-pos-dark); }
 
 /* ------------------------------------------------------------------ ink CTA */
-/* Square, ruled, mono — the hero action reads as a stamp, not a pill. */
+/* Ruled, mono, and rounded the same restrained amount as the rest of the
+   product's buttons — a stamp with a softened corner, not a pill. */
 .btn-lp {
   display: inline-flex; align-items: center; gap: 11px; font-family: var(--pp-mono);
-  font-size: 13.5px; padding: 15px 26px; border: 0; border-radius: 0;
+  font-size: 13.5px; padding: 15px 26px; border: 0; border-radius: var(--pp-radius-lg);
   background: var(--pp-brand-ink); color: #fff; text-decoration: none;
   transition: background var(--pp-ease);
 }
@@ -774,7 +812,7 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
   font-family: var(--pp-mono); letter-spacing: 0.1em; text-transform: uppercase; font-size: 12px;
 }
 .pp-lp-ledger .total.v { font-size: 22px; letter-spacing: 0; text-transform: none; }
-.pp-lp-bar { display: flex; height: 7px; overflow: hidden; }
+.pp-lp-bar { display: flex; height: 7px; overflow: hidden; border-radius: var(--pp-radius-full); }
 
 /* -------------------------------------------------------------- the split */
 .pp-lp-split { display: grid; grid-template-columns: 1fr 1.15fr; align-items: stretch; }
@@ -802,12 +840,12 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-lp-plate .pp-compare__key { color: var(--pp-on-dark-muted); }
 .pp-lp-plate .pp-compare .pp-kpi { color: var(--pp-on-dark); }
 .pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--pp-pos-dark); }
-.pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: 0; height: 9px; }
+.pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: var(--pp-radius-full); height: 9px; }
 .pp-lp-plate .pp-compare__bar .lift { background: var(--pp-pos-dark); opacity: 1; }
 .pp-lp-plate .pp-compare__lift {
-  background: rgba(111, 220, 160, 0.14); color: var(--pp-pos-dark); border-radius: 0;
+  background: rgba(111, 220, 160, 0.14); color: var(--pp-pos-dark); border-radius: var(--pp-radius-full);
 }
-.pp-lp-plate .pp-compare__key i { border-radius: 0; }
+.pp-lp-plate .pp-compare__key i { border-radius: 50%; }
 
 /* ------------------------------------------------------------ the range */
 .pp-lp-range { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--pp-line); }
