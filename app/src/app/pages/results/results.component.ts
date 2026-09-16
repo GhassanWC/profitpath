@@ -10,7 +10,6 @@ import { IconComponent } from '../../shared/icon.component';
 import { MetricTileComponent } from '../../shared/metric-tile.component';
 import { MoneyPipe, PctPipe, SignedPipe } from '../../shared/pipes';
 import { ProfitCompareComponent } from '../../shared/profit-compare.component';
-import { ScenarioCardComponent } from '../../shared/scenario-card.component';
 
 type Tab = 'overview' | 'whatif' | 'target';
 
@@ -19,7 +18,7 @@ type Tab = 'overview' | 'whatif' | 'target';
   standalone: true,
   imports: [
     RouterLink, MoneyPipe, PctPipe, SignedPipe,
-    MetricTileComponent, ScenarioCardComponent, CostBreakdownComponent, IconComponent, ProfitCompareComponent,
+    MetricTileComponent, CostBreakdownComponent, IconComponent, ProfitCompareComponent,
   ],
   template: `
     @if (store.pricing(); as p) {
@@ -37,23 +36,32 @@ type Tab = 'overview' | 'whatif' | 'target';
               <div class="pp-kpi pp-kpi--hero">
                 <span class="cur">{{ currencyMark(p.recommended.price, p.currency) }}</span>{{ figure(p.recommended.price, p.currency) }}
               </div>
-              <div class="pp-subhead" style="margin: 4px 0 22px">
-                {{ t('results.sub', { unit: unitKey(), margin: p.marginBand.mid }) }}
+              <!-- The one sentence that answers "so should I sell it for this?" —
+                   ahead of anything else, in the same breath as the price. -->
+              <div class="pp-kpi pp-kpi--sm" style="color: var(--pp-pos); font-weight: 500; margin: 6px 0 20px">
+                {{ t('results.youMake', { profit: p.recommended.profitPerUnit, unit: unitKey(), cur: p.currency }) }}
               </div>
 
-              <div class="pp-stat-strip">
-                <div class="pp-stat">
-                  <div class="k"><pp-icon name="wallet" [size]="12" /> {{ t('results.trueCost') }}</div>
-                  <div class="v pp-num">{{ p.trueCostPerUnit | money: p.currency }}</div>
+              <!-- Cost, price and profit as one bridge rather than three
+                   equal-weight tiles: the story is that the middle number is
+                   what's left of the first once the last is taken out. -->
+              <div class="pp-bridge">
+                <div class="pp-bridge__node">
+                  <div class="pp-bridge__label">{{ t('results.trueCost') }}</div>
+                  <div class="pp-bridge__value pp-num">{{ p.trueCostPerUnit | money: p.currency }}</div>
                 </div>
-                <div class="pp-stat">
-                  <div class="k"><pp-icon name="coins" [size]="12" /> {{ t('results.profitPerUnit', { unit: unitKey() }) }}</div>
-                  <div class="v pp-num">{{ p.recommended.profitPerUnit | money: p.currency }}</div>
+                <pp-icon name="arrow-right" class="pp-icon-flip pp-bridge__arrow" [size]="14" />
+                <div class="pp-bridge__node pp-bridge__node--price">
+                  <div class="pp-bridge__value pp-num">{{ p.recommended.price | money: p.currency : 0 }}</div>
                 </div>
-                <div class="pp-stat">
-                  <div class="k"><pp-icon name="scale" [size]="12" /> {{ t('results.margin') }}</div>
-                  <div class="v pp-num">{{ p.recommended.marginPct | pct }}</div>
+                <pp-icon name="arrow-right" class="pp-icon-flip pp-bridge__arrow" [size]="14" />
+                <div class="pp-bridge__node">
+                  <div class="pp-bridge__label">{{ t('results.profitPerUnit', { unit: unitKey() }) }}</div>
+                  <div class="pp-bridge__value pp-num" style="color: var(--pp-pos)">{{ p.recommended.profitPerUnit | money: p.currency }}</div>
                 </div>
+              </div>
+              <div class="pp-label" style="margin: 0 0 4px">
+                {{ t('results.marginExplain', { margin: p.recommended.marginPct, kept: p.recommended.marginPct * 100, hundred: 100, cur: p.currency }) }}
               </div>
 
               <div class="mt-4 d-flex flex-wrap gap-2">
@@ -69,9 +77,16 @@ type Tab = 'overview' | 'whatif' | 'target';
                 <span class="pp-eyebrow"><pp-icon name="chart-column" [size]="14" /> {{ t('results.outlook') }}</span>
                 <span class="pp-subhead">{{ t('results.outlook.at', { count: p.expectedUnits, units: unitsKey() }) }}</span>
               </div>
+              <!-- Profit is the number a business owner actually cares about; revenue
+                   and costs are its context, not its equal. -->
               <div class="d-grid" style="gap: 10px">
-                <pp-metric-tile icon="banknote" [label]="t('results.revenue')" [value]="p.recommended.monthlyRevenue | money: p.currency : 0" />
-                <pp-metric-tile icon="trending-up" [label]="t('results.profit')" [value]="p.recommended.monthlyProfit | money: p.currency : 0" color="var(--pp-pos)" />
+                <pp-metric-tile
+                  icon="trending-up" [big]="true"
+                  [label]="t('results.profit')"
+                  [value]="p.recommended.monthlyProfit | money: p.currency : 0"
+                  [sub]="t('results.revenueCosts', { revenue: p.recommended.monthlyRevenue, costs: p.recommended.monthlyRevenue - p.recommended.monthlyProfit, cur: p.currency })"
+                  color="var(--pp-pos)"
+                />
                 <pp-metric-tile icon="zap" [label]="t('results.breakEvenSales')" [value]="(p.recommended.breakEvenUnits ?? '—') + ' ' + t(unitsKey())" [sub]="t('results.breakEvenSales.sub', { count: p.expectedUnits })" />
               </div>
               <div class="pp-subhead mt-3">{{ t('results.estimatesNote') }}</div>
@@ -87,9 +102,8 @@ type Tab = 'overview' | 'whatif' | 'target';
         @if (store.roadmap(); as r) {
           @if (r.recommendations.length) {
             <div class="pp-card mt-3">
-              <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap">
+              <div class="mb-3">
                 <span class="pp-eyebrow"><pp-icon name="map" [size]="14" /> {{ t('results.roadmapWorth') }}</span>
-                <a routerLink="/roadmap" class="btn btn-pp-ghost btn-sm">{{ t('results.openRoadmap') }} <pp-icon name="arrow-right" class="pp-icon-flip" [size]="13" /></a>
               </div>
               <pp-profit-compare
                 [current]="r.current.monthlyProfit"
@@ -97,6 +111,7 @@ type Tab = 'overview' | 'whatif' | 'target';
                 [currency]="p.currency"
                 [count]="r.recommendations.length"
               />
+              <a routerLink="/roadmap" class="btn btn-pp-ghost mt-3">{{ t('results.roadmapCta') }} <pp-icon name="arrow-right" class="pp-icon-flip" [size]="14" /></a>
             </div>
           }
         }
@@ -114,10 +129,33 @@ type Tab = 'overview' | 'whatif' | 'target';
           @case ('overview') {
             <div class="pp-fade">
               <h3 class="mb-3">{{ t('results.threeWays') }}</h3>
-              <div class="row g-3">
-                <div class="col-md-4"><pp-scenario-card [scenario]="p.scenarios.minimum" [currency]="p.currency" [businessType]="store.businessType()" /></div>
-                <div class="col-md-4"><pp-scenario-card [scenario]="p.scenarios.recommended" [currency]="p.currency" [businessType]="store.businessType()" /></div>
-                <div class="col-md-4"><pp-scenario-card [scenario]="p.scenarios.premium" [currency]="p.currency" [businessType]="store.businessType()" /></div>
+              <!-- One scannable table, not three cards to cross-reference by eye.
+                   Only the recommended row carries a sentence — a decision needs
+                   one reason, not three notes read in parallel. -->
+              <div class="pp-price-table-wrap">
+                <div class="pp-price-table">
+                  <div class="head">{{ t('results.compare.strategy') }}</div>
+                  <div class="head">{{ t('results.compare.price') }}</div>
+                  <div class="head">{{ t('results.whatif.profitPerUnit', { unit: unitKey() }) }}</div>
+                  <div class="head">{{ t('results.margin') }}</div>
+                  <div class="head">{{ t('results.whatif.monthlyProfit') }}</div>
+
+                  @for (row of priceRows(); track row.scenario.key) {
+                    <div class="strategy" [class.r-recommended]="row.recommended">
+                      @if (row.recommended) {
+                        <pp-icon name="badge-check" [size]="14" />
+                      }
+                      {{ t('scenario.' + row.scenario.key + '.label') }}
+                    </div>
+                    <div class="cell" [class.r-recommended]="row.recommended">{{ row.scenario.price | money: p.currency : 0 }}</div>
+                    <div class="cell" [class.r-recommended]="row.recommended" [style.color]="row.scenario.profitPerUnit < 0 ? 'var(--pp-neg)' : null">{{ row.scenario.profitPerUnit | money: p.currency }}</div>
+                    <div class="cell" [class.r-recommended]="row.recommended">{{ row.scenario.marginPct | pct }}</div>
+                    <div class="cell" [class.r-recommended]="row.recommended">{{ row.scenario.monthlyProfit | money: p.currency : 0 }}</div>
+                    @if (row.recommended) {
+                      <div class="note">{{ recommendedNote(row.scenario) }}</div>
+                    }
+                  }
+                </div>
               </div>
 
               <div class="row g-4 mt-2">
@@ -359,6 +397,22 @@ export class ResultsComponent {
   }
   unitsKey(): string {
     return `unit.${this.store.businessType() ?? 'generic'}.other`;
+  }
+
+  /** The three-way table's rows, in a fixed low-to-high order regardless of scenario key order. */
+  readonly priceRows = computed(() => {
+    const p = this.store.pricing();
+    if (!p) return [];
+    return [
+      { scenario: p.scenarios.minimum, recommended: false },
+      { scenario: p.scenarios.recommended, recommended: true },
+      { scenario: p.scenarios.premium, recommended: false },
+    ];
+  });
+
+  /** The one sentence the recommended row keeps — the engine's own note, not invented marketing copy. */
+  recommendedNote(scenario: { note: string; noteI18n?: { key: string; params?: Record<string, string | number> } }): string {
+    return this.i18n.msg(scenario.noteI18n, scenario.note);
   }
 
   /** Slider labels are UI copy, keyed by the economics field they drive. */

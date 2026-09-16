@@ -460,14 +460,23 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-detect .sub { font-size: 12px; color: var(--pp-brand-ink); }
 
 /* --------------------------------------------------------------- results -- */
-/* The unit-economics strip under the recommended price: three supporting
-   figures, each clearly subordinate to the price above them. */
-.pp-stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .pp-stat { background: transparent; border-top: 1px solid var(--pp-line); border-radius: 0; padding: 16px 0 0; min-width: 0; }
 .pp-stat .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
 .pp-stat .v { font-size: var(--pp-fig-lg); font-weight: 400; letter-spacing: -0.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .pp-stat--accent { border-top-color: var(--pp-brand); }
 .pp-stat--accent .k { color: var(--pp-brand-ink); }
+
+/* The cost → price → profit bridge under the recommended price: three nodes
+   read as one sentence rather than three equal-weight tiles, so the middle
+   number reads as "what's left of the first once the last comes out". */
+.pp-bridge { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+.pp-bridge__node { text-align: center; }
+.pp-bridge__label { font-size: 10.5px; color: var(--pp-muted); margin-bottom: 2px; }
+.pp-bridge__value { font-family: var(--pp-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+/* The middle node restates the price the reader already saw above, larger and
+   unlabelled — a label here would only repeat what the hero figure just said. */
+.pp-bridge__node--price .pp-bridge__value { font-size: 18px; font-weight: 500; color: var(--pp-ink); }
+.pp-bridge__arrow { color: var(--pp-muted); flex: 0 0 auto; }
 
 /* Metric tiles — pale blocks inside a card, never cards in their own right.
    Same nested step-down as pp-card-bare. */
@@ -482,9 +491,19 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-compare__row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px 28px; }
 .pp-compare__side { min-width: 0; }
 .pp-compare__side .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 4px; }
+/* A small unit marker beside the big current/potential figures — "$5,970 /mo"
+   rather than a bare number the reader has to infer a period for. */
+.pp-compare__permo { font-size: 0.32em; font-weight: 400; color: var(--pp-muted); margin-inline-start: 4px; letter-spacing: 0; }
 .pp-compare__arrow { display: flex; align-items: center; color: var(--pp-muted); padding-bottom: 8px; }
-.pp-compare__lift {
-  display: inline-flex; align-items: center; gap: 7px; align-self: center;
+/* Two lines, not one: what this number IS ("Opportunity") sits above what it
+   IS WORTH, the same label-then-figure order every other stat on the page uses. */
+.pp-compare__lift { display: flex; flex-direction: column; gap: 4px; align-self: center; }
+.pp-compare__lift-label {
+  font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--pp-pos-ink); text-align: center;
+}
+.pp-compare__lift-figure {
+  display: inline-flex; align-items: center; gap: 7px;
   background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: var(--pp-radius-full);
   padding: 8px 14px; font-family: var(--pp-mono); font-size: 12.5px; font-variant-numeric: tabular-nums;
 }
@@ -500,6 +519,32 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-subhead { color: var(--pp-on-dark-muted) !important; }
 .pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.22); }
 .pp-scenario .price { font-family: var(--pp-serif); font-size: var(--pp-fig-xl); letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+/* The three-way price comparison: one scannable table rather than three cards
+   asking to be read side by side and mentally cross-referenced. Rows carry the
+   numbers; only the recommended row carries a sentence, because a decision
+   needs one reason, not three. Modelled on the landing page's plan table
+   (`.pp-lp-plans`) — the same ruled-grid language, scoped outside `.pp-lp`. */
+/* Five columns of financial mono text do not fit 390px readably — the table
+   scrolls inside its own box rather than being squeezed illegible or forcing
+   the page itself wider, the same rule this system already gives code blocks. */
+.pp-price-table-wrap { overflow-x: auto; }
+.pp-price-table { display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); align-items: center; min-width: 560px; }
+.pp-price-table > * { padding: 12px 10px; border-bottom: 1px solid var(--pp-line-2); }
+.pp-price-table .head {
+  padding: 0 10px 10px; border-bottom: 1px solid var(--pp-line); align-self: end;
+  font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pp-muted);
+}
+.pp-price-table .strategy { display: flex; align-items: center; gap: 7px; font-weight: 500; color: var(--pp-ink); }
+.pp-price-table .cell { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+/* Every cell of the recommended row shares one background, so five separate
+   grid items still read as a single highlighted row with no visible seams. */
+.pp-price-table .r-recommended { background: var(--pp-brand-soft); }
+.pp-price-table .r-recommended .strategy, .pp-price-table .r-recommended .cell { color: var(--pp-brand-ink); font-weight: 500; }
+.pp-price-table .note {
+  grid-column: 1 / -1; background: var(--pp-brand-soft); color: var(--pp-brand-ink);
+  padding: 0 10px 13px; font-size: 12px;
+}
 
 /* Badges are soft pills — the text carries the meaning, never colour alone. */
 /* Badges are tinted blocks; the word carries the meaning, never colour alone. */
@@ -594,15 +639,21 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--pp-ink); }
 .pp-waterfall .track { height: 5px; border-radius: var(--pp-radius-full); background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
 .pp-waterfall .track span { display: block; height: 100%; background: var(--pp-brand); border-radius: 0; }
+/* The two ends of the bridge — current profit opens it, potential profit closes
+   it — read as a ledger total: ruled, bold, no bar (there is nothing to show a
+   proportion of at either end). */
+.pp-waterfall .item--total { padding-block: 3px; font-size: 13px; }
+.pp-waterfall .item--total > :nth-child(2) { color: inherit; }
+.pp-waterfall .item--open { border-bottom: 1px solid var(--pp-line-2); padding-bottom: 11px; color: var(--pp-muted); }
+.pp-waterfall .item--open > :nth-child(2) { color: var(--pp-muted); }
+.pp-waterfall .item--close { border-top: 1px solid var(--pp-ink); padding-top: 11px; font-weight: 500; color: var(--pp-pos); }
+.pp-waterfall .item--close > :nth-child(2) { color: var(--pp-pos); }
 
 /* ------------------------------------------------------------- animation -- */
 /* Route entry is one keyframe. No bounces, no springs, no scroll reveals. */
 .pp-fade { animation: ppfade var(--pp-ease-slow) both; }
 @keyframes ppfade { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 
-@media (max-width: 768px) {
-  .pp-stat-strip { grid-template-columns: 1fr; }
-}
 @media (max-width: 576px) {
   .pp-hero { padding: 36px 0 24px; }
   .pp-card, .pp-scenario, .pp-rec { padding: 15px; }
@@ -837,12 +888,14 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
    vanish, so the surface restates them rather than the component branching. */
 .pp-lp-plate .pp-compare__side .k,
 .pp-lp-plate .pp-compare__arrow,
-.pp-lp-plate .pp-compare__key { color: var(--pp-on-dark-muted); }
+.pp-lp-plate .pp-compare__key,
+.pp-lp-plate .pp-compare__permo { color: var(--pp-on-dark-muted); }
 .pp-lp-plate .pp-compare .pp-kpi { color: var(--pp-on-dark); }
 .pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--pp-pos-dark); }
 .pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: var(--pp-radius-full); height: 9px; }
 .pp-lp-plate .pp-compare__bar .lift { background: var(--pp-pos-dark); opacity: 1; }
-.pp-lp-plate .pp-compare__lift {
+.pp-lp-plate .pp-compare__lift-label { color: var(--pp-pos-dark); }
+.pp-lp-plate .pp-compare__lift-figure {
   background: rgba(111, 220, 160, 0.14); color: var(--pp-pos-dark); border-radius: var(--pp-radius-full);
 }
 .pp-lp-plate .pp-compare__key i { border-radius: 50%; }
