@@ -27,7 +27,7 @@ surfaces cannot drift — retargeting the tokens there moves the whole product a
 **An editorial register, not a dashboard one.** The product prices things for people who
 sell things, so it reads as financial print: a flat paper ground, rules instead of shadows,
 **Instrument Serif** for headings and the hero figure, **IBM Plex Mono** for every number, and
-**Plus Jakarta Sans** for the copy you actually read. Nothing floats; a surface is told apart
+**Inter** for the copy you actually read. Nothing floats; a surface is told apart
 from the ground by a rule and a tint, not by a shadow.
 
 **Corners follow Apple's own restraint, not a blanket value.** A `--pp-radius-*` scale in

@@ -82,7 +82,7 @@
      carries every figure so columns of money line up, the sans carries
      reading copy. Arabic faces sit at the end of each stack: font fallback is
      per-glyph, so Latin text never reaches them. */
-  --pp-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
+  --pp-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
   --pp-serif: 'Instrument Serif', Georgia, 'Times New Roman', 'Noto Naskh Arabic', serif;
   --pp-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, 'Noto Sans Arabic', monospace;
 
