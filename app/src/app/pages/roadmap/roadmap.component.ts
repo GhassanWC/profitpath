@@ -41,7 +41,15 @@ const ORDER: RecCategory[] = ['reduce_costs', 'reduce_cac', 'increase_revenue', 
                   <div class="d-flex align-items-center gap-2 mb-3">
                     <pp-icon name="chart-column" [size]="14" /><span class="pp-eyebrow">{{ t('roadmap.liftFrom') }}</span>
                   </div>
+                  <!-- A bridge, not a bare ranked list: current profit opens it,
+                       each recommendation adds to it, potential profit closes it —
+                       the same "if I do these things" story in one read, rather
+                       than four cards the reader has to total up themselves. -->
                   <div class="pp-waterfall">
+                    <div class="item item--total item--open">
+                      <span>{{ t('compare.today') }}</span>
+                      <span class="pp-num">{{ r.current.monthlyProfit | money: p.currency : 0 }}</span>
+                    </div>
                     @for (rec of r.recommendations; track rec.id) {
                       <div class="item">
                         <span>{{ recTitle(rec) }}</span>
@@ -49,7 +57,14 @@ const ORDER: RecCategory[] = ['reduce_costs', 'reduce_cac', 'increase_revenue', 
                         <div class="track"><span [style.width.%]="(rec.estimatedMonthlyImpact / maxImpact()) * 100"></span></div>
                       </div>
                     }
+                    <div class="item item--total item--close">
+                      <span>{{ t('compare.following') }}</span>
+                      <span class="pp-num">{{ r.optimisedMonthlyProfit | money: p.currency : 0 }}</span>
+                    </div>
                   </div>
+                  <!-- The individual items sum to more than the gap between the two
+                       totals above — improvements overlap — so this note is what
+                       keeps the bridge honest rather than looking like it doesn't add up. -->
                   <div class="pp-label mt-3">{{ t('roadmap.sumNote', { sum: r.sumOfImpacts, cur: p.currency, discount: r.interactionDiscountPct }) }}</div>
                 </div>
               </div>

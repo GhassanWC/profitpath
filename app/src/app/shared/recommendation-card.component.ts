@@ -37,6 +37,11 @@ import { MoneyPipe } from './pipes';
             </div>
           </div>
 
+          <!-- Why, immediately under the title it explains — a reader gets the
+               reason in the same glance as the headline, before the metadata
+               row asks for a second look. -->
+          <p class="pp-body mt-1 mb-0">{{ why }}</p>
+
           <!-- Difficulty + priority, always in that order -->
           <div class="pp-rec__meta mt-2">
             <span class="pp-badge" [class]="'pp-badge ' + rec().priority">
@@ -49,8 +54,6 @@ import { MoneyPipe } from './pipes';
               <span class="pp-label">{{ t('roadmap.shareOfLift', { share: share() }) }}</span>
             }
           </div>
-
-          <p class="pp-body mt-3">{{ why }}</p>
 
           <!-- The next action: the point of the card, on its own surface -->
           <div class="pp-rec__action mt-3">

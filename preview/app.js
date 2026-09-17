@@ -471,14 +471,34 @@
   }
 
   // ---------- results ----------
-  function tile(ic, label, value, sub, color, small) {
-    return `<div class="pp-metric"><div class="k">${icon(ic, 12)} ${label}</div><div class="pp-kpi ${small ? 'pp-kpi--sm' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+  function tile(ic, label, value, sub, color, small, big) {
+    return `<div class="pp-metric"><div class="k">${icon(ic, 12)} ${label}</div><div class="pp-kpi ${small ? 'pp-kpi--sm' : ''} ${big ? 'pp-kpi--xl' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
   }
-  function scenarioCard(sc, cur) {
-    const u = unitParams();
-    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="pp-subhead">${t('scenario.' + sc.key + '.label')}</span><span class="pp-badge ${sc.status}">${icon(SCENARIO_ICONS[sc.status] || 'info', 11)}${t('scenario.status.' + sc.status)}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
-      <div class="pp-ledger mt-3"><span class="pp-muted">${t('results.whatif.profitPerUnit', u)}</span><span class="pp-num" style="${sc.profitPerUnit < 0 ? 'color:var(--pp-neg)' : ''}">${money(sc.profitPerUnit, cur)}</span><span class="pp-muted">${t('results.margin')}</span><span class="pp-num">${pct(sc.marginPct)}</span><span class="pp-muted">${t('results.whatif.monthlyProfit')}</span><span class="pp-num">${money(sc.monthlyProfit, cur, 0)}</span>${sc.breakEvenUnits !== null ? `<span class="pp-muted">${t('results.breakEven')}</span><span class="pp-num">${sc.breakEvenUnits} ${unitsOf()}</span>` : ''}</div>
-      <p class="pp-muted mt-3 mb-0" style="font-size:12px">${esc(msg(sc.noteI18n, sc.note))}</p></div>`;
+  /** One scannable table, not three cards to cross-reference by eye. Only the
+      recommended row carries a sentence — a decision needs one reason, not three
+      notes read in parallel. */
+  function priceTable(p, cur, u) {
+    const rows = [
+      { sc: p.scenarios.minimum, rec: false },
+      { sc: p.scenarios.recommended, rec: true },
+      { sc: p.scenarios.premium, rec: false },
+    ];
+    const cell = (v, rec, color) => `<div class="cell ${rec ? 'r-recommended' : ''}" ${color ? `style="color:${color}"` : ''}>${v}</div>`;
+    const row = ({ sc, rec }) => `
+      <div class="strategy ${rec ? 'r-recommended' : ''}">${rec ? icon('badge-check', 14) : ''}${t('scenario.' + sc.key + '.label')}</div>
+      ${cell(money(sc.price, cur, 0), rec)}
+      ${cell(money(sc.profitPerUnit, cur), rec, sc.profitPerUnit < 0 ? 'var(--pp-neg)' : null)}
+      ${cell(pct(sc.marginPct), rec)}
+      ${cell(money(sc.monthlyProfit, cur, 0), rec)}
+      ${rec ? `<div class="note">${esc(msg(sc.noteI18n, sc.note))}</div>` : ''}`;
+    return `<div class="pp-price-table-wrap"><div class="pp-price-table">
+      <div class="head">${t('results.compare.strategy')}</div>
+      <div class="head">${t('results.compare.price')}</div>
+      <div class="head">${t('results.whatif.profitPerUnit', u)}</div>
+      <div class="head">${t('results.margin')}</div>
+      <div class="head">${t('results.whatif.monthlyProfit')}</div>
+      ${rows.map(row).join('')}
+    </div></div>`;
   }
   /** The blue→violet cost-composition series, named from the tokens in styles.css. */
   const PALETTE = {
@@ -555,7 +575,7 @@
       .map(([tab, l, ic]) => `<button class="${S.tab === tab ? 'active' : ''}" data-tab="${tab}">${icon(ic, 14)} ${t(l)}</button>`).join('');
     let panel;
     if (S.tab === 'overview') {
-      panel = `<h3 class="mb-3">${t('results.threeWays')}</h3><div class="row g-3"><div class="col-md-4">${scenarioCard(p.scenarios.minimum, cur)}</div><div class="col-md-4">${scenarioCard(p.scenarios.recommended, cur)}</div><div class="col-md-4">${scenarioCard(p.scenarios.premium, cur)}</div></div>
+      panel = `<h3 class="mb-3">${t('results.threeWays')}</h3>${priceTable(p, cur, u)}
         <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card pp-card--insight h-100">
           <div class="d-flex align-items-center gap-2 mb-1">${iconBadge('lightbulb', 'pp-icon-badge--sm', 14)}<h4 class="mb-0">${t('results.why', { cur, price: p.recommended.price })}</h4></div>
           <p class="pp-body" style="margin:12px 0 20px">${explainPrice(m, p)}</p><div class="pp-subhead mb-2">${t('results.costGoes', { cur })}</div>${breakdown(p.costBreakdown, cur)}</div></div>
@@ -578,26 +598,29 @@
         <div class="col-lg-7" id="tgt-metrics">${targetMetrics(m, p)}</div></div>`;
     }
     const roadmapTeaser = r && r.recommendations.length ? `<div class="pp-card mt-3">
-      <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap"><span class="pp-eyebrow">${icon('map', 14)} ${t('results.roadmapWorth')}</span><a href="#/roadmap" class="btn btn-pp-ghost btn-sm">${t('results.openRoadmap')} ${icon('arrow-right', 13, 'pp-icon-flip')}</a></div>
-      ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>` : '';
+      <div class="mb-3"><span class="pp-eyebrow">${icon('map', 14)} ${t('results.roadmapWorth')}</span></div>
+      ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}
+      <a href="#/roadmap" class="btn btn-pp-ghost mt-3">${t('results.roadmapCta')} ${icon('arrow-right', 14, 'pp-icon-flip')}</a></div>` : '';
     return `<div class="pp-container py-5 pp-fade">
       <div class="row g-4 align-items-start">
         <div class="col-lg-7"><div class="pp-card pp-card--primary">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><span class="pp-eyebrow">${t('results.eyebrow', { offering: esc(S.offering) })}</span><span class="pp-badge recommended">${icon('badge-check', 12)} ${t('results.badge')}</span></div>
           ${heroFigure(p.recommended.price, cur, 'pp-kpi--hero')}
-          <div class="pp-subhead" style="margin:4px 0 22px">${t('results.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
-          <div class="pp-stat-strip">
-            <div class="pp-stat"><div class="k">${icon('wallet', 12)} ${t('results.trueCost')}</div><div class="v pp-num">${money(p.trueCostPerUnit, cur)}</div></div>
-            <div class="pp-stat"><div class="k">${icon('coins', 12)} ${t('results.profitPerUnit', u)}</div><div class="v pp-num">${money(p.recommended.profitPerUnit, cur)}</div></div>
-            <div class="pp-stat"><div class="k">${icon('scale', 12)} ${t('results.margin')}</div><div class="v pp-num">${pct(p.recommended.marginPct)}</div></div>
+          <div class="pp-kpi pp-kpi--sm" style="color:var(--pp-pos);font-weight:500;margin:6px 0 20px">${t('results.youMake', { profit: p.recommended.profitPerUnit, unit: u.unit, cur })}</div>
+          <div class="pp-bridge">
+            <div class="pp-bridge__node"><div class="pp-bridge__label">${t('results.trueCost')}</div><div class="pp-bridge__value pp-num">${money(p.trueCostPerUnit, cur)}</div></div>
+            ${icon('arrow-right', 14, 'pp-icon-flip pp-bridge__arrow')}
+            <div class="pp-bridge__node pp-bridge__node--price"><div class="pp-bridge__value pp-num">${money(p.recommended.price, cur, 0)}</div></div>
+            ${icon('arrow-right', 14, 'pp-icon-flip pp-bridge__arrow')}
+            <div class="pp-bridge__node"><div class="pp-bridge__label">${t('results.profitPerUnit', u)}</div><div class="pp-bridge__value pp-num" style="color:var(--pp-pos)">${money(p.recommended.profitPerUnit, cur)}</div></div>
           </div>
+          <div class="pp-label" style="margin:0 0 4px">${t('results.marginExplain', { margin: p.recommended.marginPct, kept: p.recommended.marginPct * 100, hundred: 100, cur })}</div>
           <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp btn-pp-hero">${t('results.seeRoadmap')} ${icon('arrow-right', 15, 'pp-icon-flip')}</a><a href="#/analyze" class="btn btn-pp-white" id="edit-answers">${icon('square-pen', 14)} ${t('results.editAnswers')}</a></div>
         </div></div>
         <div class="col-lg-5"><div class="pp-card pp-card--data h-100">
           <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><span class="pp-eyebrow">${icon('chart-column', 14)} ${t('results.outlook')}</span><span class="pp-subhead">${t('results.outlook.at', { count: p.expectedUnits, units: u.units })}</span></div>
           <div class="d-grid" style="gap:10px">
-            ${tile('banknote', t('results.revenue'), money(p.recommended.monthlyRevenue, cur, 0))}
-            ${tile('trending-up', t('results.profit'), money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-pos)')}
+            ${tile('trending-up', t('results.profit'), money(p.recommended.monthlyProfit, cur, 0), t('results.revenueCosts', { revenue: p.recommended.monthlyRevenue, costs: p.recommended.monthlyRevenue - p.recommended.monthlyProfit, cur }), 'var(--pp-pos)', false, true)}
             ${tile('zap', t('results.breakEvenSales'), `${p.recommended.breakEvenUnits ?? '—'} ${unitsOf()}`, t('results.breakEvenSales.sub', { count: p.expectedUnits }))}
           </div>
           <div class="pp-subhead mt-3">${t('results.estimatesNote')}</div>
@@ -629,8 +652,8 @@
       <button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${esc(t(rec.done ? 'roadmap.markNotDone' : 'roadmap.markDone'))}">${icon(rec.done ? 'check' : 'plus', 13)}</button>
       <div class="flex-grow-1" style="min-width:0">
         <div class="d-flex justify-content-between align-items-start" style="gap:16px"><h4>${esc(msg(i18n && i18n.title, rec.title))}</h4><div class="pp-rec__impact"><div class="v">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-label">${t('roadmap.estPerMonth')}</div></div></div>
+        <p class="pp-body mt-1 mb-0">${esc(msg(i18n && i18n.why, rec.why))}</p>
         <div class="pp-rec__meta mt-2">${badges(rec)}${share > 0 ? `<span class="pp-label">${t('roadmap.shareOfLift', { share })}</span>` : ''}</div>
-        <p class="pp-body mt-3">${esc(msg(i18n && i18n.why, rec.why))}</p>
         <div class="pp-rec__action mt-3">${icon('arrow-up-right', 15, 'pp-icon-flip')}<div><div class="k">${t('roadmap.nextAction')}</div>${esc(msg(i18n && i18n.action, rec.action))}</div></div>
         ${rec.assumptions.length ? `<details class="mt-3"><summary>${icon('chevron-right', 13, 'pp-icon-flip')} ${t('roadmap.assumptions')}</summary><ul>${rec.assumptions.map((a, i) => `<li>${esc(msg(i18n && i18n.assumptions[i], a))}</li>`).join('')}</ul></details>` : ''}
       </div></div></article>`;
@@ -644,7 +667,11 @@
         <div class="row g-3 mt-1">
           <div class="col-md-7"><div class="pp-card-bare pp-card-bare--data h-100">
             <div class="d-flex align-items-center gap-2 mb-3">${icon('chart-column', 14)}<span class="pp-eyebrow">${t('roadmap.liftFrom')}</span></div>
-            <div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span>${esc(msg(x.i18n && x.i18n.title, x.title))}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}</div>
+            <div class="pp-waterfall">
+              <div class="item item--total item--open"><span>${t('compare.today')}</span><span class="pp-num">${money(r.current.monthlyProfit, cur, 0)}</span></div>
+              ${r.recommendations.map((x) => `<div class="item"><span>${esc(msg(x.i18n && x.i18n.title, x.title))}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}
+              <div class="item item--total item--close"><span>${t('compare.following')}</span><span class="pp-num">${money(r.optimisedMonthlyProfit, cur, 0)}</span></div>
+            </div>
             <div class="pp-label mt-3">${t('roadmap.sumNote', { cur, sum: r.sumOfImpacts, discount: r.interactionDiscountPct })}</div>
           </div></div>
           <div class="col-md-5"><div class="pp-card-bare pp-card-bare--data h-100 d-flex flex-column">

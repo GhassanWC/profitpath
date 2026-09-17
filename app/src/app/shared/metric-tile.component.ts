@@ -13,7 +13,7 @@ import { IconComponent } from './icon.component';
         }
         {{ label() }}
       </div>
-      <div class="pp-kpi" [class.pp-kpi--sm]="small()" [style.color]="color()">{{ value() }}</div>
+      <div class="pp-kpi" [class.pp-kpi--sm]="small()" [class.pp-kpi--xl]="big()" [style.color]="color()">{{ value() }}</div>
       @if (sub()) {
         <div class="sub">{{ sub() }}</div>
       }
@@ -28,4 +28,6 @@ export class MetricTileComponent {
   color = input<string>('');
   icon = input<string>('');
   small = input(false);
+  /** A dominant tile — the one figure on the card the reader should see first. */
+  big = input(false);
 }

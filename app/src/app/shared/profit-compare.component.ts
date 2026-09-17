@@ -22,7 +22,7 @@ import { MoneyPipe } from './pipes';
         <div class="pp-compare__side">
           <div class="k"><pp-icon name="wallet" [size]="12" /> {{ t('compare.today') }}</div>
           <div class="pp-kpi pp-num" [class.pp-kpi--xl]="!compact()" [class.pp-kpi--lg]="compact()">
-            {{ current() | money: currency() : 0 }}
+            {{ current() | money: currency() : 0 }}<span class="pp-compare__permo">{{ t('compare.perMonth') }}</span>
           </div>
         </div>
 
@@ -31,13 +31,16 @@ import { MoneyPipe } from './pipes';
         <div class="pp-compare__side">
           <div class="k"><pp-icon name="target" [size]="12" /> {{ t('compare.following') }}</div>
           <div class="pp-kpi pp-kpi--pos pp-num" [class.pp-kpi--xl]="!compact()" [class.pp-kpi--lg]="compact()">
-            {{ optimised() | money: currency() : 0 }}
+            {{ optimised() | money: currency() : 0 }}<span class="pp-compare__permo">{{ t('compare.perMonth') }}</span>
           </div>
         </div>
 
         <div class="pp-compare__lift">
-          <pp-icon name="trending-up" [size]="15" />
-          +{{ lift() | money: currency() : 0 }}<span class="pp-muted">·</span>{{ liftPctLabel() }}
+          <div class="pp-compare__lift-label">{{ t('compare.opportunity') }}</div>
+          <div class="pp-compare__lift-figure">
+            <pp-icon name="trending-up" [size]="15" />
+            +{{ lift() | money: currency() : 0 }}<span class="pp-muted">·</span>{{ liftPctLabel() }}
+          </div>
         </div>
       </div>
 

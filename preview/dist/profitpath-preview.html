@@ -1,6 +1,6 @@
 <!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ProfitPath</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>/* Minimal utility subset (the Angular app uses Bootstrap 5 for these) */
 *, *::before, *::after { box-sizing: border-box; }
 .row { display: flex; flex-wrap: wrap; margin-inline: calc(-0.5 * var(--g, 1rem)); margin-top: calc(-1 * var(--g, 1rem)); }
@@ -116,7 +116,7 @@ input, select { font: inherit; color: inherit; }
      carries every figure so columns of money line up, the sans carries
      reading copy. Arabic faces sit at the end of each stack: font fallback is
      per-glyph, so Latin text never reaches them. */
-  --pp-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
+  --pp-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Naskh Arabic', 'Noto Sans Arabic', 'Geeza Pro', Tahoma, sans-serif;
   --pp-serif: 'Instrument Serif', Georgia, 'Times New Roman', 'Noto Naskh Arabic', serif;
   --pp-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, 'Noto Sans Arabic', monospace;
 
@@ -494,14 +494,23 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-detect .sub { font-size: 12px; color: var(--pp-brand-ink); }
 
 /* --------------------------------------------------------------- results -- */
-/* The unit-economics strip under the recommended price: three supporting
-   figures, each clearly subordinate to the price above them. */
-.pp-stat-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .pp-stat { background: transparent; border-top: 1px solid var(--pp-line); border-radius: 0; padding: 16px 0 0; min-width: 0; }
 .pp-stat .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 5px; }
 .pp-stat .v { font-size: var(--pp-fig-lg); font-weight: 400; letter-spacing: -0.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .pp-stat--accent { border-top-color: var(--pp-brand); }
 .pp-stat--accent .k { color: var(--pp-brand-ink); }
+
+/* The cost → price → profit bridge under the recommended price: three nodes
+   read as one sentence rather than three equal-weight tiles, so the middle
+   number reads as "what's left of the first once the last comes out". */
+.pp-bridge { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+.pp-bridge__node { text-align: center; }
+.pp-bridge__label { font-size: 10.5px; color: var(--pp-muted); margin-bottom: 2px; }
+.pp-bridge__value { font-family: var(--pp-mono); font-size: 15px; font-variant-numeric: tabular-nums; }
+/* The middle node restates the price the reader already saw above, larger and
+   unlabelled — a label here would only repeat what the hero figure just said. */
+.pp-bridge__node--price .pp-bridge__value { font-size: 18px; font-weight: 500; color: var(--pp-ink); }
+.pp-bridge__arrow { color: var(--pp-muted); flex: 0 0 auto; }
 
 /* Metric tiles — pale blocks inside a card, never cards in their own right.
    Same nested step-down as pp-card-bare. */
@@ -516,9 +525,19 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-compare__row { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px 28px; }
 .pp-compare__side { min-width: 0; }
 .pp-compare__side .k { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pp-muted); margin-bottom: 4px; }
+/* A small unit marker beside the big current/potential figures — "$5,970 /mo"
+   rather than a bare number the reader has to infer a period for. */
+.pp-compare__permo { font-size: 0.32em; font-weight: 400; color: var(--pp-muted); margin-inline-start: 4px; letter-spacing: 0; }
 .pp-compare__arrow { display: flex; align-items: center; color: var(--pp-muted); padding-bottom: 8px; }
-.pp-compare__lift {
-  display: inline-flex; align-items: center; gap: 7px; align-self: center;
+/* Two lines, not one: what this number IS ("Opportunity") sits above what it
+   IS WORTH, the same label-then-figure order every other stat on the page uses. */
+.pp-compare__lift { display: flex; flex-direction: column; gap: 4px; align-self: center; }
+.pp-compare__lift-label {
+  font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--pp-pos-ink); text-align: center;
+}
+.pp-compare__lift-figure {
+  display: inline-flex; align-items: center; gap: 7px;
   background: var(--pp-pos-soft); color: var(--pp-pos-ink); border-radius: var(--pp-radius-full);
   padding: 8px 14px; font-family: var(--pp-mono); font-size: 12.5px; font-variant-numeric: tabular-nums;
 }
@@ -534,6 +553,32 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-scenario.recommended .pp-muted, .pp-scenario.recommended .pp-subhead { color: var(--pp-on-dark-muted) !important; }
 .pp-scenario.recommended .pp-ledger .total { border-color: rgba(255, 255, 255, 0.22); }
 .pp-scenario .price { font-family: var(--pp-serif); font-size: var(--pp-fig-xl); letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
+/* The three-way price comparison: one scannable table rather than three cards
+   asking to be read side by side and mentally cross-referenced. Rows carry the
+   numbers; only the recommended row carries a sentence, because a decision
+   needs one reason, not three. Modelled on the landing page's plan table
+   (`.pp-lp-plans`) — the same ruled-grid language, scoped outside `.pp-lp`. */
+/* Five columns of financial mono text do not fit 390px readably — the table
+   scrolls inside its own box rather than being squeezed illegible or forcing
+   the page itself wider, the same rule this system already gives code blocks. */
+.pp-price-table-wrap { overflow-x: auto; }
+.pp-price-table { display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); align-items: center; min-width: 560px; }
+.pp-price-table > * { padding: 12px 10px; border-bottom: 1px solid var(--pp-line-2); }
+.pp-price-table .head {
+  padding: 0 10px 10px; border-bottom: 1px solid var(--pp-line); align-self: end;
+  font-family: var(--pp-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--pp-muted);
+}
+.pp-price-table .strategy { display: flex; align-items: center; gap: 7px; font-weight: 500; color: var(--pp-ink); }
+.pp-price-table .cell { font-family: var(--pp-mono); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+/* Every cell of the recommended row shares one background, so five separate
+   grid items still read as a single highlighted row with no visible seams. */
+.pp-price-table .r-recommended { background: var(--pp-brand-soft); }
+.pp-price-table .r-recommended .strategy, .pp-price-table .r-recommended .cell { color: var(--pp-brand-ink); font-weight: 500; }
+.pp-price-table .note {
+  grid-column: 1 / -1; background: var(--pp-brand-soft); color: var(--pp-brand-ink);
+  padding: 0 10px 13px; font-size: 12px;
+}
 
 /* Badges are soft pills — the text carries the meaning, never colour alone. */
 /* Badges are tinted blocks; the word carries the meaning, never colour alone. */
@@ -628,15 +673,21 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
 .pp-waterfall .item > :nth-child(2) { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--pp-ink); }
 .pp-waterfall .track { height: 5px; border-radius: var(--pp-radius-full); background: var(--pp-subtle); overflow: hidden; grid-column: 1 / -1; }
 .pp-waterfall .track span { display: block; height: 100%; background: var(--pp-brand); border-radius: 0; }
+/* The two ends of the bridge — current profit opens it, potential profit closes
+   it — read as a ledger total: ruled, bold, no bar (there is nothing to show a
+   proportion of at either end). */
+.pp-waterfall .item--total { padding-block: 3px; font-size: 13px; }
+.pp-waterfall .item--total > :nth-child(2) { color: inherit; }
+.pp-waterfall .item--open { border-bottom: 1px solid var(--pp-line-2); padding-bottom: 11px; color: var(--pp-muted); }
+.pp-waterfall .item--open > :nth-child(2) { color: var(--pp-muted); }
+.pp-waterfall .item--close { border-top: 1px solid var(--pp-ink); padding-top: 11px; font-weight: 500; color: var(--pp-pos); }
+.pp-waterfall .item--close > :nth-child(2) { color: var(--pp-pos); }
 
 /* ------------------------------------------------------------- animation -- */
 /* Route entry is one keyframe. No bounces, no springs, no scroll reveals. */
 .pp-fade { animation: ppfade var(--pp-ease-slow) both; }
 @keyframes ppfade { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 
-@media (max-width: 768px) {
-  .pp-stat-strip { grid-template-columns: 1fr; }
-}
 @media (max-width: 576px) {
   .pp-hero { padding: 36px 0 24px; }
   .pp-card, .pp-scenario, .pp-rec { padding: 15px; }
@@ -871,12 +922,14 @@ pp-icon, .pp-i { display: inline-flex; align-items: center; justify-content: cen
    vanish, so the surface restates them rather than the component branching. */
 .pp-lp-plate .pp-compare__side .k,
 .pp-lp-plate .pp-compare__arrow,
-.pp-lp-plate .pp-compare__key { color: var(--pp-on-dark-muted); }
+.pp-lp-plate .pp-compare__key,
+.pp-lp-plate .pp-compare__permo { color: var(--pp-on-dark-muted); }
 .pp-lp-plate .pp-compare .pp-kpi { color: var(--pp-on-dark); }
 .pp-lp-plate .pp-compare .pp-kpi--pos { color: var(--pp-pos-dark); }
 .pp-lp-plate .pp-compare__bar { background: rgba(242, 239, 232, 0.14); border-radius: var(--pp-radius-full); height: 9px; }
 .pp-lp-plate .pp-compare__bar .lift { background: var(--pp-pos-dark); opacity: 1; }
-.pp-lp-plate .pp-compare__lift {
+.pp-lp-plate .pp-compare__lift-label { color: var(--pp-pos-dark); }
+.pp-lp-plate .pp-compare__lift-figure {
   background: rgba(111, 220, 160, 0.14); color: var(--pp-pos-dark); border-radius: var(--pp-radius-full);
 }
 .pp-lp-plate .pp-compare__key i { border-radius: 50%; }
@@ -2972,13 +3025,15 @@ exports.AR = {
     'category.reduce_costs.blurb': 'كل وحدة تكلفة تحذفها هي وحدة ربح تكسبها — دون أي مبيعات إضافية.',
     'category.reduce_costs.label': 'خفض التكاليف',
     'chart.costBreakdown': 'تفصيل التكاليف',
-    'compare.barLabel': 'ربحك اليوم يمثل {share|plain}% من الرقم بعد التحسين',
-    'compare.following': 'مع اتباع خارطة الطريق',
+    'compare.barLabel': 'الربح الحالي يمثل {share|plain}% من الرقم المحتمل',
+    'compare.following': 'الربح المحتمل',
     'compare.keyAdded': 'ما تضيفه التوصيات الـ{count|plain}',
     'compare.keyNote': 'تقديرات من أرقامك أنت · وليست تنبؤًا',
-    'compare.keyToday': 'ربحك اليوم',
+    'compare.keyToday': 'الربح الحالي',
     'compare.moreProfit': 'ربح أكبر',
-    'compare.today': 'اليوم',
+    'compare.opportunity': 'الفرصة',
+    'compare.perMonth': '/ شهريًا',
+    'compare.today': 'الربح الحالي',
     'costLine.labor': 'العمالة',
     'costLine.marketing': 'التسويق / جذب العملاء',
     'costLine.materials': 'المواد',
@@ -3103,7 +3158,7 @@ exports.AR = {
     'marginBand.requested': 'طلبت هامشًا قدره {desired|pct0}. وللمقارنة، {typeKey|t} تعمل عادة بين {low|pct0} و{high|pct0}.',
     'nav.calculator': 'الحاسبة',
     'nav.cta': 'احسب سعري',
-    'nav.results': 'النتائج',
+    'nav.results': 'قرارك',
     'nav.roadmap': 'خارطة الطريق',
     'option.channels.delivery_app.label': 'تطبيق توصيل (طلبات، أوبر إيتس…)',
     'option.channels.instagram.label': 'إنستغرام / تيك توك',
@@ -3513,6 +3568,8 @@ exports.AR = {
     'results.breakEvenPrice': 'سعر التعادل',
     'results.breakEvenSales': 'مبيعات التعادل',
     'results.breakEvenSales.sub': 'من {count|plain} المتوقعة',
+    'results.compare.price': 'السعر',
+    'results.compare.strategy': 'الاستراتيجية',
     'results.costGoes': 'إلى أين يذهب كل {cur} من التكلفة',
     'results.editAnswers': 'تعديل الإجابات',
     'results.estimatesNote': 'تقديرات من مدخلاتك · وليست ضمانًا',
@@ -3520,7 +3577,7 @@ exports.AR = {
     'results.eyebrow': 'سعرك الموصى به · {offering}',
     'results.fixedMonthly': 'التكاليف الثابتة الشهرية',
     'results.margin': 'الهامش',
-    'results.openRoadmap': 'افتح خارطة الطريق',
+    'results.marginExplain': 'هامش {margin|pct} — أي أنك تحتفظ بـ{kept|money2} من كل {hundred|money0} من المبيعات بعد خصم التكاليف.',
     'results.original': 'الأصلي: {value}',
     'results.outlook': 'التوقعات الشهرية',
     'results.outlook.at': 'عند {count|plain} {units|t}',
@@ -3529,6 +3586,8 @@ exports.AR = {
     'results.pts': '{value} نقطة',
     'results.reset': 'إعادة تعيين',
     'results.revenue': 'الإيراد الشهري التقديري',
+    'results.revenueCosts': 'الإيراد {revenue|money0} · التكاليف {costs|money0}',
+    'results.roadmapCta': 'إليك كيف تصل إلى ذلك',
     'results.roadmapWorth': 'ما تساويه خارطة طريقك',
     'results.seeRoadmap': 'اعرض خارطة طريق الربح',
     'results.slider.fixedMonthlyTotal': 'التكاليف الثابتة الشهرية',
@@ -3539,7 +3598,6 @@ exports.AR = {
     'results.slider.purchase': 'تكلفة الشراء',
     'results.slider.shipping': 'الشحن',
     'results.slider.units': '{units|t} شهريًا',
-    'results.sub': 'لكل {unit|t} · مُسعّر على الهامش المعتاد لهذا النوع من الأنشطة والبالغ {margin|pct0}',
     'results.tab.pricing': 'التسعير',
     'results.tab.target': 'الربح المستهدف',
     'results.tab.whatif': 'ماذا لو؟',
@@ -3577,6 +3635,7 @@ exports.AR = {
     'results.whatif.was': 'كانت {value}',
     'results.whatif.weaker': 'هذا السيناريو يبدو أضعف.',
     'results.why': 'لماذا {price|money0}؟',
+    'results.youMake': 'تربح {profit|money2} عن كل {unit|t}',
     'roadmap.analyseAnother': 'حلّل نشاطًا آخر',
     'roadmap.assumptions': 'الافتراضات وراء هذا التقدير',
     'roadmap.backToPricing': 'العودة إلى التسعير',
@@ -3606,8 +3665,8 @@ exports.AR = {
     'scenario.premium.label': 'المميّز',
     'scenario.premium.note': 'هامش أعلى لكل عملية بيع، لكنك ستحتاج غالبًا إلى تموضع أقوى أو عملاء أقل عددًا وأفضل جودة.',
     'scenario.recommended.label': 'الموصى به',
-    'scenario.recommended.note.midpoint': 'يستهدف هامشًا صافيًا قدره {margin|pct0} — وهو منتصف النطاق لـ{typeKey|t}.',
-    'scenario.recommended.note.requested': 'يستهدف هامشًا صافيًا قدره {margin|pct0} — وهو الهامش الذي طلبته.',
+    'scenario.recommended.note.midpoint': 'يستهدف هامشًا صافيًا قدره {margin|pct} — وهو منتصف النطاق لـ{typeKey|t}.',
+    'scenario.recommended.note.requested': 'يستهدف هامشًا صافيًا قدره {margin|pct} — وهو الهامش الذي طلبته.',
     'scenario.status.loss': 'يحقق خسارة',
     'scenario.status.low': 'هامش ضئيل',
     'scenario.status.premium': 'هامش أعلى',
@@ -3728,13 +3787,15 @@ exports.EN = {
     'category.reduce_costs.blurb': 'Every unit of cost removed is a unit of profit gained — no extra sales needed.',
     'category.reduce_costs.label': 'Reduce costs',
     'chart.costBreakdown': 'Cost breakdown',
-    'compare.barLabel': 'Profit today is {share|plain}% of the optimised figure',
-    'compare.following': 'Following the roadmap',
+    'compare.barLabel': 'Current profit is {share|plain}% of the potential figure',
+    'compare.following': 'Potential profit',
     'compare.keyAdded': 'Added by the {count|plain} recommendations',
     'compare.keyNote': 'Estimates from your own numbers · not a forecast',
-    'compare.keyToday': 'Profit today',
+    'compare.keyToday': 'Current profit',
     'compare.moreProfit': 'more profit',
-    'compare.today': 'Today',
+    'compare.opportunity': 'Opportunity',
+    'compare.perMonth': '/ mo',
+    'compare.today': 'Current profit',
     'costLine.labor': 'Labour',
     'costLine.marketing': 'Marketing / acquisition',
     'costLine.materials': 'Materials',
@@ -3859,7 +3920,7 @@ exports.EN = {
     'marginBand.requested': 'You asked for a {desired|pct0} margin. For reference, {typeKey|t} businesses typically run {low|pct0}–{high|pct0}.',
     'nav.calculator': 'Calculator',
     'nav.cta': 'Calculate my price',
-    'nav.results': 'Results',
+    'nav.results': 'My Decision',
     'nav.roadmap': 'Roadmap',
     'option.channels.delivery_app.label': 'Delivery app (Talabat, Uber Eats…)',
     'option.channels.instagram.label': 'Instagram / TikTok',
@@ -4239,7 +4300,7 @@ exports.EN = {
     'rec.supplier_cost.title': 'Find a supplier below {target|money} per {unit|t}',
     'rec.supplier_cost.why': 'Purchase cost is {share|pct0} of your true cost per {unit|t} — the single biggest lever you have. Every {cur} saved here goes straight to profit.',
     'rec.upsell.a1': '{attach|pct0} of customers take the add-on.',
-    'rec.upsell.a2': 'The add-on carries a {margin|pct0} margin.',
+    'rec.upsell.a2': 'The add-on carries a {margin|pct} margin.',
     'rec.upsell.action': 'Design one add-on at roughly {share|pct0} of your price and offer it at the moment of purchase. Measure the attach rate for a month.',
     'rec.upsell.example.digital': 'a workbook, template pack or 1:1 session',
     'rec.upsell.example.food': 'drinks, sides or a "party size" option',
@@ -4269,6 +4330,8 @@ exports.EN = {
     'results.breakEvenPrice': 'Break-even price',
     'results.breakEvenSales': 'Break-even sales',
     'results.breakEvenSales.sub': 'of your expected {count|plain}',
+    'results.compare.price': 'Price',
+    'results.compare.strategy': 'Strategy',
     'results.costGoes': 'Where each {cur} of cost goes',
     'results.editAnswers': 'Edit answers',
     'results.estimatesNote': 'Estimates from your inputs · not a guarantee',
@@ -4276,7 +4339,7 @@ exports.EN = {
     'results.eyebrow': 'Your recommended price · {offering}',
     'results.fixedMonthly': 'Monthly fixed costs',
     'results.margin': 'Margin',
-    'results.openRoadmap': 'Open the roadmap',
+    'results.marginExplain': '{margin|pct} margin — you keep {kept|money2} of every {hundred|money0} in sales after costs.',
     'results.original': 'Original: {value}',
     'results.outlook': 'Monthly outlook',
     'results.outlook.at': 'at {count|plain} {units|t}',
@@ -4285,6 +4348,8 @@ exports.EN = {
     'results.pts': '{value} pts',
     'results.reset': 'Reset',
     'results.revenue': 'Est. monthly revenue',
+    'results.revenueCosts': 'Revenue {revenue|money0} · Costs {costs|money0}',
+    'results.roadmapCta': 'Here\'s how to get there',
     'results.roadmapWorth': 'What your roadmap is worth',
     'results.seeRoadmap': 'See my Profit Roadmap',
     'results.slider.fixedMonthlyTotal': 'Monthly fixed costs',
@@ -4295,7 +4360,6 @@ exports.EN = {
     'results.slider.purchase': 'Purchase cost',
     'results.slider.shipping': 'Shipping',
     'results.slider.units': '{units|t} per month',
-    'results.sub': 'per {unit|t} · priced for the {margin|pct0} margin typical of this kind of business',
     'results.tab.pricing': 'Pricing',
     'results.tab.target': 'Target profit',
     'results.tab.whatif': 'What if?',
@@ -4333,6 +4397,7 @@ exports.EN = {
     'results.whatif.was': 'was {value}',
     'results.whatif.weaker': 'This scenario looks weaker.',
     'results.why': 'Why {price|money0}?',
+    'results.youMake': 'You make {profit|money2} per {unit|t}',
     'roadmap.analyseAnother': 'Analyse another business',
     'roadmap.assumptions': 'Assumptions behind this estimate',
     'roadmap.backToPricing': 'Back to pricing',
@@ -4473,13 +4538,15 @@ exports.ES = {
     'category.reduce_costs.blurb': 'Cada unidad de coste eliminada es una unidad de beneficio ganada, sin vender más.',
     'category.reduce_costs.label': 'Reducir costes',
     'chart.costBreakdown': 'Desglose de costes',
-    'compare.barLabel': 'El beneficio actual es el {share|plain} % de la cifra optimizada',
-    'compare.following': 'Siguiendo la hoja de ruta',
+    'compare.barLabel': 'El beneficio actual es el {share|plain} % de la cifra potencial',
+    'compare.following': 'Beneficio potencial',
     'compare.keyAdded': 'Añadido por las {count|plain} recomendaciones',
     'compare.keyNote': 'Estimaciones a partir de tus propias cifras · no es una previsión',
     'compare.keyToday': 'Beneficio actual',
     'compare.moreProfit': 'más beneficio',
-    'compare.today': 'Hoy',
+    'compare.opportunity': 'Oportunidad',
+    'compare.perMonth': '/ mes',
+    'compare.today': 'Beneficio actual',
     'costLine.labor': 'Mano de obra',
     'costLine.marketing': 'Marketing / captación',
     'costLine.materials': 'Materiales',
@@ -4604,7 +4671,7 @@ exports.ES = {
     'marginBand.requested': 'Has pedido un margen del {desired|pct0}. Como referencia, los negocios de {typeKey|t} suelen moverse entre el {low|pct0} y el {high|pct0}.',
     'nav.calculator': 'Calculadora',
     'nav.cta': 'Calcular mi precio',
-    'nav.results': 'Resultados',
+    'nav.results': 'Mi decisión',
     'nav.roadmap': 'Hoja de ruta',
     'option.channels.delivery_app.label': 'App de reparto (Talabat, Uber Eats…)',
     'option.channels.instagram.label': 'Instagram / TikTok',
@@ -5014,6 +5081,8 @@ exports.ES = {
     'results.breakEvenPrice': 'Precio de equilibrio',
     'results.breakEvenSales': 'Ventas de equilibrio',
     'results.breakEvenSales.sub': 'de las {count|plain} previstas',
+    'results.compare.price': 'Precio',
+    'results.compare.strategy': 'Estrategia',
     'results.costGoes': 'Adónde va cada {cur} de coste',
     'results.editAnswers': 'Editar respuestas',
     'results.estimatesNote': 'Estimaciones a partir de tus datos · no es una garantía',
@@ -5021,7 +5090,7 @@ exports.ES = {
     'results.eyebrow': 'Tu precio recomendado · {offering}',
     'results.fixedMonthly': 'Costes fijos mensuales',
     'results.margin': 'Margen',
-    'results.openRoadmap': 'Abrir la hoja de ruta',
+    'results.marginExplain': 'Margen del {margin|pct}: conservas {kept|money2} de cada {hundred|money0} en ventas después de los costes.',
     'results.original': 'Original: {value}',
     'results.outlook': 'Previsión mensual',
     'results.outlook.at': 'con {count|plain} {units|t}',
@@ -5030,6 +5099,8 @@ exports.ES = {
     'results.pts': '{value} pts',
     'results.reset': 'Restablecer',
     'results.revenue': 'Ingresos mensuales est.',
+    'results.revenueCosts': 'Ingresos {revenue|money0} · Costes {costs|money0}',
+    'results.roadmapCta': 'Así es como llegar',
     'results.roadmapWorth': 'Lo que vale tu hoja de ruta',
     'results.seeRoadmap': 'Ver mi hoja de ruta de beneficio',
     'results.slider.fixedMonthlyTotal': 'Costes fijos mensuales',
@@ -5040,7 +5111,6 @@ exports.ES = {
     'results.slider.purchase': 'Coste de compra',
     'results.slider.shipping': 'Envío',
     'results.slider.units': '{units|t} al mes',
-    'results.sub': 'por {unit|t} · con el margen del {margin|pct0} habitual en este tipo de negocio',
     'results.tab.pricing': 'Precios',
     'results.tab.target': 'Beneficio objetivo',
     'results.tab.whatif': '¿Y si…?',
@@ -5078,6 +5148,7 @@ exports.ES = {
     'results.whatif.was': 'antes {value}',
     'results.whatif.weaker': 'Este escenario parece más débil.',
     'results.why': '¿Por qué {price|money0}?',
+    'results.youMake': 'Ganas {profit|money2} por {unit|t}',
     'roadmap.analyseAnother': 'Analizar otro negocio',
     'roadmap.assumptions': 'Supuestos tras esta estimación',
     'roadmap.backToPricing': 'Volver a los precios',
@@ -5218,13 +5289,15 @@ exports.FR = {
     'category.reduce_costs.blurb': 'Chaque unité de coût supprimée est une unité de profit gagnée — sans aucune vente supplémentaire.',
     'category.reduce_costs.label': 'Réduire les coûts',
     'chart.costBreakdown': 'Répartition des coûts',
-    'compare.barLabel': 'Votre profit actuel représente {share|plain} % du chiffre optimisé',
-    'compare.following': 'En suivant la feuille de route',
+    'compare.barLabel': 'Votre profit actuel représente {share|plain} % du chiffre potentiel',
+    'compare.following': 'Profit potentiel',
     'compare.keyAdded': 'Apporté par les {count|plain} recommandations',
     'compare.keyNote': 'Estimations issues de vos propres chiffres · ce n\'est pas une prévision',
     'compare.keyToday': 'Profit actuel',
     'compare.moreProfit': 'de profit en plus',
-    'compare.today': 'Aujourd\'hui',
+    'compare.opportunity': 'Opportunité',
+    'compare.perMonth': '/ mois',
+    'compare.today': 'Profit actuel',
     'costLine.labor': 'Main-d\'œuvre',
     'costLine.marketing': 'Marketing / acquisition',
     'costLine.materials': 'Matières',
@@ -5349,7 +5422,7 @@ exports.FR = {
     'marginBand.requested': 'Vous avez demandé une marge de {desired|pct0}. À titre de repère, les activités {typeKey|t} se situent en général entre {low|pct0} et {high|pct0}.',
     'nav.calculator': 'Calculateur',
     'nav.cta': 'Calculer mon prix',
-    'nav.results': 'Résultats',
+    'nav.results': 'Ma décision',
     'nav.roadmap': 'Feuille de route',
     'option.channels.delivery_app.label': 'Application de livraison (Talabat, Uber Eats…)',
     'option.channels.instagram.label': 'Instagram / TikTok',
@@ -5759,6 +5832,8 @@ exports.FR = {
     'results.breakEvenPrice': 'Prix d\'équilibre',
     'results.breakEvenSales': 'Ventes à l\'équilibre',
     'results.breakEvenSales.sub': 'sur les {count|plain} prévues',
+    'results.compare.price': 'Prix',
+    'results.compare.strategy': 'Stratégie',
     'results.costGoes': 'Où va chaque {cur} de coût',
     'results.editAnswers': 'Modifier mes réponses',
     'results.estimatesNote': 'Estimations issues de vos données · sans garantie',
@@ -5766,7 +5841,7 @@ exports.FR = {
     'results.eyebrow': 'Votre prix recommandé · {offering}',
     'results.fixedMonthly': 'Coûts fixes mensuels',
     'results.margin': 'Marge',
-    'results.openRoadmap': 'Ouvrir la feuille de route',
+    'results.marginExplain': 'Marge de {margin|pct} : vous conservez {kept|money2} sur chaque tranche de {hundred|money0} de ventes, une fois les coûts déduits.',
     'results.original': 'Valeur d\'origine : {value}',
     'results.outlook': 'Perspective mensuelle',
     'results.outlook.at': 'pour {count|plain} {units|t}',
@@ -5775,6 +5850,8 @@ exports.FR = {
     'results.pts': '{value} pts',
     'results.reset': 'Réinitialiser',
     'results.revenue': 'Chiffre d\'affaires mensuel estimé',
+    'results.revenueCosts': 'Chiffre d\'affaires {revenue|money0} · Coûts {costs|money0}',
+    'results.roadmapCta': 'Voici comment y arriver',
     'results.roadmapWorth': 'Ce que vaut votre feuille de route',
     'results.seeRoadmap': 'Voir ma feuille de route',
     'results.slider.fixedMonthlyTotal': 'Coûts fixes mensuels',
@@ -5785,7 +5862,6 @@ exports.FR = {
     'results.slider.purchase': 'Coût d\'achat',
     'results.slider.shipping': 'Transport',
     'results.slider.units': '{units|t} par mois',
-    'results.sub': 'par {unit|t} · calé sur la marge de {margin|pct0} habituelle pour ce type d\'activité',
     'results.tab.pricing': 'Tarification',
     'results.tab.target': 'Profit cible',
     'results.tab.whatif': 'Et si ?',
@@ -5823,6 +5899,7 @@ exports.FR = {
     'results.whatif.was': 'auparavant {value}',
     'results.whatif.weaker': 'Ce scénario paraît plus faible.',
     'results.why': 'Pourquoi {price|money0} ?',
+    'results.youMake': 'Vous gagnez {profit|money2} par {unit|t}',
     'roadmap.analyseAnother': 'Analyser une autre activité',
     'roadmap.assumptions': 'Hypothèses derrière cette estimation',
     'roadmap.backToPricing': 'Retour à la tarification',
@@ -5852,8 +5929,8 @@ exports.FR = {
     'scenario.premium.label': 'Premium',
     'scenario.premium.note': 'Marge plus élevée par vente, mais il vous faudra sans doute un positionnement plus fort ou des clients moins nombreux et mieux choisis.',
     'scenario.recommended.label': 'Recommandé',
-    'scenario.recommended.note.midpoint': 'Vise une marge nette de {margin|pct0} — le point médian pour les activités {typeKey|t}.',
-    'scenario.recommended.note.requested': 'Vise une marge nette de {margin|pct0} — la marge que vous avez demandée.',
+    'scenario.recommended.note.midpoint': 'Vise une marge nette de {margin|pct} — le point médian pour les activités {typeKey|t}.',
+    'scenario.recommended.note.requested': 'Vise une marge nette de {margin|pct} — la marge que vous avez demandée.',
     'scenario.status.loss': 'Perd de l\'argent',
     'scenario.status.low': 'Marge mince',
     'scenario.status.premium': 'Marge plus élevée',
@@ -6361,14 +6438,34 @@ exports.FR = {
   }
 
   // ---------- results ----------
-  function tile(ic, label, value, sub, color, small) {
-    return `<div class="pp-metric"><div class="k">${icon(ic, 12)} ${label}</div><div class="pp-kpi ${small ? 'pp-kpi--sm' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+  function tile(ic, label, value, sub, color, small, big) {
+    return `<div class="pp-metric"><div class="k">${icon(ic, 12)} ${label}</div><div class="pp-kpi ${small ? 'pp-kpi--sm' : ''} ${big ? 'pp-kpi--xl' : ''}" style="${color ? 'color:' + color : ''}">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
   }
-  function scenarioCard(sc, cur) {
-    const u = unitParams();
-    return `<div class="pp-scenario ${sc.key === 'recommended' ? 'recommended' : ''}"><div class="d-flex justify-content-between align-items-center gap-2 mb-2"><span class="pp-subhead">${t('scenario.' + sc.key + '.label')}</span><span class="pp-badge ${sc.status}">${icon(SCENARIO_ICONS[sc.status] || 'info', 11)}${t('scenario.status.' + sc.status)}</span></div><div class="price pp-num">${money(sc.price, cur, 0)}</div>
-      <div class="pp-ledger mt-3"><span class="pp-muted">${t('results.whatif.profitPerUnit', u)}</span><span class="pp-num" style="${sc.profitPerUnit < 0 ? 'color:var(--pp-neg)' : ''}">${money(sc.profitPerUnit, cur)}</span><span class="pp-muted">${t('results.margin')}</span><span class="pp-num">${pct(sc.marginPct)}</span><span class="pp-muted">${t('results.whatif.monthlyProfit')}</span><span class="pp-num">${money(sc.monthlyProfit, cur, 0)}</span>${sc.breakEvenUnits !== null ? `<span class="pp-muted">${t('results.breakEven')}</span><span class="pp-num">${sc.breakEvenUnits} ${unitsOf()}</span>` : ''}</div>
-      <p class="pp-muted mt-3 mb-0" style="font-size:12px">${esc(msg(sc.noteI18n, sc.note))}</p></div>`;
+  /** One scannable table, not three cards to cross-reference by eye. Only the
+      recommended row carries a sentence — a decision needs one reason, not three
+      notes read in parallel. */
+  function priceTable(p, cur, u) {
+    const rows = [
+      { sc: p.scenarios.minimum, rec: false },
+      { sc: p.scenarios.recommended, rec: true },
+      { sc: p.scenarios.premium, rec: false },
+    ];
+    const cell = (v, rec, color) => `<div class="cell ${rec ? 'r-recommended' : ''}" ${color ? `style="color:${color}"` : ''}>${v}</div>`;
+    const row = ({ sc, rec }) => `
+      <div class="strategy ${rec ? 'r-recommended' : ''}">${rec ? icon('badge-check', 14) : ''}${t('scenario.' + sc.key + '.label')}</div>
+      ${cell(money(sc.price, cur, 0), rec)}
+      ${cell(money(sc.profitPerUnit, cur), rec, sc.profitPerUnit < 0 ? 'var(--pp-neg)' : null)}
+      ${cell(pct(sc.marginPct), rec)}
+      ${cell(money(sc.monthlyProfit, cur, 0), rec)}
+      ${rec ? `<div class="note">${esc(msg(sc.noteI18n, sc.note))}</div>` : ''}`;
+    return `<div class="pp-price-table-wrap"><div class="pp-price-table">
+      <div class="head">${t('results.compare.strategy')}</div>
+      <div class="head">${t('results.compare.price')}</div>
+      <div class="head">${t('results.whatif.profitPerUnit', u)}</div>
+      <div class="head">${t('results.margin')}</div>
+      <div class="head">${t('results.whatif.monthlyProfit')}</div>
+      ${rows.map(row).join('')}
+    </div></div>`;
   }
   /** The blue→violet cost-composition series, named from the tokens in styles.css. */
   const PALETTE = {
@@ -6445,7 +6542,7 @@ exports.FR = {
       .map(([tab, l, ic]) => `<button class="${S.tab === tab ? 'active' : ''}" data-tab="${tab}">${icon(ic, 14)} ${t(l)}</button>`).join('');
     let panel;
     if (S.tab === 'overview') {
-      panel = `<h3 class="mb-3">${t('results.threeWays')}</h3><div class="row g-3"><div class="col-md-4">${scenarioCard(p.scenarios.minimum, cur)}</div><div class="col-md-4">${scenarioCard(p.scenarios.recommended, cur)}</div><div class="col-md-4">${scenarioCard(p.scenarios.premium, cur)}</div></div>
+      panel = `<h3 class="mb-3">${t('results.threeWays')}</h3>${priceTable(p, cur, u)}
         <div class="row g-4 mt-2"><div class="col-lg-7"><div class="pp-card pp-card--insight h-100">
           <div class="d-flex align-items-center gap-2 mb-1">${iconBadge('lightbulb', 'pp-icon-badge--sm', 14)}<h4 class="mb-0">${t('results.why', { cur, price: p.recommended.price })}</h4></div>
           <p class="pp-body" style="margin:12px 0 20px">${explainPrice(m, p)}</p><div class="pp-subhead mb-2">${t('results.costGoes', { cur })}</div>${breakdown(p.costBreakdown, cur)}</div></div>
@@ -6468,26 +6565,29 @@ exports.FR = {
         <div class="col-lg-7" id="tgt-metrics">${targetMetrics(m, p)}</div></div>`;
     }
     const roadmapTeaser = r && r.recommendations.length ? `<div class="pp-card mt-3">
-      <div class="d-flex justify-content-between align-items-start gap-3 mb-3 flex-wrap"><span class="pp-eyebrow">${icon('map', 14)} ${t('results.roadmapWorth')}</span><a href="#/roadmap" class="btn btn-pp-ghost btn-sm">${t('results.openRoadmap')} ${icon('arrow-right', 13, 'pp-icon-flip')}</a></div>
-      ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}</div>` : '';
+      <div class="mb-3"><span class="pp-eyebrow">${icon('map', 14)} ${t('results.roadmapWorth')}</span></div>
+      ${compare(r.current.monthlyProfit, r.optimisedMonthlyProfit, cur, r.recommendations.length, false)}
+      <a href="#/roadmap" class="btn btn-pp-ghost mt-3">${t('results.roadmapCta')} ${icon('arrow-right', 14, 'pp-icon-flip')}</a></div>` : '';
     return `<div class="pp-container py-5 pp-fade">
       <div class="row g-4 align-items-start">
         <div class="col-lg-7"><div class="pp-card pp-card--primary">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-2"><span class="pp-eyebrow">${t('results.eyebrow', { offering: esc(S.offering) })}</span><span class="pp-badge recommended">${icon('badge-check', 12)} ${t('results.badge')}</span></div>
           ${heroFigure(p.recommended.price, cur, 'pp-kpi--hero')}
-          <div class="pp-subhead" style="margin:4px 0 22px">${t('results.sub', { unit: u.unit, margin: p.marginBand.mid })}</div>
-          <div class="pp-stat-strip">
-            <div class="pp-stat"><div class="k">${icon('wallet', 12)} ${t('results.trueCost')}</div><div class="v pp-num">${money(p.trueCostPerUnit, cur)}</div></div>
-            <div class="pp-stat"><div class="k">${icon('coins', 12)} ${t('results.profitPerUnit', u)}</div><div class="v pp-num">${money(p.recommended.profitPerUnit, cur)}</div></div>
-            <div class="pp-stat"><div class="k">${icon('scale', 12)} ${t('results.margin')}</div><div class="v pp-num">${pct(p.recommended.marginPct)}</div></div>
+          <div class="pp-kpi pp-kpi--sm" style="color:var(--pp-pos);font-weight:500;margin:6px 0 20px">${t('results.youMake', { profit: p.recommended.profitPerUnit, unit: u.unit, cur })}</div>
+          <div class="pp-bridge">
+            <div class="pp-bridge__node"><div class="pp-bridge__label">${t('results.trueCost')}</div><div class="pp-bridge__value pp-num">${money(p.trueCostPerUnit, cur)}</div></div>
+            ${icon('arrow-right', 14, 'pp-icon-flip pp-bridge__arrow')}
+            <div class="pp-bridge__node pp-bridge__node--price"><div class="pp-bridge__value pp-num">${money(p.recommended.price, cur, 0)}</div></div>
+            ${icon('arrow-right', 14, 'pp-icon-flip pp-bridge__arrow')}
+            <div class="pp-bridge__node"><div class="pp-bridge__label">${t('results.profitPerUnit', u)}</div><div class="pp-bridge__value pp-num" style="color:var(--pp-pos)">${money(p.recommended.profitPerUnit, cur)}</div></div>
           </div>
+          <div class="pp-label" style="margin:0 0 4px">${t('results.marginExplain', { margin: p.recommended.marginPct, kept: p.recommended.marginPct * 100, hundred: 100, cur })}</div>
           <div class="mt-4 d-flex flex-wrap gap-2"><a href="#/roadmap" class="btn btn-pp btn-pp-hero">${t('results.seeRoadmap')} ${icon('arrow-right', 15, 'pp-icon-flip')}</a><a href="#/analyze" class="btn btn-pp-white" id="edit-answers">${icon('square-pen', 14)} ${t('results.editAnswers')}</a></div>
         </div></div>
         <div class="col-lg-5"><div class="pp-card pp-card--data h-100">
           <div class="d-flex justify-content-between align-items-start gap-2 mb-3"><span class="pp-eyebrow">${icon('chart-column', 14)} ${t('results.outlook')}</span><span class="pp-subhead">${t('results.outlook.at', { count: p.expectedUnits, units: u.units })}</span></div>
           <div class="d-grid" style="gap:10px">
-            ${tile('banknote', t('results.revenue'), money(p.recommended.monthlyRevenue, cur, 0))}
-            ${tile('trending-up', t('results.profit'), money(p.recommended.monthlyProfit, cur, 0), '', 'var(--pp-pos)')}
+            ${tile('trending-up', t('results.profit'), money(p.recommended.monthlyProfit, cur, 0), t('results.revenueCosts', { revenue: p.recommended.monthlyRevenue, costs: p.recommended.monthlyRevenue - p.recommended.monthlyProfit, cur }), 'var(--pp-pos)', false, true)}
             ${tile('zap', t('results.breakEvenSales'), `${p.recommended.breakEvenUnits ?? '—'} ${unitsOf()}`, t('results.breakEvenSales.sub', { count: p.expectedUnits }))}
           </div>
           <div class="pp-subhead mt-3">${t('results.estimatesNote')}</div>
@@ -6519,8 +6619,8 @@ exports.FR = {
       <button type="button" class="pp-check mt-1 ${rec.done ? 'on' : ''}" data-toggle="${rec.id}" aria-label="${esc(t(rec.done ? 'roadmap.markNotDone' : 'roadmap.markDone'))}">${icon(rec.done ? 'check' : 'plus', 13)}</button>
       <div class="flex-grow-1" style="min-width:0">
         <div class="d-flex justify-content-between align-items-start" style="gap:16px"><h4>${esc(msg(i18n && i18n.title, rec.title))}</h4><div class="pp-rec__impact"><div class="v">+${money(rec.estimatedMonthlyImpact, cur, 0)}</div><div class="pp-label">${t('roadmap.estPerMonth')}</div></div></div>
+        <p class="pp-body mt-1 mb-0">${esc(msg(i18n && i18n.why, rec.why))}</p>
         <div class="pp-rec__meta mt-2">${badges(rec)}${share > 0 ? `<span class="pp-label">${t('roadmap.shareOfLift', { share })}</span>` : ''}</div>
-        <p class="pp-body mt-3">${esc(msg(i18n && i18n.why, rec.why))}</p>
         <div class="pp-rec__action mt-3">${icon('arrow-up-right', 15, 'pp-icon-flip')}<div><div class="k">${t('roadmap.nextAction')}</div>${esc(msg(i18n && i18n.action, rec.action))}</div></div>
         ${rec.assumptions.length ? `<details class="mt-3"><summary>${icon('chevron-right', 13, 'pp-icon-flip')} ${t('roadmap.assumptions')}</summary><ul>${rec.assumptions.map((a, i) => `<li>${esc(msg(i18n && i18n.assumptions[i], a))}</li>`).join('')}</ul></details>` : ''}
       </div></div></article>`;
@@ -6534,7 +6634,11 @@ exports.FR = {
         <div class="row g-3 mt-1">
           <div class="col-md-7"><div class="pp-card-bare pp-card-bare--data h-100">
             <div class="d-flex align-items-center gap-2 mb-3">${icon('chart-column', 14)}<span class="pp-eyebrow">${t('roadmap.liftFrom')}</span></div>
-            <div class="pp-waterfall">${r.recommendations.map((x) => `<div class="item"><span>${esc(msg(x.i18n && x.i18n.title, x.title))}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}</div>
+            <div class="pp-waterfall">
+              <div class="item item--total item--open"><span>${t('compare.today')}</span><span class="pp-num">${money(r.current.monthlyProfit, cur, 0)}</span></div>
+              ${r.recommendations.map((x) => `<div class="item"><span>${esc(msg(x.i18n && x.i18n.title, x.title))}</span><span class="pp-num">+${money(x.estimatedMonthlyImpact, cur, 0)}</span><div class="track"><span style="width:${(x.estimatedMonthlyImpact / max) * 100}%"></span></div></div>`).join('')}
+              <div class="item item--total item--close"><span>${t('compare.following')}</span><span class="pp-num">${money(r.optimisedMonthlyProfit, cur, 0)}</span></div>
+            </div>
             <div class="pp-label mt-3">${t('roadmap.sumNote', { cur, sum: r.sumOfImpacts, discount: r.interactionDiscountPct })}</div>
           </div></div>
           <div class="col-md-5"><div class="pp-card-bare pp-card-bare--data h-100 d-flex flex-column">
