@@ -1,0 +1,69 @@
+name: Atlas (Flutter)
+
+# The Flutter app is a separate product in this repository, so it gets its own
+# workflow and its own path filter — a change to the Angular app should not
+# spend five minutes downloading a Flutter SDK, and vice versa.
+on:
+  push:
+    branches: [claude/eager-brown-p2z7zz]
+    paths:
+      - 'atlas/**'
+      - '.github/workflows/atlas.yml'
+  pull_request:
+    paths:
+      - 'atlas/**'
+      - '.github/workflows/atlas.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: atlas
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pinned: an SDK bump should be a commit someone made on purpose.
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Warnings are failures here. The analysis_options.yaml in this project
+      # turns on rules the team actually wants, so letting them pass as advice
+      # would make them decoration.
+      - name: Analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Tests
+        run: flutter test --reporter=expanded
+
+      # The map asset and its parser are generated and written separately.
+      # This proves the committed binary is still the one the generator makes,
+      # so nobody can hand-edit one half.
+      - name: The map asset matches its generator
+        run: |
+          cd tool
+          npm pack world-atlas@2 --silent
+          npm pack world-countries@5 --silent
+          tar xzf world-atlas-*.tgz
+          tar xzf world-countries-*.tgz
+          python3 build_map_assets.py countries-50m.json ../assets/data
+          cd ..
+          git diff --exit-code --stat -- assets/data/world_outlines.bin assets/data/countries.json

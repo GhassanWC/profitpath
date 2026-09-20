@@ -16,7 +16,26 @@ app/                               Angular 18 application (standalone components
   src/app/shared/                  metric tile, scenario card, cost breakdown, recommendation card, pipes
 preview/                           Dependency-free live preview built from the same compiled engine
 tools/                             ledger-clip.mjs draws the hero clip; hero-clip.mjs cuts it to spec
+
+atlas/                             A second product: Atlas, a Flutter app for iOS and Android
 ```
+
+## A second product in this repository: Atlas
+
+`atlas/` is not part of ProfitPath. It is a separate application — a map-based
+social network where **creators choose which countries their content is shown
+in, an AI explains what each post is, and the viewer decides whether to watch or
+skip**. It shares nothing with the Angular app but the repository, has its own
+CI workflow, and is documented on its own terms in
+[`atlas/README.md`](atlas/README.md) and
+[`atlas/docs/architecture.md`](atlas/docs/architecture.md).
+
+```bash
+cd atlas && flutter pub get && flutter run
+```
+
+It runs with no backend and no API key: the app boots on bundled sample content
+and every screen is reachable.
 
 ## Design system
 
