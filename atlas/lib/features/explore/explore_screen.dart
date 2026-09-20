@@ -15,6 +15,7 @@ import '../../data/geo/country_registry.dart';
 import '../../data/geo/world_outlines.dart';
 import '../../models/country.dart';
 import '../../providers/app_providers.dart';
+import '../../providers/session_providers.dart';
 import '../map/map_camera.dart';
 import '../map/widgets/world_map.dart';
 import 'explore_providers.dart';
@@ -38,6 +39,32 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     with SingleTickerProviderStateMixin {
   late final MapCameraController _camera = MapCameraController(vsync: this);
   Size _viewport = Size.zero;
+  bool _placed = false;
+
+  /// The map's own box. The sheet covers the bottom of the screen, so a map
+  /// centred in the whole viewport would sit half-hidden behind it.
+  static const double _mapHeightFraction = 0.72;
+
+  /// Close enough to read a region, far enough to see its neighbours. A whole
+  /// world at this aspect is a thin band on a tall phone, which is a poor first
+  /// impression of a product whose main idea is the map.
+  static const double _homeZoom = 2.6;
+
+  /// Opens on where the viewer is, rather than on an arbitrary meridian: the
+  /// first question this screen answers is "what is reaching me here".
+  void _placeInitialCamera() {
+    if (_placed || _viewport.isEmpty) return;
+    final WorldOutlines? outlines = ref.read(worldOutlinesProvider).value;
+    if (outlines == null) return;
+
+    _placed = true;
+    final String? home = ref.read(viewerCountryProvider);
+    final CountryOutline? outline = home == null ? null : outlines[home];
+    _camera.camera = MapCamera(
+      center: outline?.centroid,
+      zoom: _homeZoom,
+    ).clamped(_viewport);
+  }
 
   @override
   void dispose() {
@@ -53,6 +80,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       }
       return;
     }
+
     final WorldOutlines? outlines = ref.read(worldOutlinesProvider).value;
     final CountryOutline? outline = outlines?[code];
     if (outline != null && !_viewport.isEmpty) {
@@ -89,9 +117,14 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         _viewport = constraints.biggest;
+        _placeInitialCamera();
         return Stack(
           children: <Widget>[
-            Positioned.fill(
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: constraints.maxHeight * _mapHeightFraction,
               child: switch ((outlines, registry)) {
                 (
                   AsyncData<WorldOutlines>(value: final WorldOutlines world),
@@ -126,7 +159,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
             ),
             Positioned(
               right: Insets.lg,
-              bottom: constraints.maxHeight * 0.40,
+              bottom:
+                  constraints.maxHeight * (1 - _mapHeightFraction) + Insets.xl,
               child: _ZoomControls(
                 onIn: () => _zoomBy(1.8),
                 onOut: () => _zoomBy(1 / 1.8),
@@ -241,13 +275,47 @@ class _ZoomControls extends StatelessWidget {
 
 /// The sheet over the map. Shows the selected country when there is one, and
 /// the trending list when there is not.
-class _ExploreSheet extends ConsumerWidget {
+class _ExploreSheet extends ConsumerStatefulWidget {
   const _ExploreSheet({required this.onCountry});
 
   final void Function(String? code) onCountry;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ExploreSheet> createState() => _ExploreSheetState();
+}
+
+class _ExploreSheetState extends ConsumerState<_ExploreSheet> {
+  final DraggableScrollableController _sheet = DraggableScrollableController();
+
+  static const double _collapsed = 0.32;
+  static const double _halfway = 0.58;
+  static const double _open = 0.86;
+
+  @override
+  void dispose() {
+    _sheet.dispose();
+    super.dispose();
+  }
+
+  /// Choosing a country puts an action in the sheet, so the sheet comes up far
+  /// enough to show it. On a short phone it would otherwise sit below the fold,
+  /// which misses the whole point of the panel.
+  void _onSelectionChanged(String? code) {
+    if (!_sheet.isAttached) return;
+    final double target = code == null ? _collapsed : _halfway;
+    if ((_sheet.size - target).abs() < 0.02) return;
+    _sheet.animateTo(target, duration: Motion.base, curve: Motion.enter);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<String?>(selectedCountryProvider, (
+      String? previous,
+      String? next,
+    ) {
+      if (previous != next) _onSelectionChanged(next);
+    });
+
     final CountryActivity? selected = ref.watch(
       selectedCountryActivityProvider,
     );
@@ -257,11 +325,12 @@ class _ExploreSheet extends ConsumerWidget {
     );
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.32,
-      minChildSize: 0.32,
-      maxChildSize: 0.86,
+      controller: _sheet,
+      initialChildSize: _collapsed,
+      minChildSize: _collapsed,
+      maxChildSize: _open,
       snap: true,
-      snapSizes: const <double>[0.32, 0.86],
+      snapSizes: const <double>[_collapsed, _halfway, _open],
       builder: (BuildContext context, ScrollController controller) =>
           DecoratedBox(
             decoration: const BoxDecoration(
@@ -282,7 +351,7 @@ class _ExploreSheet extends ConsumerWidget {
                     child: _SelectedCountryPanel(
                       code: selectedCode,
                       activity: selected,
-                      onClear: () => onCountry(null),
+                      onClear: () => widget.onCountry(null),
                     ),
                   ),
                 SliverToBoxAdapter(
@@ -301,7 +370,7 @@ class _ExploreSheet extends ConsumerWidget {
                           .where((CountryActivity c) => c.code != selectedCode)
                           .toList(),
                       selectedCode: selectedCode,
-                      onCountry: onCountry,
+                      onCountry: widget.onCountry,
                     ),
                   AsyncError<List<CountryActivity>>(
                     error: final Object error,

@@ -111,7 +111,7 @@ The format is documented on `WorldOutlines`.
 
 ```bash
 flutter analyze   # clean
-flutter test      # 90 tests
+flutter test      # 109 tests
 ```
 
 The suite is written against the product's claims rather than its code shape.
@@ -123,7 +123,11 @@ The ones worth reading first:
   a post with two watches is not judged on a two-watch completion rate.
 - `test/features/preview_deck_test.dart` — the next preview is up in the same
   frame the decision was made.
-- `test/features/app_boot_test.dart` — boots the real app and walks it.
+- `test/features/app_boot_test.dart` — boots the real app, signs in, walks
+  every tab, and writes and publishes a post through the UI.
+- `test/features/layout_audit_test.dart` — walks every screen at three phone
+  sizes and fails on any overflow. Writing it found six real clipping bugs
+  below 700pt of height.
 - `test/data/world_outlines_test.dart` — runs against the shipped asset, so the
   generator and the parser cannot drift apart.
 

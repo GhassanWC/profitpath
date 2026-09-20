@@ -228,7 +228,13 @@ class WorldMapPainter extends CustomPainter {
       if (!isSelected && onScreenWidth < 96) continue;
       if (!isSelected && (activity[outline.code] ?? 0) == 0) continue;
 
-      final Offset centre = camera.toCanvas(outline.centroid, size);
+      // The average of a ring's points can fall outside a concave country —
+      // a label floating in the sea next to Norway reads as a bug. Prefer the
+      // bounding box's centre when the shape actually contains it.
+      final Offset anchor = outline.path.contains(outline.bounds.center)
+          ? outline.bounds.center
+          : outline.centroid;
+      final Offset centre = camera.toCanvas(anchor, size);
       if (!size.contains(centre)) continue;
 
       final TextPainter painter = _label(resolve(outline.code), isSelected);

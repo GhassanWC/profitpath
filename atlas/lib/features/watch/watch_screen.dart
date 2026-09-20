@@ -316,45 +316,62 @@ class _TopBar extends ConsumerWidget {
             filled: false,
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          GestureDetector(
-            onTap: () => context.push(Routes.user(post.creatorId)),
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              children: <Widget>[
-                UserAvatar(
-                  initials: creator.value?.initials ?? '·',
-                  imageUrl: creator.value?.profileImageUrl,
-                  size: 32,
-                  ring: true,
-                ),
-                const SizedBox(width: Insets.sm),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      creator.value?.displayName ?? '',
-                      style: AtlasTypography.titleSmall.copyWith(fontSize: 14),
-                    ),
-                    if (post.originCountry != null)
-                      Row(
-                        children: <Widget>[
-                          CountryFlag(post.originCountry!, size: 11),
-                          const SizedBox(width: 4),
-                          Text(
-                            post.category.label,
-                            style: AtlasTypography.overline.copyWith(
-                              fontSize: 9.5,
-                            ),
+          // Takes what is left after the controls, rather than competing with a
+          // Spacer for it: on a 320pt phone that fight leaves the creator's
+          // name about twenty pixels.
+          Expanded(
+            child: GestureDetector(
+              onTap: () => context.push(Routes.user(post.creatorId)),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  UserAvatar(
+                    initials: creator.value?.initials ?? '·',
+                    imageUrl: creator.value?.profileImageUrl,
+                    size: 32,
+                    ring: true,
+                  ),
+                  const SizedBox(width: Insets.sm),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          creator.value?.displayName ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AtlasTypography.titleSmall.copyWith(
+                            fontSize: 14,
                           ),
-                        ],
-                      ),
-                  ],
-                ),
-              ],
+                        ),
+                        if (post.originCountry != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              CountryFlag(post.originCountry!, size: 11),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  post.category.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AtlasTypography.overline.copyWith(
+                                    fontSize: 9.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const Spacer(),
+          const SizedBox(width: Insets.sm),
           if (!isMine)
             AtlasButton(
               label: following ? 'Following' : 'Follow',

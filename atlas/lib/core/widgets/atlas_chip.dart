@@ -68,11 +68,23 @@ class AtlasChip extends StatelessWidget {
             leading!,
             const SizedBox(width: Insets.sm),
           ],
-          Text(
-            label,
-            style: AtlasTypography.label.copyWith(
-              color: foreground,
-              fontSize: dense ? 12.5 : 13.5,
+          // Capped, because a chip's label comes from content — an audience
+          // the model wrote, a topic a creator typed — and an uncapped one
+          // pushes straight out of whatever Wrap is holding it. A fixed number
+          // rather than a fraction of the screen: a Wrap hands its children
+          // unbounded width, so there is nothing local to be a fraction of,
+          // and this one leaves room for the chip's own padding and its
+          // remove control inside a card on a 320pt phone.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 176),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AtlasTypography.label.copyWith(
+                color: foreground,
+                fontSize: dense ? 12.5 : 13.5,
+              ),
             ),
           ),
           if (onRemove != null) ...<Widget>[

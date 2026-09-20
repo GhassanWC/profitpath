@@ -60,11 +60,15 @@ class ReviewStep extends ConsumerWidget {
         const SizedBox(height: Insets.xl),
         Row(
           children: <Widget>[
-            Text(
-              'THE PREVIEW PEOPLE WILL READ',
-              style: AtlasTypography.overline,
+            Expanded(
+              child: Text(
+                'THE PREVIEW PEOPLE WILL READ',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AtlasTypography.overline,
+              ),
             ),
-            const Spacer(),
+            const SizedBox(width: Insets.md),
             GestureDetector(
               onTap: () => _editPreview(context, ref, preview),
               behavior: HitTestBehavior.opaque,
@@ -263,8 +267,15 @@ class _ProfileCard extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Text('AI CONTENT PROFILE', style: AtlasTypography.overline),
-            const Spacer(),
+            Expanded(
+              child: Text(
+                'AI CONTENT PROFILE',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AtlasTypography.overline,
+              ),
+            ),
+            const SizedBox(width: Insets.sm),
             if (profile.editedByCreator)
               Text(
                 'EDITED BY YOU',

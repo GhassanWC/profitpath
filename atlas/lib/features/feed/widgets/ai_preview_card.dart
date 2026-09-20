@@ -70,81 +70,129 @@ class AiPreviewCard extends ConsumerWidget {
                 Insets.xl,
                 Insets.lg,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _MetaRow(profile: profile, onExplain: onExplainPreview),
-                  const SizedBox(height: Insets.md),
-                  Text(
-                    preview?.headline ?? post.caption,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AtlasTypography.headline,
-                  ),
-                  const SizedBox(height: Insets.md),
-                  Flexible(
-                    child: Text(
-                      preview?.summary ?? post.caption,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: AtlasTypography.bodyMuted,
-                    ),
-                  ),
-                  if (preview != null) ...<Widget>[
-                    const SizedBox(height: Insets.lg),
-                    const Divider(color: AtlasColors.hairline, height: 1),
-                    const SizedBox(height: Insets.lg),
-                    Text(
-                      'WHY YOU MIGHT WATCH',
-                      style: AtlasTypography.overline,
-                    ),
-                    const SizedBox(height: Insets.sm),
-                    Flexible(
-                      child: Text(
-                        preview.reasonToWatch,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: AtlasTypography.body.copyWith(height: 1.45),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  _TargetingLine(
-                    post: post,
-                    viewerCountry: viewerCountry,
-                    registry: registry,
-                  ),
-                  const SizedBox(height: Insets.lg),
-                  Row(
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  // The same card is used in the feed, on a country page and
+                  // in the composer's review step, on phones from 667pt to
+                  // 950pt tall. Rather than clip, it gives up lines of the
+                  // summary first: the two things a viewer cannot decide
+                  // without are the headline and why this might be for them.
+                  final double room = constraints.maxHeight;
+                  final bool tight = room < 300;
+                  // A small Android phone in the feed leaves barely 200pt for
+                  // this half. What survives down there is the headline, one
+                  // line of what it shows, one line of why, and the decision.
+                  final bool veryTight = room < 240;
+                  final int headlineLines = tight ? 1 : 2;
+                  final int summaryLines = room > 360
+                      ? 4
+                      : room > 300
+                      ? 3
+                      : veryTight
+                      ? 1
+                      : 2;
+                  final int reasonLines = room > 330
+                      ? 3
+                      : veryTight
+                      ? 1
+                      : 2;
+                  final bool showReasonLabel = room > 290;
+                  final bool showDivider = room > 270;
+                  final double gap = veryTight
+                      ? Insets.sm
+                      : tight
+                      ? Insets.md
+                      : Insets.lg;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Expanded(
-                        flex: 3,
-                        child: AtlasButton(
-                          label: 'Watch',
-                          onPressed: onWatch,
-                          icon: Icons.play_arrow_rounded,
-                          size: AtlasButtonSize.large,
-                          expand: true,
-                          semanticLabel:
-                              'Watch: ${post.preview?.headline ?? post.caption}',
+                      _MetaRow(profile: profile, onExplain: onExplainPreview),
+                      const SizedBox(height: Insets.md),
+                      Text(
+                        preview?.headline ?? post.caption,
+                        maxLines: headlineLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: AtlasTypography.headline,
+                      ),
+                      const SizedBox(height: Insets.md),
+                      Flexible(
+                        child: Text(
+                          preview?.summary ?? post.caption,
+                          maxLines: summaryLines,
+                          overflow: TextOverflow.ellipsis,
+                          style: AtlasTypography.bodyMuted,
                         ),
                       ),
-                      const SizedBox(width: Insets.md),
-                      Expanded(
-                        flex: 2,
-                        child: AtlasButton(
-                          label: 'Skip',
-                          onPressed: onSkip,
-                          kind: AtlasButtonKind.secondary,
-                          size: AtlasButtonSize.large,
-                          trailingIcon: Icons.arrow_forward_rounded,
-                          expand: true,
-                          semanticLabel: 'Skip this post',
+                      if (preview != null) ...<Widget>[
+                        SizedBox(height: gap),
+                        if (showDivider) ...<Widget>[
+                          const Divider(color: AtlasColors.hairline, height: 1),
+                          SizedBox(height: gap),
+                        ],
+                        if (showReasonLabel) ...<Widget>[
+                          Text(
+                            'WHY YOU MIGHT WATCH',
+                            style: AtlasTypography.overline,
+                          ),
+                          const SizedBox(height: Insets.sm),
+                        ],
+                        Flexible(
+                          child: Text(
+                            preview.reasonToWatch,
+                            maxLines: reasonLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: AtlasTypography.body.copyWith(height: 1.45),
+                          ),
                         ),
+                      ],
+                      const Spacer(),
+                      _TargetingLine(
+                        post: post,
+                        viewerCountry: viewerCountry,
+                        registry: registry,
+                      ),
+                      SizedBox(height: gap),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            flex: 3,
+                            child: AtlasButton(
+                              label: 'Watch',
+                              onPressed: onWatch,
+                              icon: Icons.play_arrow_rounded,
+                              size: veryTight
+                                  ? AtlasButtonSize.small
+                                  : tight
+                                  ? AtlasButtonSize.medium
+                                  : AtlasButtonSize.large,
+                              expand: true,
+                              semanticLabel:
+                                  'Watch: ${post.preview?.headline ?? post.caption}',
+                            ),
+                          ),
+                          const SizedBox(width: Insets.md),
+                          Expanded(
+                            flex: 2,
+                            child: AtlasButton(
+                              label: 'Skip',
+                              onPressed: onSkip,
+                              kind: AtlasButtonKind.secondary,
+                              size: veryTight
+                                  ? AtlasButtonSize.small
+                                  : tight
+                                  ? AtlasButtonSize.medium
+                                  : AtlasButtonSize.large,
+                              trailingIcon: Icons.arrow_forward_rounded,
+                              expand: true,
+                              semanticLabel: 'Skip this post',
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -207,14 +255,18 @@ class _Backdrop extends ConsumerWidget {
           right: Insets.lg,
           child: Row(
             children: <Widget>[
+              // Country names get long. The pill gives way before the clock
+              // does, rather than pushing it off the card.
               if (origin.isNotEmpty)
-                _GlassPill(
-                  child: CountryLabel(
-                    code: origin,
-                    name: originName,
-                    prefix: 'From',
-                    flagSize: 14,
-                    style: AtlasTypography.label.copyWith(fontSize: 12.5),
+                Flexible(
+                  child: _GlassPill(
+                    child: CountryLabel(
+                      code: origin,
+                      name: originName,
+                      prefix: 'From',
+                      flagSize: 14,
+                      style: AtlasTypography.label.copyWith(fontSize: 12.5),
+                    ),
                   ),
                 ),
               const Spacer(),

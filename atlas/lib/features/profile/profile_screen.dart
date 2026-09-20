@@ -204,9 +204,15 @@ class _Header extends ConsumerWidget {
           const SizedBox(height: Insets.lg),
           Row(
             children: <Widget>[
-              _Stat(label: 'Posts', value: user.postsCount),
-              _Stat(label: 'Followers', value: user.followersCount),
-              _Stat(label: 'Following', value: user.followingCount),
+              Expanded(
+                child: _Stat(label: 'Posts', value: user.postsCount),
+              ),
+              Expanded(
+                child: _Stat(label: 'Followers', value: user.followersCount),
+              ),
+              Expanded(
+                child: _Stat(label: 'Following', value: user.followingCount),
+              ),
             ],
           ),
           const SizedBox(height: Insets.lg),
@@ -254,16 +260,20 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: Insets.xxl),
+    padding: const EdgeInsets.only(right: Insets.lg),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
           Format.compact(value),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: AtlasTypography.headlineSmall.copyWith(fontSize: 20),
         ),
         Text(
           label.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: AtlasTypography.overline.copyWith(fontSize: 9.5),
         ),
       ],

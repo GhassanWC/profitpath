@@ -82,9 +82,16 @@ class _FeedHeader extends ConsumerWidget {
                     children: <Widget>[
                       CountryFlag(country, size: 13),
                       const SizedBox(width: 6),
-                      Text(
-                        'Because you are in ${registry?.resolve(country).name ?? country}',
-                        style: AtlasTypography.caption.copyWith(fontSize: 12.5),
+                      Flexible(
+                        child: Text(
+                          'Because you are in '
+                          '${registry?.resolve(country).name ?? country}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AtlasTypography.caption.copyWith(
+                            fontSize: 12.5,
+                          ),
+                        ),
                       ),
                     ],
                   ),

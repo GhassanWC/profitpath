@@ -34,8 +34,15 @@ class ReachMap extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: Insets.gutter),
           child: Row(
             children: <Widget>[
-              Text('CONTENT REACH', style: AtlasTypography.overline),
-              const Spacer(),
+              Expanded(
+                child: Text(
+                  'CONTENT REACH',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AtlasTypography.overline,
+                ),
+              ),
+              const SizedBox(width: Insets.sm),
               Text(
                 reach.isEmpty
                     ? 'Nowhere yet'

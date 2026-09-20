@@ -60,13 +60,17 @@ class _AiSummaryPanelState extends State<AiSummaryPanel> {
                   ),
                   child: Row(
                     children: <Widget>[
-                      Text(
-                        'WHAT THE AI MADE OF THIS',
-                        style: AtlasTypography.overline.copyWith(
-                          color: AtlasColors.accent,
+                      Expanded(
+                        child: Text(
+                          'WHAT THE AI MADE OF THIS',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AtlasTypography.overline.copyWith(
+                            color: AtlasColors.accent,
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: Insets.sm),
                       AnimatedRotation(
                         turns: _open ? 0.5 : 0,
                         duration: Motion.base,

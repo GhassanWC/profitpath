@@ -1,4 +1,5 @@
 import 'package:atlas/app.dart';
+import 'package:atlas/core/widgets/atlas_button.dart';
 import 'package:atlas/features/feed/widgets/ai_preview_card.dart';
 import 'package:atlas/features/map/widgets/world_map.dart';
 import 'package:flutter/material.dart';
@@ -114,6 +115,79 @@ void main() {
     expect(find.text('What are you posting?'), findsOneWidget);
     expect(find.text('Record a video'), findsOneWidget);
     expect(find.text('Write instead'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('a post can be written, targeted and published', (
+    WidgetTester tester,
+  ) async {
+    await boot(tester);
+    await signIn(tester);
+
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await tester.tap(find.bySemanticsLabel('Create a post'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    Future<void> advance() async {
+      await tester.tap(find.text('Continue'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    await tester.tap(find.text('Write instead'));
+    await tester.pump();
+    await tester.enterText(
+      find.byType(TextField).last,
+      'Has anyone here done the Oman visa on arrival recently?',
+    );
+    await tester.pump();
+    await advance();
+
+    expect(find.text('What do you want this to achieve?'), findsOneWidget);
+    await tester.enterText(
+      find.byType(TextField).first,
+      'I want people who have actually done this recently to tell me how it went.',
+    );
+    await tester.pump();
+    await advance();
+
+    expect(find.text('Where should people see it?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Oman');
+    await tester.pump();
+    // `find.text` also matches the search field's own contents, so target the
+    // row rather than the word.
+    await tester.tap(find.widgetWithText(ListTile, 'Oman'));
+    await tester.pump();
+    expect(find.text('Going to 1 country'), findsOneWidget);
+    await advance();
+
+    // The review step: analysis has run and the creator can act on it.
+    expect(find.text('What the AI made of it'), findsOneWidget);
+    expect(find.text('AI CONTENT PROFILE'), findsOneWidget);
+
+    // The card a viewer will actually meet is further down the review step.
+    await tester.scrollUntilVisible(
+      find.text('THE PREVIEW PEOPLE WILL READ'),
+      280,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.byType(AiPreviewCard), findsOneWidget);
+
+    final AtlasButton publish = tester.widget<AtlasButton>(
+      find.widgetWithText(AtlasButton, 'Publish'),
+    );
+    expect(
+      publish.onPressed,
+      isNotNull,
+      reason: 'an honest preview must be publishable',
+    );
+
+    await tester.tap(find.text('Publish'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(find.text('It is on its way'), findsOneWidget);
     semantics.dispose();
   });
 }
