@@ -1,0 +1,27 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+  errors:
+    # A missing await in the data layer is a bug, not a style note.
+    unawaited_futures: warning
+
+linter:
+  rules:
+    # Off, and deliberately. It fires on `_field = namedParam` in a constructor
+    # initializer and suggests `this._field`, which does not compile: a named
+    # parameter cannot start with an underscore. Several services take their
+    # dependencies as named parameters and hold them privately.
+    prefer_initializing_formals: false
+
+    always_declare_return_types: true
+    avoid_redundant_argument_values: true
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    sort_child_properties_last: true
+    unawaited_futures: true
+    use_super_parameters: true
