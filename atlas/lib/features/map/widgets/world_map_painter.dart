@@ -148,7 +148,7 @@ class WorldMapPainter extends CustomPainter {
       }
 
       fill.color = isHighlighted
-          ? Color.lerp(AtlasColors.land, AtlasColors.accent, 0.34)!
+          ? Color.lerp(AtlasColors.land, AtlasColors.accent, 0.55)!
           : _activityColour(count);
       canvas.drawPath(outline.path, fill);
       canvas.drawPath(outline.path, stroke);
@@ -193,12 +193,23 @@ class WorldMapPainter extends CustomPainter {
   }
 
   void _paintMarkers(Canvas canvas, Size size, double scale) {
-    if (activity.isEmpty || maxActivity <= 0) return;
-
     final Paint dot = Paint()..color = AtlasColors.accent;
     final Paint halo = Paint()
       ..color = AtlasColors.accent.withValues(alpha: 0.16)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+
+    // A highlighted country is usually a small one seen at world zoom — a tint
+    // alone is not enough to find it, which defeats the point of a reach map.
+    for (final String code in highlighted) {
+      final CountryOutline? outline = outlines[code];
+      if (outline == null) continue;
+      final Offset centre = camera.toCanvas(outline.centroid, size);
+      if (!size.contains(centre)) continue;
+      canvas.drawCircle(centre, 9, halo);
+      canvas.drawCircle(centre, 3, dot);
+    }
+
+    if (activity.isEmpty || maxActivity <= 0) return;
 
     for (final MapEntry<String, int> entry in activity.entries) {
       final CountryOutline? outline = outlines[entry.key];
@@ -235,17 +246,21 @@ class WorldMapPainter extends CustomPainter {
           ? outline.bounds.center
           : outline.centroid;
       final Offset centre = camera.toCanvas(anchor, size);
-      if (!size.contains(centre)) continue;
-
       final TextPainter painter = _label(resolve(outline.code), isSelected);
-      painter.paint(
-        canvas,
-        centre -
-            Offset(
-              painter.width / 2,
-              painter.height / 2 + (isSelected ? 14 : 0),
-            ),
-      );
+      final Offset topLeft =
+          centre -
+          Offset(painter.width / 2, painter.height / 2 + (isSelected ? 14 : 0));
+
+      // Whole label or none: one clipped by the edge of the viewport reads as
+      // a rendering fault rather than as a label.
+      final Rect viewport = Offset.zero & size;
+      final Rect box = topLeft & Size(painter.width, painter.height);
+      if (!viewport.contains(box.topLeft) ||
+          !viewport.contains(box.bottomRight)) {
+        continue;
+      }
+
+      painter.paint(canvas, topLeft);
     }
   }
 

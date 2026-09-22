@@ -16,8 +16,7 @@ import '../support/harness.dart';
 void main() {
   Future<void> boot(WidgetTester tester) async {
     useInMemoryPreferences();
-    await tester.binding.setSurfaceSize(const Size(430, 932));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    useScreen(tester, const Size(430, 932));
 
     await tester.pumpWidget(
       ProviderScope(overrides: testOverrides(), child: const AtlasApp()),
@@ -168,11 +167,11 @@ void main() {
 
     // The card a viewer will actually meet is further down the review step.
     await tester.scrollUntilVisible(
-      find.text('THE PREVIEW PEOPLE WILL READ'),
+      find.byType(AiPreviewCard),
       280,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.byType(AiPreviewCard), findsOneWidget);
+    expect(find.text('THE PREVIEW PEOPLE WILL READ'), findsOneWidget);
 
     final AtlasButton publish = tester.widget<AtlasButton>(
       find.widgetWithText(AtlasButton, 'Publish'),

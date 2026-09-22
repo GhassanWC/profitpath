@@ -125,7 +125,6 @@ class _StaticMapState extends State<_StaticMap>
     controller: _camera,
     highlighted: widget.highlighted,
     interactive: false,
-    showMarkers: false,
     showGraticule: false,
   );
 }

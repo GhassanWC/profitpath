@@ -34,7 +34,22 @@ class CountryFlag extends StatelessWidget {
                 style: AtlasTypography.overline.copyWith(fontSize: size * 0.55),
               ),
             )
-          : Text(emoji, style: TextStyle(fontSize: size, height: 1.1)),
+          : Text(
+              emoji,
+              style: TextStyle(
+                fontSize: size,
+                height: 1.1,
+                // Inter carries no emoji, so the platform's emoji font has to
+                // be named for the flag to resolve. These are the real family
+                // names on iOS, Android and Windows; the ones that do not
+                // exist on a given platform are skipped.
+                fontFamilyFallback: const <String>[
+                  'Apple Color Emoji',
+                  'Noto Color Emoji',
+                  'Segoe UI Emoji',
+                ],
+              ),
+            ),
     );
   }
 }

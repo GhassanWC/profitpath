@@ -326,7 +326,10 @@ final class MockAiService implements AiService {
           .map(
             (MapEntry<String, int> e) => ContentCategory.fromSlug(e.key).label,
           ),
-      ...?matched[ranked.first.key]?.take(3).map(_title),
+      ...?matched[ranked.first.key]
+          ?.where((String w) => !w.contains(' ') && !_notTopics.contains(w))
+          .take(3)
+          .map(_title),
     };
 
     return (category, subcategories.take(4).toList(growable: false));
@@ -406,16 +409,35 @@ final class MockAiService implements AiService {
     return ContentType.discovery;
   }
 
+  /// Phrases the vocabulary matches on but which are not topics — they are how
+  /// someone asks, not what they are asking about.
+  static const Set<String> _notTopics = <String>{
+    'should i',
+    'which one',
+    'help me',
+    'tell me',
+    'thoughts',
+    'happening',
+    'wondering',
+    'street food',
+  };
+
   List<String> _topics(
     String text,
     PostAnalysisRequest request,
     ContentCategory category,
   ) {
     final Set<String> topics = <String>{category.label};
-    if (request.originCountry != null) topics.add(request.originCountry!);
+    // No raw country codes: the post already carries where it is from, and
+    // "OM" is not a subject anyone is interested in.
     for (final MapEntry<String, List<String>> entry in _vocabulary.entries) {
       for (final String word in entry.value) {
-        if (word.length > 4 && text.contains(word)) topics.add(_title(word));
+        if (word.length > 4 &&
+            !word.contains(' ') &&
+            !_notTopics.contains(word) &&
+            text.contains(word)) {
+          topics.add(_title(word));
+        }
       }
     }
     return topics.take(6).toList(growable: false);

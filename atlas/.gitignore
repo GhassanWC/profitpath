@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Captured by `flutter test --update-goldens test/screenshots.dart`. Regenerable
+# in eleven seconds, and seven megabytes of PNG is not worth versioning.
+/screenshots/

@@ -23,8 +23,7 @@ void main() {
     group('on a $label phone', () {
       Future<void> boot(WidgetTester tester) async {
         useInMemoryPreferences();
-        await tester.binding.setSurfaceSize(size);
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+        useScreen(tester, size);
         await tester.pumpWidget(
           ProviderScope(overrides: testOverrides(), child: const AtlasApp()),
         );

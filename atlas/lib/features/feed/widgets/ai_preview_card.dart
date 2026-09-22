@@ -117,10 +117,13 @@ class AiPreviewCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: Insets.md),
                       Flexible(
-                        child: Text(
+                        // Twice the reason's share of whatever is left: the
+                        // summary is the longer sentence and the one that
+                        // carries what the post actually is.
+                        flex: 2,
+                        child: _ElasticText(
                           preview?.summary ?? post.caption,
                           maxLines: summaryLines,
-                          overflow: TextOverflow.ellipsis,
                           style: AtlasTypography.bodyMuted,
                         ),
                       ),
@@ -138,10 +141,9 @@ class AiPreviewCard extends ConsumerWidget {
                           const SizedBox(height: Insets.sm),
                         ],
                         Flexible(
-                          child: Text(
+                          child: _ElasticText(
                             preview.reasonToWatch,
                             maxLines: reasonLines,
-                            overflow: TextOverflow.ellipsis,
                             style: AtlasTypography.body.copyWith(height: 1.45),
                           ),
                         ),
@@ -337,6 +339,54 @@ class _GlassPill extends StatelessWidget {
   );
 }
 
+/// Text that takes as many lines as it is actually given.
+///
+/// A `Flexible` hands its child whatever vertical space is left, which can be
+/// less than the child asked for — and a `Text` that wanted four lines and was
+/// given two and a half does not ellipsise, it clips, cutting the last line in
+/// half. Reading the space from the incoming constraints and choosing the line
+/// count there means the card degrades by losing a whole line rather than by
+/// slicing one.
+class _ElasticText extends StatelessWidget {
+  const _ElasticText(this.text, {required this.maxLines, required this.style});
+
+  final String text;
+
+  /// An upper bound. The space available decides the rest.
+  final int maxLines;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (BuildContext context, BoxConstraints constraints) {
+      final double lineHeight =
+          (style.fontSize ?? 14) *
+          (style.height ?? 1.4) *
+          MediaQuery.textScalerOf(context).scale(1);
+      final int fits = constraints.maxHeight.isFinite
+          ? (constraints.maxHeight / lineHeight).floor()
+          : maxLines;
+      return Text(
+        text,
+        maxLines: fits.clamp(1, maxLines),
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      );
+    },
+  );
+}
+
+/// `Education · Educational` is one label twice; `Travel · Informational` is
+/// two useful ones.
+String _metaLabel(AiContentProfile profile) {
+  final String category = profile.category.label;
+  final String type = profile.contentType.label;
+  final bool redundant =
+      category.toLowerCase().startsWith(type.toLowerCase()) ||
+      type.toLowerCase().startsWith(category.toLowerCase());
+  return (redundant ? category : '$category · $type').toUpperCase();
+}
+
 class _MetaRow extends StatelessWidget {
   const _MetaRow({required this.profile, required this.onExplain});
 
@@ -348,26 +398,36 @@ class _MetaRow extends StatelessWidget {
     final AiContentProfile? p = profile;
     return Row(
       children: <Widget>[
-        if (p != null) ...<Widget>[
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: p.category.swatch,
-              shape: BoxShape.circle,
+        if (p != null)
+          Expanded(
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: p.category.swatch,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: Insets.sm),
+                Flexible(
+                  child: Text(
+                    // The type only earns its place when it says something the
+                    // category has not already said: "Education · Educational"
+                    // is one label twice.
+                    _metaLabel(p),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AtlasTypography.overline,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: Insets.sm),
-          Flexible(
-            child: Text(
-              '${p.category.label} · ${p.contentType.label}'.toUpperCase(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AtlasTypography.overline,
-            ),
-          ),
-        ],
-        const Spacer(),
+          )
+        else
+          const Spacer(),
+        const SizedBox(width: Insets.md),
         Semantics(
           button: onExplain != null,
           label: 'What is an AI preview?',

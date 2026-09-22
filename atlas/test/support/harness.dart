@@ -33,6 +33,20 @@ List<Override> testOverrides({String? viewerCountry = 'OM'}) => <Override>[
   viewerCountryProvider.overrideWith((Ref ref) => viewerCountry),
 ];
 
+/// Sizes the test screen.
+///
+/// `setSurfaceSize` alone is not enough: it changes the constraints widgets are
+/// laid out against but leaves `MediaQuery` reporting the default 800x600, so
+/// anything that sizes itself from `MediaQuery.sizeOf` — the country page's
+/// cards, the composer's preview — lays out for a screen that is not the one
+/// under test. Setting the view sizes both.
+void useScreen(WidgetTester tester, Size size, {double pixelRatio = 3}) {
+  tester.view
+    ..physicalSize = size * pixelRatio
+    ..devicePixelRatio = pixelRatio;
+  addTearDown(tester.view.reset);
+}
+
 /// Pumps a widget inside the app's theme and a configured provider scope.
 Future<void> pumpAtlas(
   WidgetTester tester,
@@ -41,8 +55,7 @@ Future<void> pumpAtlas(
   Size surface = const Size(430, 932),
 }) async {
   useInMemoryPreferences();
-  await tester.binding.setSurfaceSize(surface);
-  addTearDown(() => tester.binding.setSurfaceSize(null));
+  useScreen(tester, surface);
 
   await tester.pumpWidget(
     ProviderScope(

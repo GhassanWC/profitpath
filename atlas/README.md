@@ -107,6 +107,18 @@ python3 make_sample_clips.py ../assets/media                    # placeholder re
 byte buffer, against roughly 3 MB of GeoJSON and an object per coordinate.
 The format is documented on `WorldOutlines`.
 
+## Looking at it without a device
+
+```bash
+flutter test --update-goldens test/screenshots.dart
+```
+
+Writes every screen to `screenshots/` at 3x, with the real typefaces and the
+platform emoji font loaded — `flutter test` otherwise draws every string in a
+placeholder box font. The one thing it cannot show is video: `video_player` has
+no implementation in a headless test, so the watch screen captures its chrome
+around a loading state.
+
 ## Checks
 
 ```bash
